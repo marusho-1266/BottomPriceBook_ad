@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router';
 import { BarChart3, Home, Plus, SlidersHorizontal } from 'lucide-react';
+import { OfflineBanner } from './OfflineBanner';
 
 function Tab({
   to,
@@ -28,6 +29,7 @@ function Tab({
 export function AppShell() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-cream">
+      <OfflineBanner />
       <div className="flex-1 pb-24">
         <Outlet />
       </div>

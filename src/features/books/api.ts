@@ -2,6 +2,7 @@ import {
   doc,
   runTransaction,
   serverTimestamp,
+  updateDoc,
   type Firestore,
 } from 'firebase/firestore';
 import type { BaseUnit } from '../../types/models';
@@ -48,4 +49,19 @@ export async function ensureBook(db: Firestore, uid: string): Promise<void> {
       });
     }
   });
+}
+
+export const BOTTOM_WINDOW_OPTIONS = [
+  { value: 0, label: '全期間' },
+  { value: 3, label: '3ヶ月' },
+  { value: 6, label: '6ヶ月' },
+  { value: 12, label: '12ヶ月' },
+] as const;
+
+export async function updateBook(
+  db: Firestore,
+  bookId: string,
+  patch: { name?: string; bottomWindowMonths?: number },
+): Promise<void> {
+  await updateDoc(doc(db, 'books', bookId), patch);
 }

@@ -1,6 +1,13 @@
+import { useEffect, useState } from 'react';
 import { ChevronRight, FolderTree, StoreIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { signOut } from '../features/auth/api';
+import {
+  BOTTOM_WINDOW_OPTIONS,
+  updateBook,
+} from '../features/books/api';
+import { useBook } from '../features/books/BookProvider';
+import { db } from '../lib/firebase';
 
 function SettingsLink({
   to,
@@ -24,12 +31,72 @@ function SettingsLink({
 }
 
 export function SettingsPage() {
+  const { bookId, book } = useBook();
+  const [name, setName] = useState(book?.name ?? '');
+  const windowMonths = book?.bottomWindowMonths ?? 6;
+
+  useEffect(() => {
+    if (book?.name) setName(book.name);
+  }, [book?.name]);
+
+  async function handleWindowChange(months: number) {
+    await updateBook(db, bookId, { bottomWindowMonths: months });
+  }
+
+  async function handleNameSave() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    await updateBook(db, bookId, { name: trimmed });
+  }
+
   return (
     <div>
       <header className="px-4 pt-14 pb-3">
         <h2 className="text-lg font-extrabold">設定</h2>
       </header>
-      <div className="mx-4 rounded-2xl bg-surface">
+
+      <section className="mx-4 rounded-2xl bg-surface px-4 py-4">
+        <label htmlFor="book-name" className="text-xs font-bold text-ink-faint">
+          底値帳の名前
+        </label>
+        <div className="mt-2 flex gap-2">
+          <input
+            id="book-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-cream px-3 text-sm outline-none"
+          />
+          <button
+            type="button"
+            onClick={handleNameSave}
+            className="shrink-0 rounded-xl bg-primary px-4 text-xs font-bold text-white"
+          >
+            名前を保存
+          </button>
+        </div>
+      </section>
+
+      <section className="mx-4 mt-4 rounded-2xl bg-surface px-4 py-4">
+        <div className="text-xs font-bold text-ink-faint">底値の対象期間</div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {BOTTOM_WINDOW_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleWindowChange(option.value)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${
+                windowMonths === option.value
+                  ? 'bg-primary text-white'
+                  : 'bg-cream text-ink-sub'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="mx-4 mt-4 rounded-2xl bg-surface">
         <SettingsLink
           to="/settings/categories"
           label="カテゴリ管理"
@@ -41,6 +108,7 @@ export function SettingsPage() {
           icon={<StoreIcon className="size-5" />}
         />
       </div>
+
       <div className="mx-4 mt-4">
         <button
           type="button"

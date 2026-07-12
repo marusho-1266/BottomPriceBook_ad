@@ -1,0 +1,37 @@
+@import '@fontsource/m-plus-rounded-1c/400.css';
+@import '@fontsource/m-plus-rounded-1c/500.css';
+@import '@fontsource/m-plus-rounded-1c/700.css';
+@import '@fontsource/m-plus-rounded-1c/800.css';
+@import 'tailwindcss';
+
+/* デザイントークン(docs/design.md 準拠)。
+   ダークモード対応時はここの値をメディアクエリ/クラスで切り替える。 */
+@theme {
+  --font-sans: 'M PLUS Rounded 1c', system-ui, sans-serif;
+
+  --color-cream: #fbf6ed; /* 画面背景 */
+  --color-surface: #ffffff; /* カード背景 */
+  --color-surface-alt: #fffdf8; /* タブバー背景 */
+  --color-line: #f5eddf; /* カード内の行区切り */
+  --color-line-strong: #f0e6d6; /* タブバー上辺など */
+  --color-chevron: #d9cbb6; /* シェブロン・淡い枠線 */
+  --color-ink: #453a2f; /* 本文 */
+  --color-ink-sub: #9c8e7e; /* 補足テキスト */
+  --color-ink-faint: #b7a891; /* 非アクティブ・ヒント */
+  --color-primary: #e8823c; /* アクセント */
+  --color-primary-deep: #c96f2e; /* 押下・リンク */
+  --color-primary-light: #f09a52; /* ホバー・淡い強調 */
+  --color-sale: #d95643; /* 特売バッジ文字 */
+  --color-sale-bg: #fde7e1; /* 特売バッジ背景 */
+}
+
+html {
+  background-color: var(--color-cream);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}

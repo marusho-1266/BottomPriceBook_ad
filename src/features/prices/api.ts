@@ -1,4 +1,4 @@
-import { Timestamp, addDoc, collection, query } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, deleteDoc, doc, query, updateDoc } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { useCollection } from '../../lib/firestoreHooks';
@@ -23,6 +23,26 @@ export function addPriceRecord(bookId: string, draft: PriceRecordDraft): Promise
     ...draft,
     recordedAt: Timestamp.fromDate(draft.recordedAt),
   });
+}
+
+export function updatePriceRecord(
+  bookId: string,
+  recordId: string,
+  patch: Partial<Omit<PriceRecordDraft, 'recordedAt'>> & { recordedAt?: Date },
+): Promise<void> {
+  if ((patch.price !== undefined && patch.price <= 0) ||
+      (patch.quantity !== undefined && patch.quantity <= 0)) {
+    return Promise.reject(new Error('price and quantity must be positive'));
+  }
+  const { recordedAt, ...rest } = patch;
+  return updateDoc(doc(db, 'books', bookId, 'priceRecords', recordId), {
+    ...rest,
+    ...(recordedAt ? { recordedAt: Timestamp.fromDate(recordedAt) } : {}),
+  });
+}
+
+export function deletePriceRecord(bookId: string, recordId: string): Promise<void> {
+  return deleteDoc(doc(db, 'books', bookId, 'priceRecords', recordId));
 }
 
 /** book 内の全価格記録を購読する(底値算出・参照カウントに使用) */

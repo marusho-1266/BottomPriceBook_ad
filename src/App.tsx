@@ -9,6 +9,7 @@ import { HomePage } from './routes/HomePage';
 import { RecordPage } from './routes/RecordPage';
 import { ComparePage } from './routes/ComparePage';
 import { SettingsPage } from './routes/SettingsPage';
+import { ProductDetailPage } from './routes/ProductDetailPage';
 import { CategoriesPage } from './features/categories/CategoriesPage';
 import { StoresPage } from './features/stores/StoresPage';
 import { db } from './lib/firebase';
@@ -53,6 +54,7 @@ function Gate() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="settings/categories" element={<CategoriesPage />} />
             <Route path="settings/stores" element={<StoresPage />} />
+            <Route path="products/:productId" element={<ProductDetailPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

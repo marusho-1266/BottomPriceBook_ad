@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ChevronRight, FolderTree, StoreIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { signOut } from '../features/auth/api';
@@ -32,12 +32,10 @@ function SettingsLink({
 
 export function SettingsPage() {
   const { bookId, book } = useBook();
-  const [name, setName] = useState(book?.name ?? '');
+  const bookName = book?.name ?? '';
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const name = nameDraft ?? bookName;
   const windowMonths = book?.bottomWindowMonths ?? 6;
-
-  useEffect(() => {
-    if (book?.name) setName(book.name);
-  }, [book?.name]);
 
   async function handleWindowChange(months: number) {
     await updateBook(db, bookId, { bottomWindowMonths: months });
@@ -47,6 +45,7 @@ export function SettingsPage() {
     const trimmed = name.trim();
     if (!trimmed) return;
     await updateBook(db, bookId, { name: trimmed });
+    setNameDraft(null);
   }
 
   return (
@@ -63,7 +62,7 @@ export function SettingsPage() {
           <input
             id="book-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setNameDraft(e.target.value)}
             className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-cream px-3 text-sm outline-none"
           />
           <button

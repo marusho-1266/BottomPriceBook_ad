@@ -13,6 +13,10 @@ vi.mock('firebase/auth', () => ({
 vi.mock('../src/features/books/api', () => ({
   ensureBook: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(() => ({})),
+  onSnapshot: vi.fn(() => () => {}),
+}));
 
 import { App } from '../src/App';
 import { act } from 'react';

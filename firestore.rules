@@ -9,9 +9,20 @@ service cloud.firestore {
       function isMember() {
         return isSignedIn() && request.auth.uid in resource.data.memberUids;
       }
+      // book ドキュメントを get して member か判定(サブコレクション用)
+      function isBookMember() {
+        return request.auth != null
+          && request.auth.uid
+            in get(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
+      }
+      // book 作成と同一トランザクション内の書き込み(シード)も許可するため getAfter を使う
+      function isBookMemberAfterWrite() {
+        return request.auth != null
+          && request.auth.uid
+            in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
+      }
 
-      // 自分の bookId は未作成でも読める(初期化時の存在確認に必要)。
-      // それ以外はメンバーのみ
+      // 自分の bookId は未作成でも読める(初期化時の存在確認に必要)。それ以外はメンバーのみ
       allow read: if isSignedIn() && (bookId == request.auth.uid || isMember());
 
       // MVP では bookId = uid の決定的 ID のみ許可(H-4)
@@ -29,25 +40,31 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // book 配下のサブコレクション(categories / stores / products / priceRecords)
-      match /{collection}/{docId} {
-        function isSignedIn() {
-          return request.auth != null;
-        }
-        // 書き込みは book 作成と同一トランザクションのシードも許可するため getAfter を使う
-        function isMemberAfterWrite() {
-          return isSignedIn()
-            && request.auth.uid
-              in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
-        }
-        function isMemberNow() {
-          return isSignedIn()
-            && request.auth.uid
-              in get(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
+      match /categories/{categoryId} {
+        allow read: if isBookMember();
+        // book 作成トランザクションでのシード書き込みがあるため getAfter 判定
+        allow write: if isBookMemberAfterWrite();
+      }
+
+      match /stores/{storeId} {
+        allow read, write: if isBookMember();
+      }
+
+      match /products/{productId} {
+        allow read, write: if isBookMember();
+      }
+
+      match /priceRecords/{recordId} {
+        // price / quantity は正の数(M-3)。上限等の業務バリデーションはクライアント責務
+        function isValidRecord() {
+          return request.resource.data.price is number
+            && request.resource.data.price > 0
+            && request.resource.data.quantity is number
+            && request.resource.data.quantity > 0;
         }
 
-        allow read: if isMemberNow();
-        allow write: if isMemberAfterWrite();
+        allow read, delete: if isBookMember();
+        allow create, update: if isBookMember() && isValidRecord();
       }
     }
   }

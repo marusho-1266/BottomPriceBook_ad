@@ -16,10 +16,25 @@ vi.mock('../../../src/features/categories/api', () => ({
   })),
   addCategory: vi.fn().mockResolvedValue(undefined),
   renameCategory: vi.fn().mockResolvedValue(undefined),
+  deleteCategory: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../../src/features/products/api', () => ({
+  // 「食品」カテゴリだけ商品 2 件から参照されている状態
+  useProducts: vi.fn(() => ({
+    data: [
+      { id: 'p1', name: '米', categoryId: 'food' },
+      { id: 'p2', name: 'パン', categoryId: 'food' },
+    ],
+    loading: false,
+  })),
 }));
 
 import { CategoriesPage } from '../../../src/features/categories/CategoriesPage';
-import { addCategory, renameCategory } from '../../../src/features/categories/api';
+import {
+  addCategory,
+  deleteCategory,
+  renameCategory,
+} from '../../../src/features/categories/api';
 
 function renderPage() {
   return render(
@@ -68,5 +83,21 @@ describe('CategoriesPage', () => {
     await user.type(input, '食料品');
     await user.click(screen.getByRole('button', { name: '保存' }));
     expect(renameCategory).toHaveBeenCalledWith('b1', 'food', '食料品');
+  });
+
+  it('商品から参照中のカテゴリは削除できず件数を表示する(H-2)', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole('button', { name: '削除' })[0]);
+    expect(deleteCategory).not.toHaveBeenCalled();
+    expect(screen.getByText('2件の商品が使用中のため削除できません')).toBeInTheDocument();
+  });
+
+  it('参照されていないカテゴリは確認のうえ削除できる', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole('button', { name: '削除' })[1]);
+    expect(deleteCategory).toHaveBeenCalledWith('b1', 'drink');
   });
 });

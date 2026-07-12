@@ -1,14 +1,25 @@
 import { useState, type FormEvent } from 'react';
 import { SubPageHeader } from '../../components/SubPageHeader';
 import { useBook } from '../books/BookProvider';
-import { addCategory, renameCategory, useCategories } from './api';
+import { useProducts } from '../products/api';
+import { addCategory, deleteCategory, renameCategory, useCategories } from './api';
 import type { BaseUnit, Category, WithId } from '../../types/models';
 
 const BASE_UNITS: BaseUnit[] = ['g', 'ml', '個', '枚', '組', '回分'];
 
-function CategoryRow({ category, bookId }: { category: WithId<Category>; bookId: string }) {
+function CategoryRow({
+  category,
+  bookId,
+  referenceCount,
+}: {
+  category: WithId<Category>;
+  bookId: string;
+  /** このカテゴリを参照している商品数。0 より大きい場合は削除禁止(H-2) */
+  referenceCount: number;
+}) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
+  const [blocked, setBlocked] = useState(false);
 
   const save = async () => {
     const trimmed = name.trim();
@@ -16,6 +27,16 @@ function CategoryRow({ category, bookId }: { category: WithId<Category>; bookId:
       await renameCategory(bookId, category.id, trimmed);
     }
     setEditing(false);
+  };
+
+  const remove = async () => {
+    if (referenceCount > 0) {
+      setBlocked(true);
+      return;
+    }
+    if (window.confirm(`「${category.name}」を削除しますか?`)) {
+      await deleteCategory(bookId, category.id);
+    }
   };
 
   return (
@@ -37,6 +58,11 @@ function CategoryRow({ category, bookId }: { category: WithId<Category>; bookId:
           <div className="min-w-0 flex-1">
             <div className="text-sm font-bold">{category.name}</div>
             <div className="text-[11px] text-ink-sub">基準単位: {category.baseUnit}</div>
+            {blocked && (
+              <p role="alert" className="mt-1 text-[11px] font-bold text-sale">
+                {referenceCount}件の商品が使用中のため削除できません
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -48,6 +74,9 @@ function CategoryRow({ category, bookId }: { category: WithId<Category>; bookId:
           >
             編集
           </button>
+          <button type="button" onClick={remove} className="text-sm font-bold text-sale">
+            削除
+          </button>
         </>
       )}
     </li>
@@ -57,6 +86,7 @@ function CategoryRow({ category, bookId }: { category: WithId<Category>; bookId:
 export function CategoriesPage() {
   const { bookId } = useBook();
   const { data: categories, loading } = useCategories();
+  const { data: products } = useProducts();
   const [name, setName] = useState('');
   const [baseUnit, setBaseUnit] = useState<BaseUnit>('g');
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +156,12 @@ export function CategoriesPage() {
       <ul className="mx-4 mt-4 rounded-2xl bg-surface">
         {loading && <li className="px-4 py-3 text-sm text-ink-faint">読み込み中…</li>}
         {categories.map((category) => (
-          <CategoryRow key={category.id} category={category} bookId={bookId} />
+          <CategoryRow
+            key={category.id}
+            category={category}
+            bookId={bookId}
+            referenceCount={products.filter((p) => p.categoryId === category.id).length}
+          />
         ))}
       </ul>
     </div>

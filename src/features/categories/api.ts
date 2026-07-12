@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, orderBy, query, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, orderBy, query, updateDoc } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { useCollection } from '../../lib/firestoreHooks';
@@ -26,4 +26,9 @@ export function addCategory(
 
 export function renameCategory(bookId: string, categoryId: string, name: string): Promise<void> {
   return updateDoc(doc(db, 'books', bookId, 'categories', categoryId), { name });
+}
+
+/** 参照チェックは呼び出し側(UI)の責務。MVP の意図的な割り切り(L-7) */
+export function deleteCategory(bookId: string, categoryId: string): Promise<void> {
+  return deleteDoc(doc(db, 'books', bookId, 'categories', categoryId));
 }

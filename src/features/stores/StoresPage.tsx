@@ -1,12 +1,23 @@
 import { useState, type FormEvent } from 'react';
 import { SubPageHeader } from '../../components/SubPageHeader';
 import { useBook } from '../books/BookProvider';
-import { addStore, renameStore, useStores } from './api';
+import { usePriceRecords } from '../prices/api';
+import { addStore, deleteStore, renameStore, useStores } from './api';
 import type { Store, WithId } from '../../types/models';
 
-function StoreRow({ store, bookId }: { store: WithId<Store>; bookId: string }) {
+function StoreRow({
+  store,
+  bookId,
+  referenceCount,
+}: {
+  store: WithId<Store>;
+  bookId: string;
+  /** この店舗を参照している価格記録数。0 より大きい場合は削除禁止(H-2) */
+  referenceCount: number;
+}) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(store.name);
+  const [blocked, setBlocked] = useState(false);
 
   const save = async () => {
     const trimmed = name.trim();
@@ -14,6 +25,16 @@ function StoreRow({ store, bookId }: { store: WithId<Store>; bookId: string }) {
       await renameStore(bookId, store.id, trimmed);
     }
     setEditing(false);
+  };
+
+  const remove = async () => {
+    if (referenceCount > 0) {
+      setBlocked(true);
+      return;
+    }
+    if (window.confirm(`「${store.name}」を削除しますか?`)) {
+      await deleteStore(bookId, store.id);
+    }
   };
 
   return (
@@ -32,7 +53,14 @@ function StoreRow({ store, bookId }: { store: WithId<Store>; bookId: string }) {
         </>
       ) : (
         <>
-          <div className="min-w-0 flex-1 text-sm font-bold">{store.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold">{store.name}</div>
+            {blocked && (
+              <p role="alert" className="mt-1 text-[11px] font-bold text-sale">
+                {referenceCount}件の価格記録が使用中のため削除できません
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -43,6 +71,9 @@ function StoreRow({ store, bookId }: { store: WithId<Store>; bookId: string }) {
           >
             編集
           </button>
+          <button type="button" onClick={remove} className="text-sm font-bold text-sale">
+            削除
+          </button>
         </>
       )}
     </li>
@@ -52,6 +83,7 @@ function StoreRow({ store, bookId }: { store: WithId<Store>; bookId: string }) {
 export function StoresPage() {
   const { bookId } = useBook();
   const { data: stores, loading } = useStores();
+  const { data: priceRecords } = usePriceRecords();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -99,7 +131,12 @@ export function StoresPage() {
       <ul className="mx-4 mt-4 rounded-2xl bg-surface">
         {loading && <li className="px-4 py-3 text-sm text-ink-faint">読み込み中…</li>}
         {stores.map((store) => (
-          <StoreRow key={store.id} store={store} bookId={bookId} />
+          <StoreRow
+            key={store.id}
+            store={store}
+            bookId={bookId}
+            referenceCount={priceRecords.filter((r) => r.storeId === store.id).length}
+          />
         ))}
       </ul>
     </div>

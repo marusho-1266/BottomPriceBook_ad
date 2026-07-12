@@ -8,15 +8,26 @@ vi.mock('../../../src/features/books/BookProvider', () => ({
 }));
 vi.mock('../../../src/features/stores/api', () => ({
   useStores: vi.fn(() => ({
-    data: [{ id: 's1', name: 'OKストア' }],
+    data: [
+      { id: 's1', name: 'OKストア' },
+      { id: 's2', name: '西友' },
+    ],
     loading: false,
   })),
   addStore: vi.fn().mockResolvedValue(undefined),
   renameStore: vi.fn().mockResolvedValue(undefined),
+  deleteStore: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../../src/features/prices/api', () => ({
+  // s1 だけ価格記録 1 件から参照されている状態
+  usePriceRecords: vi.fn(() => ({
+    data: [{ id: 'r1', productId: 'p1', storeId: 's1', price: 100 }],
+    loading: false,
+  })),
 }));
 
 import { StoresPage } from '../../../src/features/stores/StoresPage';
-import { addStore, renameStore } from '../../../src/features/stores/api';
+import { addStore, deleteStore, renameStore } from '../../../src/features/stores/api';
 
 function renderPage() {
   return render(
@@ -55,11 +66,27 @@ describe('StoresPage', () => {
   it('店舗名を変更できる', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: '編集' }));
+    await user.click(screen.getAllByRole('button', { name: '編集' })[0]);
     const input = screen.getByDisplayValue('OKストア');
     await user.clear(input);
     await user.type(input, 'OKストア 川崎店');
     await user.click(screen.getByRole('button', { name: '保存' }));
     expect(renameStore).toHaveBeenCalledWith('b1', 's1', 'OKストア 川崎店');
+  });
+
+  it('価格記録から参照中の店舗は削除できず件数を表示する(H-2)', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole('button', { name: '削除' })[0]);
+    expect(deleteStore).not.toHaveBeenCalled();
+    expect(screen.getByText('1件の価格記録が使用中のため削除できません')).toBeInTheDocument();
+  });
+
+  it('参照されていない店舗は確認のうえ削除できる', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole('button', { name: '削除' })[1]);
+    expect(deleteStore).toHaveBeenCalledWith('b1', 's2');
   });
 });

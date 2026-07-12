@@ -14,16 +14,15 @@ function Loading() {
 
 function Gate() {
   const { user, loading } = useAuth();
-  const [bookReady, setBookReady] = useState(false);
+  const [readyUid, setReadyUid] = useState<string | null>(null);
+  const bookReady = user != null && readyUid === user.uid;
 
   useEffect(() => {
-    if (!user) {
-      setBookReady(false);
-      return;
-    }
+    if (!user) return;
     let cancelled = false;
-    ensureBook(db, user.uid).then(() => {
-      if (!cancelled) setBookReady(true);
+    const uid = user.uid;
+    ensureBook(db, uid).then(() => {
+      if (!cancelled) setReadyUid(uid);
     });
     return () => {
       cancelled = true;

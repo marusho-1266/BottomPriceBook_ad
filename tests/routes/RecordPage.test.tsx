@@ -1,0 +1,154 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../src/features/books/BookProvider', () => ({
+  useBook: () => ({ bookId: 'b1', book: null }),
+}));
+vi.mock('../../src/features/categories/api', () => ({
+  useCategories: vi.fn(() => ({
+    data: [
+      { id: 'detergent', name: '洗剤', baseUnit: 'ml', sortOrder: 0 },
+      { id: 'food', name: '食品', baseUnit: 'g', sortOrder: 1 },
+    ],
+    loading: false,
+  })),
+}));
+vi.mock('../../src/features/products/api', () => ({
+  useProducts: vi.fn(() => ({
+    data: [
+      { id: 'p1', name: 'キュキュット 本体 240ml', categoryId: 'detergent' },
+      { id: 'p2', name: 'コシヒカリ 5kg', categoryId: 'food' },
+    ],
+    loading: false,
+  })),
+  addProduct: vi.fn().mockResolvedValue('new-product-id'),
+}));
+vi.mock('../../src/features/stores/api', () => ({
+  useStores: vi.fn(() => ({
+    data: [{ id: 's1', name: 'OKストア' }],
+    loading: false,
+  })),
+  addStore: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../src/features/prices/api', () => ({
+  addPriceRecord: vi.fn().mockResolvedValue(undefined),
+  usePriceRecords: vi.fn(() => ({ data: [], loading: false })),
+}));
+
+import { RecordPage } from '../../src/routes/RecordPage';
+import { addPriceRecord } from '../../src/features/prices/api';
+
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <RecordPage />
+    </MemoryRouter>,
+  );
+}
+
+async function selectProduct(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole('button', { name: /商品/ }));
+  await user.click(screen.getByRole('button', { name }));
+}
+
+async function selectStore(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole('button', { name: /店舗/ }));
+  await user.click(screen.getByRole('button', { name }));
+}
+
+describe('RecordPage(電卓ファースト)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('テンキーで価格を入力できる', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '5' }));
+    await user.click(screen.getByRole('button', { name: '8' }));
+    expect(screen.getByText('¥158')).toBeInTheDocument();
+  });
+
+  it('バックスペースで 1 桁消せる', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '5' }));
+    await user.click(screen.getByRole('button', { name: '1文字削除' }));
+    expect(screen.getByText('¥1')).toBeInTheDocument();
+  });
+
+  it('商品・店舗・価格・内容量・特売を入力して記録できる', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await selectStore(user, 'OKストア');
+
+    // 価格 158
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '5' }));
+    await user.click(screen.getByRole('button', { name: '8' }));
+
+    // 内容量へ切替 → 240
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '4' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+
+    await user.click(screen.getByLabelText('特売'));
+    await user.click(screen.getByRole('button', { name: '記録する' }));
+
+    expect(addPriceRecord).toHaveBeenCalledWith(
+      'b1',
+      expect.objectContaining({
+        productId: 'p1',
+        storeId: 's1',
+        price: 158,
+        quantity: 240,
+        unit: 'ml',
+        isSale: true,
+      }),
+    );
+  });
+
+  it('商品のカテゴリに応じた単位が選べる(g カテゴリなら g / kg)', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'コシヒカリ 5kg');
+    const unitSelect = screen.getByLabelText('単位');
+    expect(unitSelect).toHaveValue('g');
+    expect(screen.getByRole('option', { name: 'kg' })).toBeInTheDocument();
+  });
+
+  it('未選択・未入力で記録するとエラーを表示し保存しない', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: '記録する' }));
+    expect(addPriceRecord).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('総量入力のヒントを表示する(L-4)', () => {
+    renderPage();
+    expect(screen.getByText(/総量を入力/)).toBeInTheDocument();
+  });
+
+  it('記録後は価格がリセットされ、商品・店舗は保持される', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await selectStore(user, 'OKストア');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '記録する' }));
+
+    expect(await screen.findByText('記録しました')).toBeInTheDocument();
+    expect(screen.getByText('¥0')).toBeInTheDocument();
+    expect(screen.getByText('キュキュット 本体 240ml')).toBeInTheDocument();
+  });
+});

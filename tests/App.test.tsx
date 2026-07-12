@@ -12,9 +12,13 @@ vi.mock('firebase/auth', () => ({
 }));
 vi.mock('../src/features/books/api', () => ({
   ensureBook: vi.fn().mockResolvedValue(undefined),
+  DEFAULT_BOTTOM_WINDOW_MONTHS: 6,
 }));
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(() => ({})),
+  collection: vi.fn(() => ({})),
+  query: vi.fn(() => ({})),
+  orderBy: vi.fn(() => ({})),
   onSnapshot: vi.fn(() => () => {}),
 }));
 

@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F0EBE1;font-family:'M PLUS Rounded 1c',system-ui,sans-serif}
+a{color:#C96F2E}a:hover{color:#A85A20}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#453A2F;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 14px/1.2 'M PLUS Rounded 1c',sans-serif;color:#453A2F}
+.dv-note{margin:0 0 28px;max-width:760px;font:400 12px/1.7 'M PLUS Rounded 1c',sans-serif;color:rgba(69,58,47,.65)}
+.dv-group{margin:34px 0 14px;font:800 13px/1 'M PLUS Rounded 1c',sans-serif;color:#453A2F;display:flex;align-items:center;gap:8px}
+.dv-group span{font:500 11px/1 'M PLUS Rounded 1c',sans-serif;color:rgba(69,58,47,.5)}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(69,58,47,.1);color:#453A2F;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 11.5px/1.4 'M PLUS Rounded 1c',sans-serif;color:rgba(69,58,47,.6);max-width:402px}
+.dv-opt:target .dv-oid{background:#E8823C;color:#fff}
+.dv-next{margin:30px 0 0;font:12px/1.5 'M PLUS Rounded 1c',sans-serif;color:rgba(69,58,47,.55)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">そこねこ — 底値帳 PWA・全主要画面の初回探索</span></div>
+<p class="dv-note">spec.md 準拠。トーン: クリーム地+オレンジ/アンバー、丸ゴシック(M PLUS Rounded 1c)、猫はロゴ・アイコン程度。底値は「特売込み」をデフォルト表示し特売バッジで区別、商品詳細では通常のみの底値を併記(H-3/L-6)。内容量ヒント「総量を入力」(L-4)。記録フローは spec 目標「3タップ+数値入力」を軸に3案。</p>
+
+<div class="dv-group">ホーム(底値一覧)<span>カード大きめ・情報リッチ / 2案</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>スタンダード:検索+カテゴリチップ+底値カード</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="position:relative;width:34px;height:34px">
+          <div style="position:absolute;left:2px;top:8px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #E8823C;transform:rotate(-18deg)"></div>
+          <div style="position:absolute;right:2px;top:8px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #E8823C;transform:rotate(18deg)"></div>
+          <div style="position:absolute;left:3px;top:12px;width:28px;height:24px;background:#E8823C;border-radius:50% 50% 46% 46%"></div>
+          <div style="position:absolute;left:11px;top:21px;width:3px;height:3px;border-radius:50%;background:#FBF6ED"></div>
+          <div style="position:absolute;right:11px;top:21px;width:3px;height:3px;border-radius:50%;background:#FBF6ED"></div>
+        </div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:1px">そこねこ</div>
+      </div>
+      <div style="font-size:11px;font-weight:500;color:#9C8E7E">底値: 直近6ヶ月</div>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EFE4D2;border-radius:14px;padding:11px 14px">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="5" fill="none" stroke="#B7A891" stroke-width="1.8"></circle><line x1="11" y1="11" x2="15" y2="15" stroke="#B7A891" stroke-width="1.8" stroke-linecap="round"></line></svg>
+      <span style="font-size:14px;color:#B7A891">商品を検索</span>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;overflow:hidden">
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#E8823C;color:#fff;font-size:12px;font-weight:700">すべて</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">食品</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">飲料</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">洗剤</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">ティッシュ</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#FFFFFF;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#B7A891;letter-spacing:.5px">洗剤</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">キュキュット 本体 240ml</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#FBEDDD;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#C96F2E"><span style="width:6px;height:6px;border-radius:50%;background:#E8823C"></span>OKストア</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+            <span style="background:#FDE7E1;color:#D95643;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px">特売</span>
+            <span style="font-size:10px;font-weight:700;color:#B7A891">底値</span>
+          </div>
+          <div style="font-size:26px;font-weight:800;color:#E8823C;line-height:1.2">¥158</div>
+          <div style="font-size:11px;font-weight:500;color:#9C8E7E">0.66円/ml</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F5EDDF;display:flex;justify-content:space-between;font-size:11px;color:#B7A891">
+        <span>記録 12件</span><span>最終記録 7/10</span>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#B7A891;letter-spacing:.5px">食品</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">コシヒカリ 5kg</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#FBEDDD;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#C96F2E"><span style="width:6px;height:6px;border-radius:50%;background:#E8823C"></span>OKストア</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="font-size:10px;font-weight:700;color:#B7A891">底値</div>
+          <div style="font-size:26px;font-weight:800;color:#E8823C;line-height:1.2">¥1,980</div>
+          <div style="font-size:11px;font-weight:500;color:#9C8E7E">0.40円/g</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F5EDDF;display:flex;justify-content:space-between;font-size:11px;color:#B7A891">
+        <span>記録 5件</span><span>最終記録 7/8</span>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#B7A891;letter-spacing:.5px">飲料</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">サントリー 天然水 2L</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#FBEDDD;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#C96F2E"><span style="width:6px;height:6px;border-radius:50%;background:#E8823C"></span>業務スーパー</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="font-size:10px;font-weight:700;color:#B7A891">底値</div>
+          <div style="font-size:26px;font-weight:800;color:#E8823C;line-height:1.2">¥88</div>
+          <div style="font-size:11px;font-weight:500;color:#9C8E7E">0.044円/ml</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F5EDDF;display:flex;justify-content:space-between;font-size:11px;color:#B7A891">
+        <span>記録 8件</span><span>最終記録 7/11</span>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#B7A891;letter-spacing:.5px">ティッシュ</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">エリエール 5箱×160組</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#FBEDDD;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#C96F2E"><span style="width:6px;height:6px;border-radius:50%;background:#E8823C"></span>コスモス</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+            <span style="background:#FDE7E1;color:#D95643;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px">特売</span>
+            <span style="font-size:10px;font-weight:700;color:#B7A891">底値</span>
+          </div>
+          <div style="font-size:26px;font-weight:800;color:#E8823C;line-height:1.2">¥298</div>
+          <div style="font-size:11px;font-weight:500;color:#9C8E7E">0.37円/組</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F5EDDF;display:flex;justify-content:space-between;font-size:11px;color:#B7A891">
+        <span>記録 4件</span><span>最終記録 6/29</span>
+      </div>
+    </div>
+  </div>
+  <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 26px;background:#FFFDF8;border-top:1px solid #F0E6D6">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke="#E8823C" stroke-width="2" stroke-linejoin="round"></path></svg>
+      <span style="font-size:10px;font-weight:700;color:#E8823C">ホーム</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;margin-top:-14px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#E8823C;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(232,130,60,.4)">
+        <svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="4" x2="11" y2="18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line><line x1="4" y1="11" x2="18" y2="11" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line></svg>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:#C96F2E">記録</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="12" width="4" height="8" rx="1.5" fill="#B7A891"></rect><rect x="10" y="7" width="4" height="13" rx="1.5" fill="#B7A891"></rect><rect x="16" y="10" width="4" height="10" rx="1.5" fill="#B7A891"></rect></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">比較</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><line x1="4" y1="8" x2="20" y2="8" stroke="#B7A891" stroke-width="2" stroke-linecap="round"></line><circle cx="15" cy="8" r="3" fill="#FBF6ED" stroke="#B7A891" stroke-width="2"></circle><line x1="4" y1="16" x2="20" y2="16" stroke="#B7A891" stroke-width="2" stroke-linecap="round"></line><circle cx="9" cy="16" r="3" fill="#FBF6ED" stroke="#B7A891" stroke-width="2"></circle></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">設定</span>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>カテゴリ見出しでグルーピング+サマリーヘッダー</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 16px;background:#E8823C;border-radius:0 0 28px 28px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:1px">そこねこ</div>
+      <svg width="18" height="18" viewBox="0 0 16 16"><circle cx="7" cy="7" r="5" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.8"></circle><line x1="11" y1="11" x2="15" y2="15" stroke="rgba(255,255,255,.9)" stroke-width="1.8" stroke-linecap="round"></line></svg>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <div style="flex:1;background:rgba(255,255,255,.16);border-radius:16px;padding:12px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.75)">登録商品</div>
+        <div style="font-size:22px;font-weight:800;color:#fff">24<span style="font-size:12px;font-weight:700"> 品</span></div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,.16);border-radius:16px;padding:12px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.75)">今週の記録</div>
+        <div style="font-size:22px;font-weight:800;color:#fff">7<span style="font-size:12px;font-weight:700"> 件</span></div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,.16);border-radius:16px;padding:12px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.75)">底値更新</div>
+        <div style="font-size:22px;font-weight:800;color:#FFE3C4">3<span style="font-size:12px;font-weight:700"> 件</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:16px 20px 0">
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 10px">
+      <span style="font-size:13px;font-weight:800">洗剤</span>
+      <span style="font-size:10.5px;font-weight:500;color:#B7A891">1mlあたりで比較 →</span>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #F5EDDF">
+        <div style="flex:none;text-align:center;min-width:74px">
+          <div style="display:flex;align-items:center;justify-content:center;gap:4px"><span style="font-size:20px;font-weight:800;color:#E8823C">¥158</span></div>
+          <div style="font-size:10px;font-weight:700;color:#D95643;background:#FDE7E1;border-radius:999px;padding:2px 8px;display:inline-block;margin-top:2px">特売</div>
+        </div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:700;line-height:1.35">キュキュット 本体 240ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:2px">OKストア · 0.66円/ml</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+        <div style="flex:none;text-align:center;min-width:74px">
+          <div style="font-size:20px;font-weight:800;color:#453A2F">¥208</div>
+        </div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:700;line-height:1.35">ジョイ W除菌 300ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:2px">西友 · 0.69円/ml</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin:18px 0 10px">
+      <span style="font-size:13px;font-weight:800">飲料</span>
+      <span style="font-size:10.5px;font-weight:500;color:#B7A891">1mlあたりで比較 →</span>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #F5EDDF">
+        <div style="flex:none;text-align:center;min-width:74px">
+          <div style="font-size:20px;font-weight:800;color:#E8823C">¥88</div>
+        </div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:700;line-height:1.35">サントリー 天然水 2L</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:2px">業務スーパー · 0.044円/ml</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+        <div style="flex:none;text-align:center;min-width:74px">
+          <div style="font-size:20px;font-weight:800;color:#453A2F">¥238</div>
+        </div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:700;line-height:1.35">明治 おいしい牛乳 900ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:2px">西友 · 0.26円/ml</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin:18px 0 10px">
+      <span style="font-size:13px;font-weight:800">食品</span>
+      <span style="font-size:10.5px;font-weight:500;color:#B7A891">1gあたりで比較 →</span>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+        <div style="flex:none;text-align:center;min-width:74px">
+          <div style="font-size:20px;font-weight:800;color:#E8823C">¥1,980</div>
+        </div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:700;line-height:1.35">コシヒカリ 5kg</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:2px">OKストア · 0.40円/g</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+  </div>
+  <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 26px;background:#FFFDF8;border-top:1px solid #F0E6D6">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke="#E8823C" stroke-width="2" stroke-linejoin="round"></path></svg>
+      <span style="font-size:10px;font-weight:700;color:#E8823C">ホーム</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;margin-top:-14px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#E8823C;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(232,130,60,.4)">
+        <svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="4" x2="11" y2="18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line><line x1="4" y1="11" x2="18" y2="11" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line></svg>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:#C96F2E">記録</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="12" width="4" height="8" rx="1.5" fill="#B7A891"></rect><rect x="10" y="7" width="4" height="13" rx="1.5" fill="#B7A891"></rect><rect x="16" y="10" width="4" height="10" rx="1.5" fill="#B7A891"></rect></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">比較</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><line x1="4" y1="8" x2="20" y2="8" stroke="#B7A891" stroke-width="2" stroke-linecap="round"></line><circle cx="15" cy="8" r="3" fill="#FBF6ED" stroke="#B7A891" stroke-width="2"></circle><line x1="4" y1="16" x2="20" y2="16" stroke="#B7A891" stroke-width="2" stroke-linecap="round"></line><circle cx="9" cy="16" r="3" fill="#FBF6ED" stroke="#B7A891" stroke-width="2"></circle></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">設定</span>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+</div>
+
+<div class="dv-group">価格を記録<span>目標: 3タップ+数値入力 / 3案</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>電卓ファースト:商品・店舗はチップで選択、常時テンキー</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:19px;font-weight:800">価格を記録</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:#F1E7D6;display:flex;align-items:center;justify-content:center">
+        <svg width="12" height="12" viewBox="0 0 12 12"><line x1="1" y1="1" x2="11" y2="11" stroke="#8A7B69" stroke-width="2" stroke-linecap="round"></line><line x1="11" y1="1" x2="1" y2="11" stroke="#8A7B69" stroke-width="2" stroke-linecap="round"></line></svg>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1.5px solid #EFE4D2;border-radius:16px;padding:12px 14px">
+        <span style="flex:none;font-size:11px;font-weight:700;color:#B7A891;min-width:32px">商品</span>
+        <span style="flex:1;font-size:14.5px;font-weight:700">キュキュット 本体 240ml</span>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1.5px solid #EFE4D2;border-radius:16px;padding:12px 14px">
+        <span style="flex:none;font-size:11px;font-weight:700;color:#B7A891;min-width:32px">店舗</span>
+        <span style="flex:1;font-size:14.5px;font-weight:700">OKストア 港北店</span>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#B7A891">価格(税込)</div>
+      <div style="font-size:52px;font-weight:800;color:#453A2F;line-height:1.15">¥158</div>
+      <div style="margin:0 auto;width:180px;height:3px;border-radius:2px;background:#E8823C"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;align-items:stretch">
+      <div style="flex:1.4;background:#FFFFFF;border:1.5px solid #EFE4D2;border-radius:14px;padding:9px 12px">
+        <div style="font-size:10px;font-weight:700;color:#B7A891">内容量</div>
+        <div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:17px;font-weight:800">240</span><span style="font-size:12px;font-weight:700;color:#C96F2E">ml ▾</span></div>
+      </div>
+      <div style="flex:1;background:#FDE7E1;border:1.5px solid #F6C9BE;border-radius:14px;padding:9px 12px;display:flex;flex-direction:column;justify-content:center">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:34px;height:20px;border-radius:999px;background:#D95643;position:relative"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff"></div></div>
+          <span style="font-size:12px;font-weight:800;color:#D95643">特売</span>
+        </div>
+      </div>
+      <div style="flex:1;background:#FFFFFF;border:1.5px solid #EFE4D2;border-radius:14px;padding:9px 12px">
+        <div style="font-size:10px;font-weight:700;color:#B7A891">日付</div>
+        <div style="font-size:14px;font-weight:800;margin-top:2px">今日</div>
+      </div>
+    </div>
+    <div style="margin-top:6px;font-size:10.5px;color:#B7A891">💡 内容量は総量を入力(例: 5箱×160組 → 800組)</div>
+  </div>
+  <div style="flex:1"></div>
+  <div style="flex:none;padding:10px 16px 26px;background:#FFFDF8;border-top:1px solid #F0E6D6">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">1</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">2</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">3</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">4</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">5</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">6</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">7</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">8</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">9</div>
+      <div style="height:56px;border-radius:15px;background:#F1E7D6;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#8A7B69">00</div>
+      <div style="height:56px;border-radius:15px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">0</div>
+      <div style="height:56px;border-radius:15px;background:#F1E7D6;display:flex;align-items:center;justify-content:center">
+        <svg width="24" height="18" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke="#8A7B69" stroke-width="1.6" stroke-linejoin="round"></path><line x1="11" y1="6" x2="16" y2="11" stroke="#8A7B69" stroke-width="1.6" stroke-linecap="round"></line><line x1="16" y1="6" x2="11" y2="11" stroke="#8A7B69" stroke-width="1.6" stroke-linecap="round"></line></svg>
+      </div>
+    </div>
+    <div style="margin-top:10px;height:54px;border-radius:17px;background:#E8823C;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;box-shadow:0 6px 14px rgba(232,130,60,.35)">記録する</div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>3ステップフロー:最近の組み合わせをワンタップ再利用</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 0">
+    <div style="font-size:19px;font-weight:800">価格を記録</div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:6px">
+      <div style="flex:1;display:flex;align-items:center;gap:6px;background:#E8823C;color:#fff;border-radius:999px;padding:7px 12px"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">1</span><span style="font-size:12px;font-weight:800">商品</span></div>
+      <div style="flex:1;display:flex;align-items:center;gap:6px;background:#F1E7D6;color:#B7A891;border-radius:999px;padding:7px 12px"><span style="width:16px;height:16px;border-radius:50%;background:#E4D6BE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">2</span><span style="font-size:12px;font-weight:700">店舗</span></div>
+      <div style="flex:1;display:flex;align-items:center;gap:6px;background:#F1E7D6;color:#B7A891;border-radius:999px;padding:7px 12px"><span style="width:16px;height:16px;border-radius:50%;background:#E4D6BE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">3</span><span style="font-size:12px;font-weight:700">価格</span></div>
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:16px 20px 0">
+    <div style="font-size:12px;font-weight:800;color:#8A7B69;margin:0 0 8px">最近の記録から(商品+店舗をまとめて選択)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:#FFF4E6;border:1.5px solid #F2C79A;border-radius:18px;padding:14px">
+        <div style="font-size:13.5px;font-weight:700;line-height:1.35">キュキュット 本体 240ml</div>
+        <div style="margin-top:6px;font-size:11px;font-weight:700;color:#C96F2E">OKストア 港北店</div>
+        <div style="margin-top:4px;font-size:11px;color:#B7A891">前回 ¥178 · 7/2</div>
+      </div>
+      <div style="background:#FFF4E6;border:1.5px solid #F2C79A;border-radius:18px;padding:14px">
+        <div style="font-size:13.5px;font-weight:700;line-height:1.35">サントリー 天然水 2L</div>
+        <div style="margin-top:6px;font-size:11px;font-weight:700;color:#C96F2E">業務スーパー</div>
+        <div style="margin-top:4px;font-size:11px;color:#B7A891">前回 ¥88 · 7/11</div>
+      </div>
+      <div style="background:#FFF4E6;border:1.5px solid #F2C79A;border-radius:18px;padding:14px">
+        <div style="font-size:13.5px;font-weight:700;line-height:1.35">明治 おいしい牛乳 900ml</div>
+        <div style="margin-top:6px;font-size:11px;font-weight:700;color:#C96F2E">西友</div>
+        <div style="margin-top:4px;font-size:11px;color:#B7A891">前回 ¥238 · 7/9</div>
+      </div>
+      <div style="background:#FFF4E6;border:1.5px solid #F2C79A;border-radius:18px;padding:14px">
+        <div style="font-size:13.5px;font-weight:700;line-height:1.35">卵 Mサイズ 10個</div>
+        <div style="margin-top:6px;font-size:11px;font-weight:700;color:#C96F2E">コスモス</div>
+        <div style="margin-top:4px;font-size:11px;color:#B7A891">前回 ¥198 · 7/5</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EFE4D2;border-radius:14px;padding:11px 14px">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="5" fill="none" stroke="#B7A891" stroke-width="1.8"></circle><line x1="11" y1="11" x2="15" y2="15" stroke="#B7A891" stroke-width="1.8" stroke-linecap="round"></line></svg>
+      <span style="font-size:14px;color:#B7A891">商品名で探す・新規登録</span>
+    </div>
+    <div style="font-size:12px;font-weight:800;color:#8A7B69;margin:16px 0 8px">すべての商品</div>
+    <div style="background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #F5EDDF">
+        <span style="flex:1;font-size:14px;font-weight:700">コシヒカリ 5kg</span><span style="font-size:11px;color:#B7A891">食品</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #F5EDDF">
+        <span style="flex:1;font-size:14px;font-weight:700">エリエール 5箱×160組</span><span style="font-size:11px;color:#B7A891">ティッシュ</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px">
+        <span style="flex:1;font-size:14px;font-weight:700">ジョイ W除菌 300ml</span><span style="font-size:11px;color:#B7A891">洗剤</span>
+      </div>
+    </div>
+  </div>
+  <div style="flex:none;padding:12px 20px 30px;background:#FFFDF8;border-top:1px solid #F0E6D6">
+    <div style="font-size:11px;color:#B7A891;text-align:center">最近のカードをタップ → テンキーへ直行(実質1タップ+数値入力)</div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>ホームから長押し:クイック再記録シート(前回の組み合わせ)</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#FBF6ED;color:#453A2F;overflow:hidden">
+  <div style="padding:64px 20px 0;filter:blur(2px);opacity:.55">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:20px;font-weight:800;letter-spacing:1px">そこねこ</div>
+      <div style="font-size:11px;font-weight:500;color:#9C8E7E">底値: 直近6ヶ月</div>
+    </div>
+    <div style="margin-top:14px;background:#FFFFFF;border-radius:20px;padding:16px">
+      <div style="font-size:16px;font-weight:700">キュキュット 本体 240ml</div>
+      <div style="font-size:26px;font-weight:800;color:#E8823C">¥158</div>
+    </div>
+    <div style="margin-top:12px;background:#FFFFFF;border-radius:20px;padding:16px">
+      <div style="font-size:16px;font-weight:700">コシヒカリ 5kg</div>
+      <div style="font-size:26px;font-weight:800;color:#E8823C">¥1,980</div>
+    </div>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(69,58,47,.35)"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;background:#FFFDF8;border-radius:28px 28px 0 0;padding:12px 20px 30px;box-shadow:0 -12px 40px rgba(69,58,47,.25)">
+    <div style="width:44px;height:5px;border-radius:999px;background:#E4D6BE;margin:0 auto"></div>
+    <div style="margin-top:14px;font-size:16px;font-weight:800">クイック記録</div>
+    <div style="margin-top:2px;font-size:11.5px;color:#9C8E7E">前回と同じ組み合わせで記録します</div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:10px;background:#FBF6ED;border-radius:16px;padding:12px 14px">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:14px;font-weight:700">キュキュット 本体 240ml</div>
+        <div style="font-size:11px;color:#9C8E7E;margin-top:2px">OKストア 港北店 · 240ml</div>
+      </div>
+      <span style="font-size:11.5px;font-weight:700;color:#C96F2E">変更</span>
+    </div>
+    <div style="margin-top:14px;text-align:center">
+      <div style="font-size:44px;font-weight:800;line-height:1.1">¥162</div>
+      <div style="margin:4px auto 0;width:140px;height:3px;border-radius:2px;background:#E8823C"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px;background:#FDE7E1;border-radius:999px;padding:7px 14px">
+        <div style="width:30px;height:18px;border-radius:999px;background:#D95643;position:relative"><div style="position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff"></div></div>
+        <span style="font-size:12px;font-weight:800;color:#D95643">特売</span>
+      </div>
+      <div style="background:#F1E7D6;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;color:#8A7B69">今日</div>
+    </div>
+    <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">1</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">2</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">3</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">4</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">5</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">6</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">7</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">8</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">9</div>
+      <div style="height:48px;border-radius:13px;background:#F1E7D6;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#8A7B69">00</div>
+      <div style="height:48px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(69,58,47,.08);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700">0</div>
+      <div style="height:48px;border-radius:13px;background:#F1E7D6;display:flex;align-items:center;justify-content:center">
+        <svg width="22" height="16" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke="#8A7B69" stroke-width="1.6" stroke-linejoin="round"></path><line x1="11" y1="6" x2="16" y2="11" stroke="#8A7B69" stroke-width="1.6" stroke-linecap="round"></line><line x1="16" y1="6" x2="11" y2="11" stroke="#8A7B69" stroke-width="1.6" stroke-linecap="round"></line></svg>
+      </div>
+    </div>
+    <div style="margin-top:10px;height:50px;border-radius:16px;background:#E8823C;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">記録する</div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+</div>
+
+<div class="dv-group">商品詳細<span>特売込み/通常のみ併記(H-3)・履歴の編集/削除(H-1) / 2案</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>底値ヒーロー+店舗別+履歴リスト</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 0">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:50%;background:#F1E7D6;display:flex;align-items:center;justify-content:center">
+        <svg width="10" height="16" viewBox="0 0 10 16"><path d="M8 2 L2 8 L8 14" stroke="#8A7B69" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:17px;font-weight:800;line-height:1.3">キュキュット 本体 240ml</div>
+        <div style="font-size:11px;font-weight:700;color:#B7A891;margin-top:1px">カテゴリ: 洗剤(ml基準)</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;background:#E8823C;border-radius:22px;padding:18px;color:#fff;box-shadow:0 8px 20px rgba(232,130,60,.3)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:800;opacity:.85">底値(特売込み・直近6ヶ月)</span>
+        <span style="background:rgba(255,255,255,.25);font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px">特売</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-top:4px">
+        <span style="font-size:40px;font-weight:800;line-height:1.1">¥158</span>
+        <span style="font-size:13px;font-weight:700;opacity:.9">0.66円/ml</span>
+      </div>
+      <div style="margin-top:6px;font-size:12.5px;font-weight:700;opacity:.9">OKストア 港北店 · 6/28</div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.25);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;font-weight:700;opacity:.85">通常価格のみの底値</span>
+        <span style="font-size:15px;font-weight:800">¥178 <span style="font-size:11px;font-weight:700;opacity:.85">西友 · 7/2</span></span>
+      </div>
+    </div>
+    <div style="margin-top:18px;font-size:13px;font-weight:800">店舗別の底値</div>
+    <div style="margin-top:8px;background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #F5EDDF;gap:8px">
+        <span style="flex:1;font-size:13.5px;font-weight:700">OKストア 港北店</span>
+        <span style="background:#FDE7E1;color:#D95643;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px">特売</span>
+        <span style="font-size:15px;font-weight:800;color:#E8823C">¥158</span>
+      </div>
+      <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #F5EDDF;gap:8px">
+        <span style="flex:1;font-size:13.5px;font-weight:700">西友</span>
+        <span style="font-size:15px;font-weight:800">¥178</span>
+      </div>
+      <div style="display:flex;align-items:center;padding:12px 16px;gap:8px">
+        <span style="flex:1;font-size:13.5px;font-weight:700">コスモス</span>
+        <span style="font-size:15px;font-weight:800">¥182</span>
+      </div>
+    </div>
+    <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:800">価格の履歴</span>
+      <span style="font-size:11px;font-weight:700;color:#B7A891">12件</span>
+    </div>
+    <div style="margin-top:8px;background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:700">¥162 <span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">7/10 · OKストア 港北店</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13.5px;font-weight:700">¥178</span><span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">7/2 · 西友</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="display:flex;align-items:center;padding:12px 16px;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13.5px;font-weight:700">¥158</span><span style="background:#FDE7E1;color:#D95643;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px">特売</span><span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">6/28 · OKストア 港北店</div>
+        </div>
+        <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#D9CBB6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>コンパクトサマリー+スワイプで編集/削除(操作を明示)</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 0">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:50%;background:#F1E7D6;display:flex;align-items:center;justify-content:center">
+        <svg width="10" height="16" viewBox="0 0 10 16"><path d="M8 2 L2 8 L8 14" stroke="#8A7B69" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="font-size:17px;font-weight:800;line-height:1.3;flex:1">キュキュット 本体 240ml</div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <div style="flex:1;background:#FFFFFF;border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10.5px;font-weight:800;color:#B7A891">特売込み底値</span><span style="background:#FDE7E1;color:#D95643;font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px">特売</span></div>
+        <div style="font-size:24px;font-weight:800;color:#E8823C;margin-top:2px">¥158</div>
+        <div style="font-size:10.5px;color:#9C8E7E;margin-top:1px">OKストア · 0.66円/ml</div>
+      </div>
+      <div style="flex:1;background:#FFFFFF;border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+        <div style="font-size:10.5px;font-weight:800;color:#B7A891">通常のみ底値</div>
+        <div style="font-size:24px;font-weight:800;margin-top:2px">¥178</div>
+        <div style="font-size:10.5px;color:#9C8E7E;margin-top:1px">西友 · 0.74円/ml</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;background:#F1E7D6;border-radius:999px;padding:4px">
+      <div style="flex:1;text-align:center;padding:8px 0;background:#FFFDF8;border-radius:999px;font-size:12.5px;font-weight:800;box-shadow:0 1px 3px rgba(69,58,47,.1)">履歴</div>
+      <div style="flex:1;text-align:center;padding:8px 0;font-size:12.5px;font-weight:700;color:#9C8E7E">店舗別</div>
+    </div>
+    <div style="margin-top:12px;background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700">¥162 <span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">7/10 · OKストア 港北店</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:stretch;border-bottom:1px solid #F5EDDF;background:#FFFFFF">
+        <div style="flex:1;min-width:0;padding:13px 16px;transform:translateX(-124px);background:#FFFFFF">
+          <div style="font-size:14px;font-weight:700">¥178 <span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">7/2 · 西友</div>
+        </div>
+        <div style="flex:none;width:62px;margin-left:-124px;background:#F2A93B;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+          <svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 14 L3 10.5 L11 2.5 a1.4 1.4 0 0 1 2 0 l0.5 0.5 a1.4 1.4 0 0 1 0 2 L5.5 13 Z" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"></path></svg>
+          <span style="font-size:10px;font-weight:800;color:#fff">編集</span>
+        </div>
+        <div style="flex:none;width:62px;background:#D95643;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+          <svg width="15" height="16" viewBox="0 0 15 16"><path d="M2 4 h11 M6 4 V2.5 a1 1 0 0 1 1 -1 h1 a1 1 0 0 1 1 1 V4 M3.5 4 l0.8 9.5 a1.5 1.5 0 0 0 1.5 1.4 h3.4 a1.5 1.5 0 0 0 1.5 -1.4 L11.5 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size:10px;font-weight:800;color:#fff">削除</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:700">¥158</span><span style="background:#FDE7E1;color:#D95643;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px">特売</span><span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">6/28 · OKストア 港北店</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;padding:13px 16px;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700">¥185 <span style="font-size:11px;font-weight:500;color:#9C8E7E">240ml</span></div>
+          <div style="font-size:11px;color:#B7A891;margin-top:1px">6/14 · コスモス</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#B7A891;text-align:center">← 左にスワイプで編集・削除</div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+</div>
+
+<div class="dv-group">カテゴリ内比較 / 設定 / ログイン<span>各1案</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>単価ランキング(基準単位あたり・バー表示)</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="padding:64px 20px 0">
+    <div style="font-size:19px;font-weight:800">カテゴリ内比較</div>
+    <div style="margin-top:12px;display:flex;gap:8px;overflow:hidden">
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#E8823C;color:#fff;font-size:12px;font-weight:700">食器用洗剤</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">ティッシュ</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">飲料</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EFE4D2;color:#8A7B69;font-size:12px;font-weight:500">食品</div>
+    </div>
+    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11.5px;font-weight:700;color:#9C8E7E">基準: 1mlあたりの底値単価</span>
+      <span style="font-size:11px;font-weight:700;color:#B7A891">直近6ヶ月</span>
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:12px 20px 0;display:flex;flex-direction:column;gap:10px">
+    <div style="background:#FFF4E6;border:1.5px solid #F2C79A;border-radius:20px;padding:14px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:none;width:26px;height:26px;border-radius:50%;background:#E8823C;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">1</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14.5px;font-weight:700">キュキュット 本体 240ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:1px">¥158 · OKストア <span style="background:#FDE7E1;color:#D95643;font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;margin-left:2px">特売</span></div>
+        </div>
+        <div style="flex:none;text-align:right">
+          <div style="font-size:18px;font-weight:800;color:#E8823C">0.66<span style="font-size:11px;font-weight:700">円/ml</span></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;height:8px;border-radius:999px;background:rgba(232,130,60,.15);overflow:hidden"><div style="width:73%;height:100%;border-radius:999px;background:#E8823C"></div></div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;padding:14px 16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:none;width:26px;height:26px;border-radius:50%;background:#F1E7D6;color:#8A7B69;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">2</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14.5px;font-weight:700">ジョイ W除菌 300ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:1px">¥208 · 西友</div>
+        </div>
+        <div style="flex:none;text-align:right">
+          <div style="font-size:18px;font-weight:800">0.69<span style="font-size:11px;font-weight:700;color:#9C8E7E">円/ml</span></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;height:8px;border-radius:999px;background:#F5EDDF;overflow:hidden"><div style="width:77%;height:100%;border-radius:999px;background:#D9CBB6"></div></div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;padding:14px 16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:none;width:26px;height:26px;border-radius:50%;background:#F1E7D6;color:#8A7B69;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">3</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14.5px;font-weight:700">チャーミーマジカ 220ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:1px">¥178 · コスモス</div>
+        </div>
+        <div style="flex:none;text-align:right">
+          <div style="font-size:18px;font-weight:800">0.81<span style="font-size:11px;font-weight:700;color:#9C8E7E">円/ml</span></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;height:8px;border-radius:999px;background:#F5EDDF;overflow:hidden"><div style="width:90%;height:100%;border-radius:999px;background:#D9CBB6"></div></div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;padding:14px 16px;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:none;width:26px;height:26px;border-radius:50%;background:#F1E7D6;color:#8A7B69;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">4</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14.5px;font-weight:700">キュキュット 詰替 770ml</div>
+          <div style="font-size:11px;color:#9C8E7E;margin-top:1px">¥698 · 西友</div>
+        </div>
+        <div style="flex:none;text-align:right">
+          <div style="font-size:18px;font-weight:800">0.91<span style="font-size:11px;font-weight:700;color:#9C8E7E">円/ml</span></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;height:8px;border-radius:999px;background:#F5EDDF;overflow:hidden"><div style="width:100%;height:100%;border-radius:999px;background:#D9CBB6"></div></div>
+    </div>
+  </div>
+  <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 26px;background:#FFFDF8;border-top:1px solid #F0E6D6">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke="#B7A891" stroke-width="2" stroke-linejoin="round"></path></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">ホーム</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;margin-top:-14px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#E8823C;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(232,130,60,.4)">
+        <svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="4" x2="11" y2="18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line><line x1="4" y1="11" x2="18" y2="11" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line></svg>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:#C96F2E">記録</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="12" width="4" height="8" rx="1.5" fill="#E8823C"></rect><rect x="10" y="7" width="4" height="13" rx="1.5" fill="#E8823C"></rect><rect x="16" y="10" width="4" height="10" rx="1.5" fill="#E8823C"></rect></svg>
+      <span style="font-size:10px;font-weight:700;color:#E8823C">比較</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><line x1="4" y1="8" x2="20" y2="8" stroke="#B7A891" stroke-width="2" stroke-linecap="round"></line><circle cx="15" cy="8" r="3" fill="#FBF6ED" stroke="#B7A891" stroke-width="2"></circle><line x1="4" y1="16" x2="20" y2="16" stroke="#B7A891" stroke-width="2" stroke-linecap="round"></line><circle cx="9" cy="16" r="3" fill="#FBF6ED" stroke="#B7A891" stroke-width="2"></circle></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">設定</span>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>設定:底値期間・カテゴリ/店舗管理(参照中は削除不可)</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="flex:1;overflow:hidden;padding:64px 20px 0">
+    <div style="font-size:19px;font-weight:800">設定</div>
+    <div style="margin-top:14px;font-size:11.5px;font-weight:800;color:#B7A891;letter-spacing:.5px">底値の対象期間</div>
+    <div style="margin-top:8px;display:flex;background:#F1E7D6;border-radius:999px;padding:4px">
+      <div style="flex:1;text-align:center;padding:8px 0;font-size:12px;font-weight:700;color:#9C8E7E">全期間</div>
+      <div style="flex:1;text-align:center;padding:8px 0;font-size:12px;font-weight:700;color:#9C8E7E">3ヶ月</div>
+      <div style="flex:1;text-align:center;padding:8px 0;background:#E8823C;border-radius:999px;font-size:12px;font-weight:800;color:#fff">6ヶ月</div>
+      <div style="flex:1;text-align:center;padding:8px 0;font-size:12px;font-weight:700;color:#9C8E7E">12ヶ月</div>
+    </div>
+    <div style="margin-top:20px;font-size:11.5px;font-weight:800;color:#B7A891;letter-spacing:.5px">カテゴリ管理</div>
+    <div style="margin-top:8px;background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <span style="flex:1;font-size:14px;font-weight:700">食品</span>
+        <span style="background:#FBEDDD;color:#C96F2E;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">g 基準</span>
+        <span style="font-size:11px;color:#B7A891">6商品</span>
+      </div>
+      <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <span style="flex:1;font-size:14px;font-weight:700">飲料</span>
+        <span style="background:#FBEDDD;color:#C96F2E;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">ml 基準</span>
+        <span style="font-size:11px;color:#B7A891">5商品</span>
+      </div>
+      <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <span style="flex:1;font-size:14px;font-weight:700">洗剤</span>
+        <span style="background:#FBEDDD;color:#C96F2E;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px">ml 基準</span>
+        <span style="font-size:11px;color:#B7A891">4商品</span>
+      </div>
+      <div style="display:flex;align-items:center;padding:13px 16px;gap:10px">
+        <span style="flex:1;font-size:14px;font-weight:700;color:#C9BBA5">パン <span style="font-size:11px;font-weight:500">(0商品)</span></span>
+        <span style="font-size:11.5px;font-weight:800;color:#D95643">削除</span>
+      </div>
+    </div>
+    <div style="margin-top:8px;display:flex;align-items:center;gap:8px;background:#FFF8EC;border:1px solid #F2E3C8;border-radius:12px;padding:9px 12px">
+      <span style="flex:none;font-size:13px">⚠</span>
+      <span style="font-size:10.5px;color:#9C8E7E;line-height:1.5">商品や記録から参照中のカテゴリ・店舗は削除できません(件数を表示してブロック)</span>
+    </div>
+    <div style="margin-top:20px;font-size:11.5px;font-weight:800;color:#B7A891;letter-spacing:.5px">店舗管理</div>
+    <div style="margin-top:8px;background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 8px rgba(69,58,47,.05)">
+      <div style="display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid #F5EDDF;gap:10px">
+        <span style="flex:1;font-size:14px;font-weight:700">OKストア 港北店</span>
+        <span style="font-size:11px;color:#B7A891">記録 18件</span>
+      </div>
+      <div style="display:flex;align-items:center;padding:13px 16px;gap:10px">
+        <span style="flex:1;font-size:14px;font-weight:700">業務スーパー</span>
+        <span style="font-size:11px;color:#B7A891">記録 9件</span>
+      </div>
+    </div>
+    <div style="margin-top:20px;background:#FFFFFF;border-radius:18px;box-shadow:0 2px 8px rgba(69,58,47,.05);display:flex;align-items:center;justify-content:center;padding:14px;font-size:14px;font-weight:800;color:#D95643">ログアウト</div>
+    <div style="margin-top:10px;text-align:center;font-size:10.5px;color:#C9BBA5">そこねこ v1.0 · neko@example.com</div>
+  </div>
+  <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 26px;background:#FFFDF8;border-top:1px solid #F0E6D6">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke="#B7A891" stroke-width="2" stroke-linejoin="round"></path></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">ホーム</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;margin-top:-14px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#E8823C;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(232,130,60,.4)">
+        <svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="4" x2="11" y2="18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line><line x1="4" y1="11" x2="18" y2="11" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></line></svg>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:#C96F2E">記録</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="12" width="4" height="8" rx="1.5" fill="#B7A891"></rect><rect x="10" y="7" width="4" height="13" rx="1.5" fill="#B7A891"></rect><rect x="16" y="10" width="4" height="10" rx="1.5" fill="#B7A891"></rect></svg>
+      <span style="font-size:10px;font-weight:500;color:#B7A891">比較</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><line x1="4" y1="8" x2="20" y2="8" stroke="#E8823C" stroke-width="2" stroke-linecap="round"></line><circle cx="15" cy="8" r="3" fill="#FBF6ED" stroke="#E8823C" stroke-width="2"></circle><line x1="4" y1="16" x2="20" y2="16" stroke="#E8823C" stroke-width="2" stroke-linecap="round"></line><circle cx="9" cy="16" r="3" fill="#FBF6ED" stroke="#E8823C" stroke-width="2"></circle></svg>
+      <span style="font-size:10px;font-weight:700;color:#E8823C">設定</span>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+<div class="dv-opt" id="1j"><div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>ログイン:Google+メール/パスワード+リセット(L-1)</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF6ED;color:#453A2F">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 28px">
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div style="position:relative;width:76px;height:76px">
+        <div style="position:absolute;left:5px;top:16px;width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:26px solid #E8823C;transform:rotate(-18deg)"></div>
+        <div style="position:absolute;right:5px;top:16px;width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:26px solid #E8823C;transform:rotate(18deg)"></div>
+        <div style="position:absolute;left:7px;top:26px;width:62px;height:52px;background:#E8823C;border-radius:50% 50% 46% 46%"></div>
+        <div style="position:absolute;left:25px;top:46px;width:6px;height:6px;border-radius:50%;background:#FBF6ED"></div>
+        <div style="position:absolute;right:25px;top:46px;width:6px;height:6px;border-radius:50%;background:#FBF6ED"></div>
+        <div style="position:absolute;left:35px;top:56px;width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:5px solid #FBF6ED"></div>
+      </div>
+      <div style="margin-top:12px;font-size:28px;font-weight:800;letter-spacing:2px">そこねこ</div>
+      <div style="margin-top:4px;font-size:12.5px;font-weight:500;color:#9C8E7E">いつもの底値、ポケットに。</div>
+    </div>
+    <div style="margin-top:36px;height:52px;border-radius:16px;background:#FFFFFF;border:1.5px solid #EFE4D2;display:flex;align-items:center;justify-content:center;gap:10px">
+      <div style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285F4 0 90deg,#34A853 90deg 180deg,#FBBC05 180deg 270deg,#EA4335 270deg 360deg)"></div>
+      <span style="font-size:14.5px;font-weight:700">Google でログイン</span>
+    </div>
+    <div style="margin:20px 0;display:flex;align-items:center;gap:12px">
+      <div style="flex:1;height:1px;background:#E8DCC8"></div>
+      <span style="font-size:11px;font-weight:700;color:#C9BBA5">または</span>
+      <div style="flex:1;height:1px;background:#E8DCC8"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="height:52px;border-radius:16px;background:#FFFFFF;border:1.5px solid #EFE4D2;display:flex;align-items:center;padding:0 16px;font-size:14px;color:#B7A891">メールアドレス</div>
+      <div style="height:52px;border-radius:16px;background:#FFFFFF;border:1.5px solid #EFE4D2;display:flex;align-items:center;justify-content:space-between;padding:0 16px">
+        <span style="font-size:14px;color:#B7A891">パスワード</span>
+        <svg width="20" height="14" viewBox="0 0 20 14"><path d="M1 7 C4 2.5 7 1 10 1 s6 1.5 9 6 c-3 4.5 -6 6 -9 6 s-6 -1.5 -9 -6 Z" fill="none" stroke="#D9CBB6" stroke-width="1.6"></path><circle cx="10" cy="7" r="2.6" fill="none" stroke="#D9CBB6" stroke-width="1.6"></circle></svg>
+      </div>
+    </div>
+    <div style="margin-top:16px;height:52px;border-radius:16px;background:#E8823C;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;box-shadow:0 6px 14px rgba(232,130,60,.35)">ログイン</div>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:18px">
+      <a href="#1j" style="font-size:12px;font-weight:700;color:#C96F2E;text-decoration:none">パスワードをお忘れの方</a>
+      <a href="#1j" style="font-size:12px;font-weight:700;color:#C96F2E;text-decoration:none">新規登録</a>
+    </div>
+  </div>
+  <div style="flex:none;padding:0 28px 40px;text-align:center;font-size:10.5px;color:#C9BBA5;line-height:1.6">オフラインでも記録OK。オンラインに戻ると自動で同期します</div>
+</div>
+</x-import>
+</div>
+</div>
+
+</div>
+
+<div class="dv-group">ダークモード<span>ホームのダーク版 / 1案</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1k"><div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a><a class="dv-oid" href="#1a">1a</a> のダーク版(温かみを残した焦げ茶ベース)</div>
+<div style="width:402px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#221C15;color:#F3EAD9">
+  <div style="padding:64px 20px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="position:relative;width:34px;height:34px">
+          <div style="position:absolute;left:2px;top:8px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #F09A52;transform:rotate(-18deg)"></div>
+          <div style="position:absolute;right:2px;top:8px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #F09A52;transform:rotate(18deg)"></div>
+          <div style="position:absolute;left:3px;top:12px;width:28px;height:24px;background:#F09A52;border-radius:50% 50% 46% 46%"></div>
+          <div style="position:absolute;left:11px;top:21px;width:3px;height:3px;border-radius:50%;background:#221C15"></div>
+          <div style="position:absolute;right:11px;top:21px;width:3px;height:3px;border-radius:50%;background:#221C15"></div>
+        </div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:1px">そこねこ</div>
+      </div>
+      <div style="font-size:11px;font-weight:500;color:#A6988A">底値: 直近6ヶ月</div>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:8px;background:#2E2720;border:1px solid #3C332A;border-radius:14px;padding:11px 14px">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="5" fill="none" stroke="#8A7B69" stroke-width="1.8"></circle><line x1="11" y1="11" x2="15" y2="15" stroke="#8A7B69" stroke-width="1.8" stroke-linecap="round"></line></svg>
+      <span style="font-size:14px;color:#8A7B69">商品を検索</span>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;overflow:hidden">
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#F09A52;color:#221C15;font-size:12px;font-weight:800">すべて</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#2E2720;border:1px solid #3C332A;color:#A6988A;font-size:12px;font-weight:500">食品</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#2E2720;border:1px solid #3C332A;color:#A6988A;font-size:12px;font-weight:500">飲料</div>
+      <div style="flex:none;padding:7px 14px;border-radius:999px;background:#2E2720;border:1px solid #3C332A;color:#A6988A;font-size:12px;font-weight:500">洗剤</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#2E2720;border-radius:20px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#8A7B69;letter-spacing:.5px">洗剤</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">キュキュット 本体 240ml</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#3C332A;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#F0B27E"><span style="width:6px;height:6px;border-radius:50%;background:#F09A52"></span>OKストア</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+            <span style="background:#4A2B24;color:#F08D7A;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px">特売</span>
+            <span style="font-size:10px;font-weight:700;color:#8A7B69">底値</span>
+          </div>
+          <div style="font-size:26px;font-weight:800;color:#F09A52;line-height:1.2">¥158</div>
+          <div style="font-size:11px;font-weight:500;color:#A6988A">0.66円/ml</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #3C332A;display:flex;justify-content:space-between;font-size:11px;color:#8A7B69">
+        <span>記録 12件</span><span>最終記録 7/10</span>
+      </div>
+    </div>
+    <div style="background:#2E2720;border-radius:20px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#8A7B69;letter-spacing:.5px">食品</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">コシヒカリ 5kg</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#3C332A;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#F0B27E"><span style="width:6px;height:6px;border-radius:50%;background:#F09A52"></span>OKストア</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="font-size:10px;font-weight:700;color:#8A7B69">底値</div>
+          <div style="font-size:26px;font-weight:800;color:#F09A52;line-height:1.2">¥1,980</div>
+          <div style="font-size:11px;font-weight:500;color:#A6988A">0.40円/g</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #3C332A;display:flex;justify-content:space-between;font-size:11px;color:#8A7B69">
+        <span>記録 5件</span><span>最終記録 7/8</span>
+      </div>
+    </div>
+    <div style="background:#2E2720;border-radius:20px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:10.5px;font-weight:700;color:#8A7B69;letter-spacing:.5px">飲料</div>
+          <div style="margin-top:2px;font-size:16px;font-weight:700;line-height:1.35">サントリー 天然水 2L</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#3C332A;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#F0B27E"><span style="width:6px;height:6px;border-radius:50%;background:#F09A52"></span>業務スーパー</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="font-size:10px;font-weight:700;color:#8A7B69">底値</div>
+          <div style="font-size:26px;font-weight:800;color:#F09A52;line-height:1.2">¥88</div>
+          <div style="font-size:11px;font-weight:500;color:#A6988A">0.044円/ml</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #3C332A;display:flex;justify-content:space-between;font-size:11px;color:#8A7B69">
+        <span>記録 8件</span><span>最終記録 7/11</span>
+      </div>
+    </div>
+  </div>
+  <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 26px;background:#1B1610;border-top:1px solid #3C332A">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V19 a1 1 0 0 1 -1 1 H5 a1 1 0 0 1 -1 -1 Z" fill="none" stroke="#F09A52" stroke-width="2" stroke-linejoin="round"></path></svg>
+      <span style="font-size:10px;font-weight:700;color:#F09A52">ホーム</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;margin-top:-14px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#F09A52;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(240,154,82,.3)">
+        <svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="4" x2="11" y2="18" stroke="#221C15" stroke-width="2.6" stroke-linecap="round"></line><line x1="4" y1="11" x2="18" y2="11" stroke="#221C15" stroke-width="2.6" stroke-linecap="round"></line></svg>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:#F0B27E">記録</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="12" width="4" height="8" rx="1.5" fill="#8A7B69"></rect><rect x="10" y="7" width="4" height="13" rx="1.5" fill="#8A7B69"></rect><rect x="16" y="10" width="4" height="10" rx="1.5" fill="#8A7B69"></rect></svg>
+      <span style="font-size:10px;font-weight:500;color:#8A7B69">比較</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding-top:4px">
+      <svg width="24" height="24" viewBox="0 0 24 24"><line x1="4" y1="8" x2="20" y2="8" stroke="#8A7B69" stroke-width="2" stroke-linecap="round"></line><circle cx="15" cy="8" r="3" fill="#221C15" stroke="#8A7B69" stroke-width="2"></circle><line x1="4" y1="16" x2="20" y2="16" stroke="#8A7B69" stroke-width="2" stroke-linecap="round"></line><circle cx="9" cy="16" r="3" fill="#221C15" stroke="#8A7B69" stroke-width="2"></circle></svg>
+      <span style="font-size:10px;font-weight:500;color:#8A7B69">設定</span>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+</div>
+
+</div>
+
+<p class="dv-next">Try next: 「ホームは <a class="dv-oid" href="#1a">1a</a>、記録は <a class="dv-oid" href="#1c">1c</a> と <a class="dv-oid" href="#1d">1d</a> を組み合わせて」 · 「<a class="dv-oid" href="#1f">1f</a> のヒーローをもっと控えめに」 · 「この方向でインタラクティブなプロトタイプにして」</p>
+</section>
+
+</x-dc>
+</body>
+</html>

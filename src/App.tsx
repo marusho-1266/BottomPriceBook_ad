@@ -9,6 +9,8 @@ import { HomePage } from './routes/HomePage';
 import { RecordPage } from './routes/RecordPage';
 import { ComparePage } from './routes/ComparePage';
 import { SettingsPage } from './routes/SettingsPage';
+import { CategoriesPage } from './features/categories/CategoriesPage';
+import { StoresPage } from './features/stores/StoresPage';
 import { db } from './lib/firebase';
 
 function Loading() {
@@ -49,6 +51,8 @@ function Gate() {
             <Route path="record" element={<RecordPage />} />
             <Route path="compare" element={<ComparePage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings/categories" element={<CategoriesPage />} />
+            <Route path="settings/stores" element={<StoresPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

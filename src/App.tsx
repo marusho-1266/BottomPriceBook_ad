@@ -1,20 +1,38 @@
+import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { LoginScreen } from './features/auth/LoginScreen';
+import { ensureBook } from './features/books/api';
+import { db } from './lib/firebase';
+
+function Loading() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-cream">
+      <p className="text-sm font-bold text-ink-faint">読み込み中…</p>
+    </div>
+  );
+}
 
 function Gate() {
   const { user, loading } = useAuth();
+  const [bookReady, setBookReady] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-cream">
-        <p className="text-sm font-bold text-ink-faint">読み込み中…</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!user) {
+      setBookReady(false);
+      return;
+    }
+    let cancelled = false;
+    ensureBook(db, user.uid).then(() => {
+      if (!cancelled) setBookReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
-  if (!user) {
-    return <LoginScreen />;
-  }
+  if (loading) return <Loading />;
+  if (!user) return <LoginScreen />;
+  if (!bookReady) return <Loading />;
 
   return (
     <div className="min-h-dvh bg-cream">

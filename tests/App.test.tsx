@@ -10,6 +10,9 @@ vi.mock('firebase/auth', () => ({
     return () => {};
   }),
 }));
+vi.mock('../src/features/books/api', () => ({
+  ensureBook: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { App } from '../src/App';
 import { act } from 'react';
@@ -23,11 +26,11 @@ describe('App(認証ガード)', () => {
     expect(screen.getByRole('button', { name: /Google でログイン/ })).toBeInTheDocument();
   });
 
-  it('ログイン済みならアプリ本体を表示する', async () => {
+  it('ログイン済みなら book を初期化してアプリ本体を表示する', async () => {
     render(<App />);
     await act(async () => {
       listeners.at(-1)!({ uid: 'u1' });
     });
-    expect(screen.getByRole('heading', { name: 'そこねこ' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'そこねこ' })).toBeInTheDocument();
   });
 });

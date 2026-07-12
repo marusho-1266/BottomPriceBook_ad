@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "node scripts/run-vitest.mjs run",
     "test:watch": "node scripts/run-vitest.mjs",
+    "test:rules": "node scripts/run-vitest.mjs run --config vitest.rules.config.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "emulators": "firebase emulators:start --project demo-sokoneko",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@fontsource/m-plus-rounded-1c": "^5.2.10",
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/jest-dom": "^6.9.1",

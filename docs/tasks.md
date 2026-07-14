@@ -226,6 +226,38 @@
 
 ---
 
+## フェーズ 7: Issue #1 カテゴリ内比較の表示改善
+
+> 対象仕様: `docs/spec-issue1-category-comparison.md`(2026-07-14)
+
+- [x] **T21: 全記録ランキング関数 `rankAllRecordsByUnitPrice`**
+  - 内容: `src/features/prices/bottomPrice.ts` に `RankedRecord` 型と
+    `rankAllRecordsByUnitPrice`(商品へ集約せず全価格記録を単価昇順で返す純粋関数)を追加。
+    期間フィルタ(`filterRecords` 流用)・特売含む・単価 null は末尾・
+    同一単価は記録日の新しい順。既存関数の挙動は変更しない
+  - 受け入れ: 期間フィルタ / 単位換算(kg・L)/ 同一商品の複数記録 /
+    null 末尾 / 記録日タイブレーク / カテゴリ外商品の記録除外、が単体テストで検証されている
+  - Verify: `npm run test && npm run lint`
+  - 依存: なし / 規模: S
+
+- [ ] **T22: ComparePage の全記録表示への変更**
+  - 内容: `ComparePage` を `rankAllRecordsByUnitPrice` に置き換え。
+    `useStores()` 結合による店舗名表示(参照切れは「(不明な店舗)」)、
+    特売バッジ(`SaleBadge`)、記録日表示、上位50件切り詰め+「他 N 件」注記、
+    行キーを `record.id` に変更
+  - 受け入れ: 店舗名・記録日・特売バッジが表示され、51件以上で切り詰め注記が出る。
+    key 重複警告が出ない(コンポーネントテスト)
+  - Verify: `npm run test && npm run lint && npm run build`
+  - 依存: T21 / 規模: S
+
+- [ ] **T23: 旧 `rankByUnitPrice` の削除**
+  - 内容: 未使用となった `rankByUnitPrice` / `RankedProduct` をテストごと削除
+  - 受け入れ: 参照が残っていない(grep)。全テスト・lint・build が通る
+  - Verify: `npm run test && npm run lint && npm run build`
+  - 依存: T22 / 規模: S
+
+---
+
 ## 並行性メモ
 
 - T8(単位換算)は T6-T7 と並行可

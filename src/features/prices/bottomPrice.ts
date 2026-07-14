@@ -99,31 +99,39 @@ export function bottomPricesByStore<R extends PriceRecordInput>(
   return result;
 }
 
-export interface RankedProduct<P extends { id: string }, R extends PriceRecordInput> {
+export interface RankedRecord<P extends { id: string }, R extends PriceRecordInput> {
   product: P;
-  best: BottomResult<R>;
+  record: R;
+  /** 基準単位あたりの円。単位不整合時は null */
+  unitPrice: number | null;
 }
 
-/** カテゴリ内の商品を基準単位あたり単価の安い順に並べる(記録のない商品は除外) */
-export function rankByUnitPrice<P extends { id: string }, R extends PriceRecordInput>(
-  products: P[],
+/**
+ * カテゴリ内の全価格記録を、対象期間でフィルタしたうえで
+ * 基準単位あたり単価の昇順に並べて返す(商品への集約は行わない)。
+ * 単価が null の行は末尾。同一単価は記録日の新しい順。
+ */
+export function rankAllRecordsByUnitPrice<P extends { id: string }, R extends PriceRecordInput>(
+  productsInCategory: P[],
   records: R[],
   baseUnit: BaseUnit,
   options: BottomPriceOptions,
-): RankedProduct<P, R>[] {
-  const ranked: RankedProduct<P, R>[] = [];
-  for (const product of products) {
-    const best = bottomPrice(
-      records.filter((r) => r.productId === product.id),
-      baseUnit,
-      options,
-    );
-    if (best) ranked.push({ product, best });
+): RankedRecord<P, R>[] {
+  const productById = new Map(productsInCategory.map((p) => [p.id, p]));
+  const ranked: RankedRecord<P, R>[] = [];
+  for (const record of filterRecords(records, options)) {
+    const product = productById.get(record.productId);
+    if (!product) continue;
+    const unitPrice = calcUnitPrice(record.price, record.quantity, record.unit, baseUnit);
+    ranked.push({ product, record, unitPrice });
   }
+  const recordedTime = (row: RankedRecord<P, R>) => toDate(row.record.recordedAt).getTime();
   ranked.sort((a, b) => {
-    if (a.best.unitPrice === null) return 1;
-    if (b.best.unitPrice === null) return -1;
-    return a.best.unitPrice - b.best.unitPrice;
+    if (a.unitPrice === null && b.unitPrice === null) return recordedTime(b) - recordedTime(a);
+    if (a.unitPrice === null) return 1;
+    if (b.unitPrice === null) return -1;
+    if (a.unitPrice !== b.unitPrice) return a.unitPrice - b.unitPrice;
+    return recordedTime(b) - recordedTime(a);
   });
   return ranked;
 }

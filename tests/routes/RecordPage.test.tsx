@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+﻿import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,6 +20,7 @@ vi.mock('../../src/features/products/api', () => ({
     data: [
       { id: 'p1', name: 'キュキュット 本体 240ml', categoryId: 'detergent' },
       { id: 'p2', name: 'コシヒカリ 5kg', categoryId: 'food' },
+      { id: 'p3', name: 'ジョイ 300ml', categoryId: 'detergent' },
     ],
     loading: false,
   })),
@@ -38,7 +39,7 @@ vi.mock('../../src/features/prices/api', () => ({
 }));
 
 import { RecordPage } from '../../src/routes/RecordPage';
-import { addPriceRecord } from '../../src/features/prices/api';
+import { addPriceRecord, usePriceRecords } from '../../src/features/prices/api';
 
 function renderPage() {
   return render(
@@ -61,6 +62,8 @@ async function selectStore(user: ReturnType<typeof userEvent.setup>, name: strin
 describe('RecordPage(電卓ファースト)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks は mockReturnValue を解除しないため、既定値を毎回設定し直す
+    vi.mocked(usePriceRecords).mockReturnValue({ data: [], loading: false } as unknown as ReturnType<typeof usePriceRecords>);
   });
 
   it('テンキーで価格を入力できる', async () => {
@@ -135,6 +138,96 @@ describe('RecordPage(電卓ファースト)', () => {
   it('総量入力のヒントを表示する(L-4)', () => {
     renderPage();
     expect(screen.getByText(/総量を入力/)).toBeInTheDocument();
+  });
+
+  it('暫定順位: 入力途中(内容量未入力)は順位も比較対象なしも表示しない', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    expect(screen.queryByText(/暫定/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/比較できる記録がありません/)).not.toBeInTheDocument();
+  });
+
+  it('暫定順位: 入力が揃うと店舗未選択でも順位を表示する', async () => {
+    // p3(ジョイ 300ml)の底値 1.0 円/ml が比較対象
+    vi.mocked(usePriceRecords).mockReturnValue({
+      data: [
+        {
+          id: 'r1',
+          productId: 'p3',
+          storeId: 's1',
+          price: 300,
+          quantity: 300,
+          unit: 'ml',
+          isSale: false,
+          recordedAt: new Date(),
+        },
+      ],
+      loading: false,
+    } as unknown as ReturnType<typeof usePriceRecords>);
+
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    // 価格 100 / 内容量 200ml → 0.5 円/ml < 1.0 円/ml → 暫定 1 位
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+
+    expect(screen.getByText(/このカテゴリで暫定 1 位 \/ 2 商品中/)).toBeInTheDocument();
+  });
+
+  it('暫定順位: 入力値を変えると順位表示が即座に更新される', async () => {
+    vi.mocked(usePriceRecords).mockReturnValue({
+      data: [
+        {
+          id: 'r1',
+          productId: 'p3',
+          storeId: 's1',
+          price: 300,
+          quantity: 300,
+          unit: 'ml',
+          isSale: false,
+          recordedAt: new Date(),
+        },
+      ],
+      loading: false,
+    } as unknown as ReturnType<typeof usePriceRecords>);
+
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    // 価格 100 / 内容量 200ml → 0.5 円/ml → 1 位
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    expect(screen.getByText(/暫定 1 位/)).toBeInTheDocument();
+
+    // 価格を 1000 に変更 → 5.0 円/ml > 1.0 円/ml → 2 位
+    await user.click(screen.getByRole('button', { name: /価格/ }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    expect(screen.getByText(/暫定 2 位/)).toBeInTheDocument();
+  });
+
+  it('暫定順位: 比較対象が無い場合はその旨を表示する', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+
+    expect(screen.getByText(/カテゴリ内に比較できる記録がありません/)).toBeInTheDocument();
+    expect(screen.queryByText(/暫定/)).not.toBeInTheDocument();
   });
 
   it('記録後は価格がリセットされ、商品・店舗は保持される', async () => {

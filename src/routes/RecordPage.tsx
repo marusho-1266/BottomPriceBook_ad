@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import { ChevronRight, Delete } from 'lucide-react';
 import { PickerSheet } from '../components/PickerSheet';
 import { useBook } from '../features/books/BookProvider';
+import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
 import { useCategories } from '../features/categories/api';
-import { addPriceRecord } from '../features/prices/api';
+import { addPriceRecord, usePriceRecords } from '../features/prices/api';
+import { rankDraftInCategory } from '../features/prices/bottomPrice';
 import { ProductForm } from '../features/products/ProductForm';
 import { addProduct, useProducts } from '../features/products/api';
 import { addStore, useStores } from '../features/stores/api';
@@ -67,10 +69,11 @@ function Keypad({
 }
 
 export function RecordPage() {
-  const { bookId } = useBook();
+  const { bookId, book } = useBook();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
   const { data: categories } = useCategories();
+  const { data: records } = usePriceRecords();
 
   const [productId, setProductId] = useState<string | null>(null);
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -92,6 +95,20 @@ export function RecordPage() {
   const baseUnit: BaseUnit | null = category?.baseUnit ?? null;
   const units = useMemo(() => (baseUnit ? allowedUnits(baseUnit) : []), [baseUnit]);
   const effectiveUnit = units.includes(unit) ? unit : (units[0] ?? '');
+
+  const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
+  const now = useMemo(() => new Date(), []);
+  const draftRank = useMemo(() => {
+    if (!product || !baseUnit) return null;
+    return rankDraftInCategory(
+      products.filter((p) => p.categoryId === product.categoryId),
+      records,
+      product.id,
+      { price: Number(priceText), quantity: Number(quantityText), unit: effectiveUnit },
+      baseUnit,
+      { windowMonths, now },
+    );
+  }, [product, baseUnit, products, records, priceText, quantityText, effectiveUnit, windowMonths, now]);
 
   const handleDigit = (digit: string) => {
     setSaved(false);
@@ -255,6 +272,17 @@ export function RecordPage() {
         <p className="mt-1.5 text-[10.5px] text-ink-faint">
           内容量は総量を入力(例: 5箱×160組 → 800組)
         </p>
+
+        {draftRank?.kind === 'ranked' && (
+          <p className="mt-2 text-xs font-bold text-primary-deep">
+            このカテゴリで暫定 {draftRank.rank} 位 / {draftRank.total} 商品中
+          </p>
+        )}
+        {draftRank?.kind === 'noCandidates' && (
+          <p className="mt-2 text-xs font-bold text-ink-faint">
+            カテゴリ内に比較できる記録がありません
+          </p>
+        )}
 
         {error && (
           <p role="alert" className="mt-2 text-xs font-bold text-sale">

@@ -1,6 +1,6 @@
 # タスク分解: 記録時の暫定順位表示(Issue #2)
 
-> Status: **I2-T1 完了(2026-07-14)** / 最終更新: 2026-07-14
+> Status: **I2-T1〜T2 完了(2026-07-14)** / 最終更新: 2026-07-14
 > 対象: `docs/spec-issue2.md`
 > 実装は 1 タスク = 1 コミット。各タスクの Verify を通してから次へ進む。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
@@ -18,7 +18,7 @@
   - Verify: `npm run test && npm run lint && npm run build`
   - 依存: なし / 規模: S
 
-- [ ] **I2-T2: RecordPage への暫定順位表示の統合**
+- [x] **I2-T2: RecordPage への暫定順位表示の統合**
   - 内容: `src/routes/RecordPage.tsx` で入力値から `rankDraftInCategory` を
     `useMemo` で算出し、「このカテゴリで暫定 {rank} 位 / {total} 商品中」
     または「比較対象なし」の表示を追加。底値設定は

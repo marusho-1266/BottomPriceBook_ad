@@ -106,6 +106,46 @@ export interface RankedRecord<P extends { id: string }, R extends PriceRecordInp
   unitPrice: number | null;
 }
 
+export type DraftRankResult =
+  | { kind: 'ranked'; rank: number; total: number }
+  | { kind: 'noCandidates' };
+
+/**
+ * 入力中のドラフト価格が、カテゴリ内の商品横断単価比較で何位相当かを返す。
+ * 対象商品はドラフト単価、他商品は既存の底値で比較する。
+ * 底値の単価が算出不能な商品は比較対象・母数から除外する。
+ * ドラフト値が無効(price / quantity が 0 以下、単位不整合)の間は null。
+ */
+export function rankDraftInCategory<P extends { id: string }, R extends PriceRecordInput>(
+  products: P[],
+  records: R[],
+  targetProductId: string,
+  draft: { price: number; quantity: number; unit: string },
+  baseUnit: BaseUnit,
+  options: BottomPriceOptions,
+): DraftRankResult | null {
+  if (draft.price <= 0) return null;
+  const draftUnitPrice = calcUnitPrice(draft.price, draft.quantity, draft.unit, baseUnit);
+  if (draftUnitPrice === null) return null;
+
+  const candidateUnitPrices: number[] = [];
+  for (const product of products) {
+    if (product.id === targetProductId) continue;
+    const best = bottomPrice(
+      records.filter((r) => r.productId === product.id),
+      baseUnit,
+      options,
+    );
+    if (best === null || best.unitPrice === null) continue;
+    candidateUnitPrices.push(best.unitPrice);
+  }
+  if (candidateUnitPrices.length === 0) return { kind: 'noCandidates' };
+
+  // 同額は同順位(上に寄せる): 厳密に安い比較対象の数 + 1
+  const cheaperCount = candidateUnitPrices.filter((p) => p < draftUnitPrice).length;
+  return { kind: 'ranked', rank: cheaperCount + 1, total: candidateUnitPrices.length + 1 };
+}
+
 /**
  * カテゴリ内の全価格記録を、対象期間でフィルタしたうえで
  * 基準単位あたり単価の昇順に並べて返す(商品への集約は行わない)。

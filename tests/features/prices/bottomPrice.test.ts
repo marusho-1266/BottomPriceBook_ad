@@ -244,7 +244,18 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 1, total: 2 });
+    // ドラフトが1位なので比較対象は2位(候補の最安)
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 1,
+      total: 2,
+      reference: {
+        productId: 'a',
+        storeId: 'store-a',
+        unitPrice: 1,
+        displayRank: 2,
+      },
+    });
   });
 
   it('同一商品・同一店舗のみ既存なら除外して 1 位 / 1 件中(例2)', () => {
@@ -260,6 +271,7 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
+    // 候補なし → reference なし
     expect(result).toEqual({ kind: 'ranked', rank: 1, total: 1 });
   });
 
@@ -278,12 +290,24 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 3 });
+    // ドラフトが2位以下なので比較対象は1位(最安候補)
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 2,
+      total: 3,
+      reference: {
+        productId: 'a',
+        storeId: 'store-b',
+        unitPrice: 0.5,
+        displayRank: 1,
+      },
+    });
   });
 
   it('候補が無い場合はドラフト単独で 1 位 / 1 件中', () => {
     const result = rankDraftInCategory(products, [], 'a', 'store-a', draft(100), 'g', options);
     expect(result).toEqual({ kind: 'ranked', rank: 1, total: 1 });
+    expect(result?.reference).toBeUndefined();
   });
 
   it('ドラフト単価が全候補より高ければ最下位', () => {
@@ -300,7 +324,17 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 3, total: 3 });
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 3,
+      total: 3,
+      reference: {
+        productId: 'x',
+        storeId: 's1',
+        unitPrice: 1,
+        displayRank: 1,
+      },
+    });
   });
 
   it('ドラフト単価が候補と完全一致した場合は同順位(上に寄せる)', () => {
@@ -317,7 +351,53 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 3 });
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 2,
+      total: 3,
+      reference: {
+        productId: 'x',
+        storeId: 's1',
+        unitPrice: 1,
+        displayRank: 1,
+      },
+    });
+  });
+
+  it('最安候補が同単価なら記録日の新しい方を reference にする', () => {
+    const records = [
+      record({
+        id: 'older',
+        productId: 'x',
+        storeId: 's1',
+        price: 100,
+        quantity: 100,
+        recordedAt: new Date('2026-01-01'),
+      }),
+      record({
+        id: 'newer',
+        productId: 'x',
+        storeId: 's2',
+        price: 100,
+        quantity: 100,
+        recordedAt: new Date('2026-06-01'),
+      }),
+    ];
+    const result = rankDraftInCategory(
+      products,
+      records,
+      'a',
+      'store-a',
+      draft(200), // 2.0 → 2位
+      'g',
+      options,
+    );
+    expect(result?.reference).toEqual({
+      productId: 'x',
+      storeId: 's2',
+      unitPrice: 1,
+      displayRank: 1,
+    });
   });
 
   it('ドラフトの単位が baseUnit に換算不能な場合は null を返す', () => {
@@ -365,7 +445,17 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 2 });
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 2,
+      total: 2,
+      reference: {
+        productId: 'x',
+        storeId: 's1',
+        unitPrice: 1,
+        displayRank: 1,
+      },
+    });
   });
 
   it('同一商品・同一店舗の履歴が複数あってもすべて除外する', () => {
@@ -383,7 +473,17 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 2 });
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 2,
+      total: 2,
+      reference: {
+        productId: 'x',
+        storeId: 's1',
+        unitPrice: 1,
+        displayRank: 1,
+      },
+    });
   });
 
   it('options(windowMonths / excludeSale)が候補フィルタに反映される', () => {
@@ -409,7 +509,17 @@ describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
       'g',
       { windowMonths: 6, now: NOW, excludeSale: true },
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 3 });
+    expect(result).toEqual({
+      kind: 'ranked',
+      rank: 2,
+      total: 3,
+      reference: {
+        productId: 'x',
+        storeId: 's1',
+        unitPrice: 1,
+        displayRank: 1,
+      },
+    });
   });
 
   it('カテゴリ外の商品の記録は候補に含めない', () => {

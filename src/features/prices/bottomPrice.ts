@@ -106,13 +106,29 @@ export interface RankedRecord<P extends { id: string }, R extends PriceRecordInp
   unitPrice: number | null;
 }
 
-export type DraftRankResult = { kind: 'ranked'; rank: number; total: number };
+/** 暫定順位表示の比較用基準記録(ドラフトが1位なら2位、それ以外なら1位) */
+export type DraftRankReference = {
+  productId: string;
+  storeId: string;
+  unitPrice: number;
+  /** UI に出す順位ラベル。ドラフトが1位なら2、それ以外なら1 */
+  displayRank: 1 | 2;
+};
+
+export type DraftRankResult = {
+  kind: 'ranked';
+  rank: number;
+  total: number;
+  /** 候補が1件以上あるときのみ。候補0件(1位/1件中)では省略 */
+  reference?: DraftRankReference;
+};
 
 /**
  * 入力中のドラフト価格が、カテゴリ内の価格記録と比べ何位相当かを返す。
  * 同一商品×同一店舗の既存記録は上書き扱いとして母数から除外する。
  * 単価換算不能な記録は比較対象・母数から除外する。
  * ドラフト値が無効(price / quantity が 0 以下、単位不整合)の間は null。
+ * 候補がある場合は比較用の基準記録(最安候補)を reference に含める。
  */
 export function rankDraftInCategory<P extends { id: string }, R extends PriceRecordInput>(
   productsInCategory: P[],
@@ -128,21 +144,48 @@ export function rankDraftInCategory<P extends { id: string }, R extends PriceRec
   if (draftUnitPrice === null) return null;
 
   const productIds = new Set(productsInCategory.map((p) => p.id));
-  const candidateUnitPrices: number[] = [];
+  const candidates: { record: R; unitPrice: number }[] = [];
   for (const record of filterRecords(records, options)) {
     if (!productIds.has(record.productId)) continue;
     if (record.productId === targetProductId && record.storeId === targetStoreId) continue;
     const unitPrice = calcUnitPrice(record.price, record.quantity, record.unit, baseUnit);
     if (unitPrice === null) continue;
-    candidateUnitPrices.push(unitPrice);
+    candidates.push({ record, unitPrice });
   }
 
   // 同額は同順位(上に寄せる): 厳密に安い比較対象の数 + 1
-  const cheaperCount = candidateUnitPrices.filter((p) => p < draftUnitPrice).length;
+  const cheaperCount = candidates.filter((c) => c.unitPrice < draftUnitPrice).length;
+  const rank = cheaperCount + 1;
+  const total = candidates.length + 1;
+
+  if (candidates.length === 0) {
+    return { kind: 'ranked', rank, total };
+  }
+
+  // 比較基準は常に候補中の最安。同単価なら記録日の新しい方
+  let best = candidates[0];
+  for (let i = 1; i < candidates.length; i++) {
+    const c = candidates[i];
+    if (c.unitPrice < best.unitPrice) {
+      best = c;
+    } else if (
+      c.unitPrice === best.unitPrice &&
+      toDate(c.record.recordedAt).getTime() > toDate(best.record.recordedAt).getTime()
+    ) {
+      best = c;
+    }
+  }
+
   return {
     kind: 'ranked',
-    rank: cheaperCount + 1,
-    total: candidateUnitPrices.length + 1,
+    rank,
+    total,
+    reference: {
+      productId: best.record.productId,
+      storeId: best.record.storeId,
+      unitPrice: best.unitPrice,
+      displayRank: rank === 1 ? 2 : 1,
+    },
   };
 }
 

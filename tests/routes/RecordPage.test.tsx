@@ -221,6 +221,10 @@ describe('RecordPage(電卓ファースト)', () => {
     await user.click(screen.getByRole('button', { name: '0' }));
 
     expect(screen.getByText(/このカテゴリで暫定 1 位 \/ 2 件中/)).toBeInTheDocument();
+    // 自分が1位なので2位(既存の別店舗記録)を表示
+    expect(
+      screen.getByText(/2位: キュキュット 本体 240ml \/ 別店舗 \/ 1\.0円\/ml/),
+    ).toBeInTheDocument();
   });
 
   it('暫定順位: 入力値を変えると順位表示が即座に更新される', async () => {
@@ -257,6 +261,10 @@ describe('RecordPage(電卓ファースト)', () => {
     await user.click(screen.getByRole('button', { name: /価格/ }));
     await user.click(screen.getByRole('button', { name: '0' }));
     expect(screen.getByText(/暫定 2 位/)).toBeInTheDocument();
+    // 自分が2位なので1位(既存記録)を表示
+    expect(
+      screen.getByText(/1位: キュキュット 本体 240ml \/ 別店舗 \/ 1\.0円\/ml/),
+    ).toBeInTheDocument();
   });
 
   it('暫定順位: 同一商品・同一店舗のみ既存なら除外して 1 位 / 1 件中', async () => {
@@ -286,6 +294,8 @@ describe('RecordPage(電卓ファースト)', () => {
 
     expect(screen.getByText(/このカテゴリで暫定 1 位 \/ 1 件中/)).toBeInTheDocument();
     expect(screen.queryByText(/比較できる記録がありません/)).not.toBeInTheDocument();
+    // 候補なしのため比較行は出さない
+    expect(screen.queryByText(/\d位:/)).not.toBeInTheDocument();
   });
 
   it('暫定順位: 期間外の記録のみなら除外後は 1 位 / 1 件中', async () => {

@@ -9,7 +9,7 @@ import { rankDraftInCategory } from '../features/prices/bottomPrice';
 import { ProductForm } from '../features/products/ProductForm';
 import { addProduct, useProducts } from '../features/products/api';
 import { addStore, useStores } from '../features/stores/api';
-import { allowedUnits } from '../lib/units';
+import { allowedUnits, formatPricePerBase } from '../lib/units';
 import type { BaseUnit } from '../types/models';
 
 type ActiveField = 'price' | 'quantity';
@@ -121,6 +121,14 @@ export function RecordPage() {
     windowMonths,
     now,
   ]);
+
+  const draftRankReferenceLabel = useMemo(() => {
+    const ref = draftRank?.reference;
+    if (!ref || !baseUnit) return null;
+    const productName = products.find((p) => p.id === ref.productId)?.name ?? '不明';
+    const storeName = stores.find((s) => s.id === ref.storeId)?.name ?? '不明';
+    return `${ref.displayRank}位: ${productName} / ${storeName} / ${formatPricePerBase(ref.unitPrice, baseUnit)}`;
+  }, [draftRank, baseUnit, products, stores]);
 
   const handleDigit = (digit: string) => {
     setSaved(false);
@@ -286,9 +294,14 @@ export function RecordPage() {
         </p>
 
         {draftRank?.kind === 'ranked' && (
-          <p className="mt-2 text-xs font-bold text-primary-deep">
-            このカテゴリで暫定 {draftRank.rank} 位 / {draftRank.total} 件中
-          </p>
+          <div className="mt-2 space-y-0.5">
+            <p className="text-xs font-bold text-primary-deep">
+              このカテゴリで暫定 {draftRank.rank} 位 / {draftRank.total} 件中
+            </p>
+            {draftRankReferenceLabel && (
+              <p className="text-[11px] font-bold text-ink-faint">{draftRankReferenceLabel}</p>
+            )}
+          </div>
         )}
 
         {error && (

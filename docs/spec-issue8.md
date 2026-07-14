@@ -107,7 +107,9 @@ tests/routes/RecordPage.test.tsx    → コンポーネントテスト改訂
 戻り値:
 
 - `null` … 順位を出さない(下記の無効条件)
-- `{ kind: 'ranked'; rank: number; total: number }` … 順位算出成功
+- `{ kind: 'ranked'; rank: number; total: number; reference?: DraftRankReference }` … 順位算出成功
+  - `reference` … 候補が1件以上あるときのみ。候補中の最安記録(同単価は記録日新しい方)
+  - `reference.displayRank` … ドラフトが1位なら `2`、それ以外なら `1`
 
 ※ `{ kind: 'noCandidates' }` は本改訂で**廃止**(単独時は 1/1 を返すため不要)
 
@@ -160,6 +162,12 @@ tests/routes/RecordPage.test.tsx    → コンポーネントテスト改訂
 
 - 表示条件: 商品・**店舗**・価格・内容量が揃い、単位換算可能で `kind: 'ranked'` のとき
 - 文言: `このカテゴリで暫定 {rank} 位 / {total} 件中`
+- 比較行(候補が1件以上あるときのみ):
+  - ドラフトが2位以下 → `1位: {商品名} / {店舗名} / {単価}`
+  - ドラフトが1位 → `2位: {商品名} / {店舗名} / {単価}`
+  - 単価は `formatPricePerBase`(基準単位あたり)。比較対象は候補中の最安記録
+    (同単価なら記録日の新しい方)
+  - 候補0件(`1位 / 1件中`)のときは比較行を出さない
 - 「カテゴリ内に比較できる記録がありません」は本改訂後は**表示しない**
   (該当分岐を削除してよい)
 - 入力・店舗の変更で即時再計算(保存ボタン不要)
@@ -168,7 +176,19 @@ tests/routes/RecordPage.test.tsx    → コンポーネントテスト改訂
 ## Code Style
 
 ```ts
-export type DraftRankResult = { kind: 'ranked'; rank: number; total: number };
+export type DraftRankReference = {
+  productId: string;
+  storeId: string;
+  unitPrice: number;
+  displayRank: 1 | 2;
+};
+
+export type DraftRankResult = {
+  kind: 'ranked';
+  rank: number;
+  total: number;
+  reference?: DraftRankReference;
+};
 
 /** 入力中ドラフトが、カテゴリ内の価格記録(同一商品×同一店舗は除外)と比べ何位かを返す */
 export function rankDraftInCategory<P extends { id: string }, R extends PriceRecordInput>(
@@ -206,6 +226,8 @@ export function rankDraftInCategory<P extends { id: string }, R extends PriceRec
 - 同一商品・同一店舗のみ既存のとき、除外後は `暫定 1 位 / 1 件中`
 - 文言が `件中` であること
 - `bottomWindowMonths` が候補フィルタに効くこと(期間外のみなら 1/1)
+- 候補があるとき比較行が出る(自分が1位なら `2位:`、2位以下なら `1位:`)
+- 候補がないとき(1位/1件中)は比較行が出ない
 
 ## Boundaries
 
@@ -226,6 +248,8 @@ export function rankDraftInCategory<P extends { id: string }, R extends PriceRec
 - [x] 店舗未選択の間は順位が表示されない
 - [x] 保存後も同一商品・同一店舗の過去記録が履歴として残る(追加保存のまま)
 - [x] 表示文言が `暫定 {rank} 位 / {total} 件中` である
+- [x] 候補があるとき比較行(1位または2位の商品名・店舗・単価)が表示される
+- [x] 候補がないとき(1位/1件中)は比較行が出ない
 - [x] `npm run test` / `npm run lint` がグリーン
 
 ## 将来スコープ(本 Issue に含めない)

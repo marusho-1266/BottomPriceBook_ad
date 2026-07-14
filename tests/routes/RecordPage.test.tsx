@@ -3,8 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { useBookMock } = vi.hoisted(() => ({
+  useBookMock: vi.fn(() => ({ bookId: 'b1', book: null as unknown })),
+}));
 vi.mock('../../src/features/books/BookProvider', () => ({
-  useBook: () => ({ bookId: 'b1', book: null }),
+  useBook: useBookMock,
 }));
 vi.mock('../../src/features/categories/api', () => ({
   useCategories: vi.fn(() => ({
@@ -64,6 +67,7 @@ describe('RecordPage(電卓ファースト)', () => {
     vi.clearAllMocks();
     // clearAllMocks は mockReturnValue を解除しないため、既定値を毎回設定し直す
     vi.mocked(usePriceRecords).mockReturnValue({ data: [], loading: false } as unknown as ReturnType<typeof usePriceRecords>);
+    useBookMock.mockReturnValue({ bookId: 'b1', book: null });
   });
 
   it('テンキーで価格を入力できる', async () => {
@@ -216,6 +220,38 @@ describe('RecordPage(電卓ファースト)', () => {
     await user.click(screen.getByRole('button', { name: /価格/ }));
     await user.click(screen.getByRole('button', { name: '0' }));
     expect(screen.getByText(/暫定 2 位/)).toBeInTheDocument();
+  });
+
+  it('暫定順位: 設定の底値期間(bottomWindowMonths)が順位計算に反映される', async () => {
+    // 底値期間 1 ヶ月の設定で、3 ヶ月前の記録しか無い → 比較対象なしになる
+    useBookMock.mockReturnValue({ bookId: 'b1', book: { bottomWindowMonths: 1 } });
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    vi.mocked(usePriceRecords).mockReturnValue({
+      data: [
+        {
+          id: 'r1',
+          productId: 'p3',
+          storeId: 's1',
+          price: 300,
+          quantity: 300,
+          unit: 'ml',
+          isSale: false,
+          recordedAt: threeMonthsAgo,
+        },
+      ],
+      loading: false,
+    } as unknown as ReturnType<typeof usePriceRecords>);
+
+    const user = userEvent.setup();
+    renderPage();
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+
+    expect(screen.getByText(/カテゴリ内に比較できる記録がありません/)).toBeInTheDocument();
+    expect(screen.queryByText(/暫定/)).not.toBeInTheDocument();
   });
 
   it('暫定順位: 比較対象が無い場合はその旨を表示する', async () => {

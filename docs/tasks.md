@@ -240,7 +240,7 @@
   - Verify: `npm run test && npm run lint`
   - 依存: なし / 規模: S
 
-- [ ] **T22: ComparePage の全記録表示への変更**
+- [x] **T22: ComparePage の全記録表示への変更**
   - 内容: `ComparePage` を `rankAllRecordsByUnitPrice` に置き換え。
     `useStores()` 結合による店舗名表示(参照切れは「(不明な店舗)」)、
     特売バッジ(`SaleBadge`)、記録日表示、上位50件切り詰め+「他 N 件」注記、

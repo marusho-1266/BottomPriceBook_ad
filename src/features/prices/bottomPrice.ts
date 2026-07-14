@@ -106,20 +106,19 @@ export interface RankedRecord<P extends { id: string }, R extends PriceRecordInp
   unitPrice: number | null;
 }
 
-export type DraftRankResult =
-  | { kind: 'ranked'; rank: number; total: number }
-  | { kind: 'noCandidates' };
+export type DraftRankResult = { kind: 'ranked'; rank: number; total: number };
 
 /**
- * 入力中のドラフト価格が、カテゴリ内の商品横断単価比較で何位相当かを返す。
- * 対象商品はドラフト単価、他商品は既存の底値で比較する。
- * 底値の単価が算出不能な商品は比較対象・母数から除外する。
+ * 入力中のドラフト価格が、カテゴリ内の価格記録と比べ何位相当かを返す。
+ * 同一商品×同一店舗の既存記録は上書き扱いとして母数から除外する。
+ * 単価換算不能な記録は比較対象・母数から除外する。
  * ドラフト値が無効(price / quantity が 0 以下、単位不整合)の間は null。
  */
 export function rankDraftInCategory<P extends { id: string }, R extends PriceRecordInput>(
-  products: P[],
+  productsInCategory: P[],
   records: R[],
   targetProductId: string,
+  targetStoreId: string,
   draft: { price: number; quantity: number; unit: string },
   baseUnit: BaseUnit,
   options: BottomPriceOptions,
@@ -128,22 +127,23 @@ export function rankDraftInCategory<P extends { id: string }, R extends PriceRec
   const draftUnitPrice = calcUnitPrice(draft.price, draft.quantity, draft.unit, baseUnit);
   if (draftUnitPrice === null) return null;
 
+  const productIds = new Set(productsInCategory.map((p) => p.id));
   const candidateUnitPrices: number[] = [];
-  for (const product of products) {
-    if (product.id === targetProductId) continue;
-    const best = bottomPrice(
-      records.filter((r) => r.productId === product.id),
-      baseUnit,
-      options,
-    );
-    if (best === null || best.unitPrice === null) continue;
-    candidateUnitPrices.push(best.unitPrice);
+  for (const record of filterRecords(records, options)) {
+    if (!productIds.has(record.productId)) continue;
+    if (record.productId === targetProductId && record.storeId === targetStoreId) continue;
+    const unitPrice = calcUnitPrice(record.price, record.quantity, record.unit, baseUnit);
+    if (unitPrice === null) continue;
+    candidateUnitPrices.push(unitPrice);
   }
-  if (candidateUnitPrices.length === 0) return { kind: 'noCandidates' };
 
   // 同額は同順位(上に寄せる): 厳密に安い比較対象の数 + 1
   const cheaperCount = candidateUnitPrices.filter((p) => p < draftUnitPrice).length;
-  return { kind: 'ranked', rank: cheaperCount + 1, total: candidateUnitPrices.length + 1 };
+  return {
+    kind: 'ranked',
+    rank: cheaperCount + 1,
+    total: candidateUnitPrices.length + 1,
+  };
 }
 
 /**

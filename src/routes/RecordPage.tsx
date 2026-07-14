@@ -99,16 +99,28 @@ export function RecordPage() {
   const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
   const now = useMemo(() => new Date(), []);
   const draftRank = useMemo(() => {
-    if (!product || !baseUnit) return null;
+    if (!product || !baseUnit || !storeId) return null;
     return rankDraftInCategory(
       products.filter((p) => p.categoryId === product.categoryId),
       records,
       product.id,
+      storeId,
       { price: Number(priceText), quantity: Number(quantityText), unit: effectiveUnit },
       baseUnit,
       { windowMonths, now },
     );
-  }, [product, baseUnit, products, records, priceText, quantityText, effectiveUnit, windowMonths, now]);
+  }, [
+    product,
+    baseUnit,
+    storeId,
+    products,
+    records,
+    priceText,
+    quantityText,
+    effectiveUnit,
+    windowMonths,
+    now,
+  ]);
 
   const handleDigit = (digit: string) => {
     setSaved(false);
@@ -275,12 +287,7 @@ export function RecordPage() {
 
         {draftRank?.kind === 'ranked' && (
           <p className="mt-2 text-xs font-bold text-primary-deep">
-            このカテゴリで暫定 {draftRank.rank} 位 / {draftRank.total} 商品中
-          </p>
-        )}
-        {draftRank?.kind === 'noCandidates' && (
-          <p className="mt-2 text-xs font-bold text-ink-faint">
-            カテゴリ内に比較できる記録がありません
+            このカテゴリで暫定 {draftRank.rank} 位 / {draftRank.total} 件中
           </p>
         )}
 

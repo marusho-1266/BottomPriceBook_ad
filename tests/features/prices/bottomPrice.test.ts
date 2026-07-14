@@ -223,73 +223,110 @@ describe('rankAllRecordsByUnitPrice(カテゴリ内の全記録ランキング)'
   });
 });
 
-describe('rankDraftInCategory(記録時の暫定順位)', () => {
+describe('rankDraftInCategory(記録時の暫定順位・記録単位)', () => {
   const products = [
-    { id: 'target', name: '入力中の商品' },
-    { id: 'p2', name: '他商品2' },
-    { id: 'p3', name: '他商品3' },
+    { id: 'a', name: '商品a' },
+    { id: 'x', name: '商品x' },
   ];
   const options = { windowMonths: 6, now: NOW };
-  // p2 の底値 1.0 円/g、p3 の底値 2.0 円/g
-  const otherRecords = [
-    record({ id: 'b', productId: 'p2', price: 100, quantity: 100 }),
-    record({ id: 'c', productId: 'p3', price: 200, quantity: 100 }),
-  ];
+  const draft = (price: number, quantity = 100) => ({ price, quantity, unit: 'g' as const });
 
-  it('ドラフト単価が全比較対象より安ければ暫定 1 位', () => {
+  it('同一商品・別店舗の記録を候補にし、安ければ暫定 1 位 / 2 件中(例1)', () => {
+    const records = [
+      record({ id: 'sa', productId: 'a', storeId: 'store-a', price: 100, quantity: 100 }), // 1.0
+    ];
     const result = rankDraftInCategory(
       products,
-      otherRecords,
-      'target',
-      { price: 50, quantity: 100, unit: 'g' }, // 0.5 円/g
+      records,
+      'a',
+      'store-b',
+      draft(80), // 0.8
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 1, total: 3 });
+    expect(result).toEqual({ kind: 'ranked', rank: 1, total: 2 });
   });
 
-  it('ドラフト単価が全比較対象より高ければ最下位', () => {
+  it('同一商品・同一店舗のみ既存なら除外して 1 位 / 1 件中(例2)', () => {
+    const records = [
+      record({ id: 'sa', productId: 'a', storeId: 'store-a', price: 100, quantity: 100 }),
+    ];
     const result = rankDraftInCategory(
       products,
-      otherRecords,
-      'target',
-      { price: 300, quantity: 100, unit: 'g' }, // 3.0 円/g
+      records,
+      'a',
+      'store-a',
+      draft(200), // 2.0
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 3, total: 3 });
+    expect(result).toEqual({ kind: 'ranked', rank: 1, total: 1 });
   });
 
-  it('ドラフト単価が比較対象と完全一致した場合は同順位(上に寄せる)', () => {
+  it('同一商品・同一店舗は全除外し、他記録だけで順位づけする(例3)', () => {
+    const records = [
+      record({ id: 'sa', productId: 'a', storeId: 'store-a', price: 100, quantity: 100 }), // 1.0 除外
+      record({ id: 'sb', productId: 'a', storeId: 'store-b', price: 50, quantity: 100 }), // 0.5
+      record({ id: 'xc', productId: 'x', storeId: 'store-c', price: 80, quantity: 100 }), // 0.8
+    ];
     const result = rankDraftInCategory(
       products,
-      otherRecords,
-      'target',
-      { price: 200, quantity: 100, unit: 'g' }, // 2.0 円/g = p3 と同額
+      records,
+      'a',
+      'store-a',
+      draft(70), // 0.7 → 0.5 より高く 0.8 より安い
       'g',
       options,
     );
     expect(result).toEqual({ kind: 'ranked', rank: 2, total: 3 });
   });
 
-  it('比較対象(他商品の記録)が無い場合は noCandidates を返す', () => {
+  it('候補が無い場合はドラフト単独で 1 位 / 1 件中', () => {
+    const result = rankDraftInCategory(products, [], 'a', 'store-a', draft(100), 'g', options);
+    expect(result).toEqual({ kind: 'ranked', rank: 1, total: 1 });
+  });
+
+  it('ドラフト単価が全候補より高ければ最下位', () => {
+    const records = [
+      record({ id: 'b', productId: 'x', storeId: 's1', price: 100, quantity: 100 }), // 1.0
+      record({ id: 'c', productId: 'x', storeId: 's2', price: 200, quantity: 100 }), // 2.0
+    ];
     const result = rankDraftInCategory(
       products,
-      [],
-      'target',
-      { price: 100, quantity: 100, unit: 'g' },
+      records,
+      'a',
+      'store-a',
+      draft(300), // 3.0
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'noCandidates' });
+    expect(result).toEqual({ kind: 'ranked', rank: 3, total: 3 });
+  });
+
+  it('ドラフト単価が候補と完全一致した場合は同順位(上に寄せる)', () => {
+    const records = [
+      record({ id: 'b', productId: 'x', storeId: 's1', price: 100, quantity: 100 }), // 1.0
+      record({ id: 'c', productId: 'x', storeId: 's2', price: 200, quantity: 100 }), // 2.0
+    ];
+    const result = rankDraftInCategory(
+      products,
+      records,
+      'a',
+      'store-a',
+      draft(200), // 2.0 = c と同額
+      'g',
+      options,
+    );
+    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 3 });
   });
 
   it('ドラフトの単位が baseUnit に換算不能な場合は null を返す', () => {
     const result = rankDraftInCategory(
       products,
-      otherRecords,
-      'target',
-      { price: 100, quantity: 100, unit: 'ml' }, // g カテゴリに ml は換算不能
+      [record({ productId: 'x' })],
+      'a',
+      'store-a',
+      { price: 100, quantity: 100, unit: 'ml' },
       'g',
       options,
     );
@@ -297,22 +334,16 @@ describe('rankDraftInCategory(記録時の暫定順位)', () => {
   });
 
   it('price が 0 以下の場合は null を返す', () => {
-    const result = rankDraftInCategory(
-      products,
-      otherRecords,
-      'target',
-      { price: 0, quantity: 100, unit: 'g' },
-      'g',
-      options,
-    );
+    const result = rankDraftInCategory(products, [], 'a', 'store-a', draft(0), 'g', options);
     expect(result).toBeNull();
   });
 
   it('quantity が 0 以下の場合は null を返す', () => {
     const result = rankDraftInCategory(
       products,
-      otherRecords,
-      'target',
+      [],
+      'a',
+      'store-a',
       { price: 100, quantity: 0, unit: 'g' },
       'g',
       options,
@@ -320,57 +351,80 @@ describe('rankDraftInCategory(記録時の暫定順位)', () => {
     expect(result).toBeNull();
   });
 
-  it('底値の単価が算出不能な他商品は順位・母数の両方から除外する', () => {
+  it('単価換算不能な記録は順位・母数の両方から除外する', () => {
     const records = [
-      ...otherRecords,
-      // p4 は全記録の単位が不整合 → bottomPrice が unitPrice: null で返す商品
-      record({ id: 'd', productId: 'p4', price: 10, quantity: 100, unit: 'ml' }),
-    ];
-    const result = rankDraftInCategory(
-      [...products, { id: 'p4', name: '単位不整合の商品' }],
-      records,
-      'target',
-      { price: 300, quantity: 100, unit: 'g' }, // 3.0 円/g
-      'g',
-      options,
-    );
-    expect(result).toEqual({ kind: 'ranked', rank: 3, total: 3 });
-  });
-
-  it('対象商品自身の既存記録は使わず、常にドラフト値で順位づけする', () => {
-    const records = [
-      ...otherRecords,
-      // 自商品の既存底値 0.1 円/g(これが使われると 1 位になってしまう)
-      record({ id: 'own', productId: 'target', price: 10, quantity: 100 }),
+      record({ id: 'ok', productId: 'x', storeId: 's1', price: 100, quantity: 100 }), // 1.0
+      record({ id: 'bad', productId: 'x', storeId: 's2', price: 10, quantity: 100, unit: 'ml' }),
     ];
     const result = rankDraftInCategory(
       products,
       records,
-      'target',
-      { price: 300, quantity: 100, unit: 'g' }, // ドラフトは 3.0 円/g
+      'a',
+      'store-a',
+      draft(300), // 3.0
       'g',
       options,
     );
-    expect(result).toEqual({ kind: 'ranked', rank: 3, total: 3 });
+    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 2 });
   });
 
-  it('options(windowMonths / excludeSale)が他商品の底値計算に反映される', () => {
+  it('同一商品・同一店舗の履歴が複数あってもすべて除外する', () => {
     const records = [
-      // 期間外の激安記録 → windowMonths: 6 では無視される
-      record({ id: 'old', productId: 'p2', price: 1, quantity: 100, recordedAt: new Date('2020-01-01') }),
-      record({ id: 'b', productId: 'p2', price: 100, quantity: 100 }),
-      // 特売の激安記録 → excludeSale: true では無視される
-      record({ id: 'sale', productId: 'p3', price: 1, quantity: 100, isSale: true }),
-      record({ id: 'c', productId: 'p3', price: 200, quantity: 100 }),
+      record({ id: 'old', productId: 'a', storeId: 'store-a', price: 10, quantity: 100 }),
+      record({ id: 'newer', productId: 'a', storeId: 'store-a', price: 20, quantity: 100 }),
+      record({ id: 'other', productId: 'x', storeId: 's1', price: 100, quantity: 100 }), // 1.0
     ];
     const result = rankDraftInCategory(
       products,
       records,
-      'target',
-      { price: 150, quantity: 100, unit: 'g' }, // 1.5 円/g → p2(1.0)より高く p3(2.0)より安い
+      'a',
+      'store-a',
+      draft(150), // 1.5 → other より高い
+      'g',
+      options,
+    );
+    expect(result).toEqual({ kind: 'ranked', rank: 2, total: 2 });
+  });
+
+  it('options(windowMonths / excludeSale)が候補フィルタに反映される', () => {
+    const records = [
+      record({
+        id: 'old',
+        productId: 'x',
+        storeId: 's1',
+        price: 1,
+        quantity: 100,
+        recordedAt: new Date('2020-01-01'),
+      }),
+      record({ id: 'b', productId: 'x', storeId: 's1', price: 100, quantity: 100 }), // 1.0
+      record({ id: 'sale', productId: 'x', storeId: 's2', price: 1, quantity: 100, isSale: true }),
+      record({ id: 'c', productId: 'x', storeId: 's2', price: 200, quantity: 100 }), // 2.0
+    ];
+    const result = rankDraftInCategory(
+      products,
+      records,
+      'a',
+      'store-a',
+      draft(150), // 1.5 → b(1.0)より高く c(2.0)より安い。sale/old は除外
       'g',
       { windowMonths: 6, now: NOW, excludeSale: true },
     );
     expect(result).toEqual({ kind: 'ranked', rank: 2, total: 3 });
+  });
+
+  it('カテゴリ外の商品の記録は候補に含めない', () => {
+    const records = [
+      record({ id: 'out', productId: 'other', storeId: 's1', price: 50, quantity: 100 }),
+    ];
+    const result = rankDraftInCategory(
+      products,
+      records,
+      'a',
+      'store-a',
+      draft(100),
+      'g',
+      options,
+    );
+    expect(result).toEqual({ kind: 'ranked', rank: 1, total: 1 });
   });
 });

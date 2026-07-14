@@ -250,7 +250,7 @@
   - Verify: `npm run test && npm run lint && npm run build`
   - 依存: T21 / 規模: S
 
-- [ ] **T23: 旧 `rankByUnitPrice` の削除**
+- [x] **T23: 旧 `rankByUnitPrice` の削除**
   - 内容: 未使用となった `rankByUnitPrice` / `RankedProduct` をテストごと削除
   - 受け入れ: 参照が残っていない(grep)。全テスト・lint・build が通る
   - Verify: `npm run test && npm run lint && npm run build`

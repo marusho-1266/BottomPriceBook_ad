@@ -3,7 +3,6 @@ import {
   bottomPrice,
   bottomPricesByStore,
   rankAllRecordsByUnitPrice,
-  rankByUnitPrice,
 } from '../../../src/features/prices/bottomPrice';
 
 const NOW = new Date('2026-07-12T00:00:00');
@@ -110,34 +109,6 @@ describe('bottomPricesByStore', () => {
     const byStore = bottomPricesByStore(records, 'g', { windowMonths: 6, now: NOW });
     expect(byStore.get('s1')?.record.id).toBe('b');
     expect(byStore.get('s2')?.record.id).toBe('c');
-  });
-});
-
-describe('rankByUnitPrice(カテゴリ内比較)', () => {
-  it('商品横断で基準単位あたり単価の安い順に並べる', () => {
-    const products = [
-      { id: 'p1', name: 'キュキュット 240ml', categoryId: 'detergent' },
-      { id: 'p2', name: 'ジョイ 300ml', categoryId: 'detergent' },
-      { id: 'p3', name: '大容量 1.2L', categoryId: 'detergent' },
-    ];
-    const records = [
-      record({ id: 'a', productId: 'p1', price: 158, quantity: 240, unit: 'ml' }), // 0.658
-      record({ id: 'b', productId: 'p2', price: 208, quantity: 300, unit: 'ml' }), // 0.693
-      record({ id: 'c', productId: 'p3', price: 598, quantity: 1.2, unit: 'L' }), // 0.498
-    ];
-    const ranking = rankByUnitPrice(products, records, 'ml', { windowMonths: 6, now: NOW });
-    expect(ranking.map((r) => r.product.id)).toEqual(['p3', 'p1', 'p2']);
-    expect(ranking[0].best.unitPrice).toBeCloseTo(598 / 1200);
-  });
-
-  it('期間内に記録がない商品はランキングから除外する', () => {
-    const products = [
-      { id: 'p1', name: 'A', categoryId: 'c' },
-      { id: 'p2', name: 'B', categoryId: 'c' },
-    ];
-    const records = [record({ id: 'a', productId: 'p1' })];
-    const ranking = rankByUnitPrice(products, records, 'g', { windowMonths: 6, now: NOW });
-    expect(ranking.map((r) => r.product.id)).toEqual(['p1']);
   });
 });
 

@@ -135,32 +135,3 @@ export function rankAllRecordsByUnitPrice<P extends { id: string }, R extends Pr
   });
   return ranked;
 }
-
-export interface RankedProduct<P extends { id: string }, R extends PriceRecordInput> {
-  product: P;
-  best: BottomResult<R>;
-}
-
-/** カテゴリ内の商品を基準単位あたり単価の安い順に並べる(記録のない商品は除外) */
-export function rankByUnitPrice<P extends { id: string }, R extends PriceRecordInput>(
-  products: P[],
-  records: R[],
-  baseUnit: BaseUnit,
-  options: BottomPriceOptions,
-): RankedProduct<P, R>[] {
-  const ranked: RankedProduct<P, R>[] = [];
-  for (const product of products) {
-    const best = bottomPrice(
-      records.filter((r) => r.productId === product.id),
-      baseUnit,
-      options,
-    );
-    if (best) ranked.push({ product, best });
-  }
-  ranked.sort((a, b) => {
-    if (a.best.unitPrice === null) return 1;
-    if (b.best.unitPrice === null) return -1;
-    return a.best.unitPrice - b.best.unitPrice;
-  });
-  return ranked;
-}

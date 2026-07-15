@@ -1,9 +1,14 @@
-import { addDoc, collection, deleteDoc, doc, orderBy, query, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { useCollection } from '../../lib/firestoreHooks';
 import { useBook } from '../books/BookProvider';
 import type { BaseUnit, Category } from '../../types/models';
+import {
+  updateCategoryWithRecords,
+  type UpdateCategoryInput,
+  type UpdateCategoryOptions,
+} from './updateCategory';
 
 export function useCategories() {
   const { bookId } = useBook();
@@ -24,8 +29,14 @@ export function addCategory(
   });
 }
 
-export function renameCategory(bookId: string, categoryId: string, name: string): Promise<void> {
-  return updateDoc(doc(db, 'books', bookId, 'categories', categoryId), { name });
+/** 名称・基準単位の更新。baseUnit 変更時は配下記録をリラベルする */
+export function updateCategory(
+  bookId: string,
+  categoryId: string,
+  input: UpdateCategoryInput,
+  options: UpdateCategoryOptions,
+): Promise<void> {
+  return updateCategoryWithRecords(db, bookId, categoryId, input, options);
 }
 
 /** 参照チェックは呼び出し側(UI)の責務。MVP の意図的な割り切り(L-7) */

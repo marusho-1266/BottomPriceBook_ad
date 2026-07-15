@@ -1,6 +1,7 @@
 # Spec: 底値帳 Web アプリ「そこねこ」
 
-> Status: **Approved(承認済み・2026-07-12)** / 最終更新: 2026-07-12
+> Status: **Approved(承認済み・2026-07-12)** / 最終更新: 2026-07-15
+> (2026-07-15: Issue #3 によりカテゴリ baseUnit の事後変更を許可。詳細は `docs/spec-issue3.md`)
 >
 > このドキュメントは spec-driven development の Phase 1 (Specify) 成果物。
 > レビュー記録: `docs/spec-review-2026-07-12.md`
@@ -168,6 +169,10 @@ books/{bookId}/priceRecords/{recordId}
 - 単価計算時は常に baseUnit に換算してから比較する(例: 米 5kg 1,980円 → 0.396円/g)
 - 複合内容量(例: ティッシュ 5箱パック × 160組)は**総量を入力**する(→ 800組)。
   入力 UI にその旨のヒントを表示する(L-4)
+- **カテゴリの baseUnit 変更**(Issue #3): 作成後も変更可能。
+  所属商品が 1 件以上ある場合は確認のうえ、配下 `priceRecords` を
+  「旧 baseUnit へ数量正規化 → 新 baseUnit へ unit リラベル」する。
+  これは物理換算ではない(詳細: `docs/spec-issue3.md`)
 - **商品のカテゴリ変更**: 単位系が同じ(baseUnit が同一)カテゴリへの変更のみ許可。
   単位系が異なるカテゴリへの変更は UI でブロックし、
   「新しい商品として登録し直す」ことを案内する

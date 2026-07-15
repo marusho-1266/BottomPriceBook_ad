@@ -3,6 +3,7 @@ import {
   allowedUnits,
   calcUnitPrice,
   formatPricePerBase,
+  relabelRecordToBaseUnit,
   toBaseQuantity,
 } from '../../src/lib/units';
 
@@ -74,5 +75,35 @@ describe('formatPricePerBase', () => {
 
   it('null は「—」を返す', () => {
     expect(formatPricePerBase(null, 'g')).toBe('—');
+  });
+});
+
+describe('relabelRecordToBaseUnit', () => {
+  it('2kg(from g) → to ml は正規化後リラベル(2000 ml)', () => {
+    expect(relabelRecordToBaseUnit({ quantity: 2, unit: 'kg' }, 'g', 'ml')).toEqual({
+      quantity: 2000,
+      unit: 'ml',
+    });
+  });
+
+  it('1.5L(from ml) → to 個 は正規化後リラベル(1500 個)', () => {
+    expect(relabelRecordToBaseUnit({ quantity: 1.5, unit: 'L' }, 'ml', '個')).toEqual({
+      quantity: 1500,
+      unit: '個',
+    });
+  });
+
+  it('3個(from 個) → to 枚 は数量そのままリラベル', () => {
+    expect(relabelRecordToBaseUnit({ quantity: 3, unit: '個' }, '個', '枚')).toEqual({
+      quantity: 3,
+      unit: '枚',
+    });
+  });
+
+  it('現行 baseUnit と不整合な unit は quantity そのまま・unit のみ付け替え', () => {
+    expect(relabelRecordToBaseUnit({ quantity: 100, unit: '個' }, 'g', 'ml')).toEqual({
+      quantity: 100,
+      unit: 'ml',
+    });
   });
 });

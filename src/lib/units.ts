@@ -40,3 +40,19 @@ export function formatPricePerBase(unitPrice: number | null, baseUnit: BaseUnit)
   const digits = unitPrice < 1 ? 2 : 1;
   return `${unitPrice.toFixed(digits)}円/${baseUnit}`;
 }
+
+/**
+ * 旧基準単位で正規化し、新基準単位へ unit を付け替える(物理換算ではない)。
+ * 現行 baseUnit と不整合な unit は quantity をそのまま残し unit のみ付け替える。
+ */
+export function relabelRecordToBaseUnit(
+  record: { quantity: number; unit: string },
+  fromBaseUnit: BaseUnit,
+  toBaseUnit: BaseUnit,
+): { quantity: number; unit: string } {
+  const normalized = toBaseQuantity(record.quantity, record.unit, fromBaseUnit);
+  if (normalized === null) {
+    return { quantity: record.quantity, unit: toBaseUnit };
+  }
+  return { quantity: normalized, unit: toBaseUnit };
+}

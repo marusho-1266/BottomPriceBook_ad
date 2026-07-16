@@ -21,7 +21,7 @@
 
 ## Phase 4: UI(T7 ∥ T8 ∥ T10、T9 は T8 の後)
 
-- [ ] T7: JoinPage + `/join/:inviteCode` ルート(M)
+- [x] T7: JoinPage + `/join/:inviteCode` ルート(M)
 - [ ] T8: 共有設定(自分の book): 招待発行・メンバー一覧・削除 + ConfirmDialog 新規(M)
 - [ ] T9: 共有設定(参加中の book): 退出 + オーナー限定編集(S)
 - [ ] T10: ホームの book 切替 UI(M)

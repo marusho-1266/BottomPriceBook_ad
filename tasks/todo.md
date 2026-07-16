@@ -4,7 +4,7 @@
 
 ## Phase 1: セキュリティルール(TDD・直列)
 
-- [ ] T1: invites コレクションのルール(M)— `firestore.rules`, `tests/rules/invites.rules.test.ts`
+- [x] T1: invites コレクションのルール(M)— `firestore.rules`, `tests/rules/invites.rules.test.ts`
 - [ ] T2: join バッチ + members サブコレクションのルール(M・最重要スパイク)— `firestore.rules`, `tests/rules/join.rules.test.ts`
 - [ ] T3: 退出・メンバー削除ルール(S)— `firestore.rules`, `tests/rules/leave.rules.test.ts`
 - [ ] ✅ チェックポイント 1: `npm run test:rules` 全 green

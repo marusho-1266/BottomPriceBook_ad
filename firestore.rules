@@ -2,6 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 招待コード。ドキュメント ID(自動 ID)自体が秘密トークンのため、
+    // get は認証済なら許可するが list は禁止(コードの列挙防止)
+    match /invites/{inviteCode} {
+      allow get: if request.auth != null;
+      allow list: if false;
+
+      // 対象 book のオーナーのみ発行可。期限は未来かつ 8 日以内(クライアント時計ずれの許容込み)
+      allow create: if request.auth != null
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.bookId is string
+        && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
+            .data.ownerUid == request.auth.uid
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(8, 'd');
+
+      // 期限延長を防ぐため update は不可。削除は発行者のみ
+      allow update: if false;
+      allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
+    }
+
     match /books/{bookId} {
       function isSignedIn() {
         return request.auth != null;

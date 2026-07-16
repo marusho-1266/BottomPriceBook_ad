@@ -75,14 +75,31 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids;
 
+      // 退出: 自分の uid の除去のみ + 他フィールド不変。オーナー自身は退出不可(Issue #7)
+      function isSelfLeave() {
+        return request.auth != null
+          && request.auth.uid in resource.data.memberUids
+          && request.auth.uid != resource.data.ownerUid
+          && request.resource.data.memberUids.toSet()
+            == resource.data.memberUids.toSet().difference([request.auth.uid].toSet())
+          && request.resource.data.memberUids.size() == resource.data.memberUids.size() - 1
+          && request.resource.data.name == resource.data.name
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.bottomWindowMonths == resource.data.bottomWindowMonths;
+      }
+
       // ownerUid / createdAt は不変。memberUids の変更は owner のみ(M-3)。
-      // 例外として、有効な招待コードによる自分自身の参加を許可(Issue #7)
+      // owner による変更でも owner 自身は memberUids から外せない(Issue #7)。
+      // 例外として、有効な招待コードによる参加と本人の退出を許可(Issue #7)
       allow update: if (isMember()
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.createdAt == resource.data.createdAt
         && (request.resource.data.memberUids == resource.data.memberUids
-          || request.auth.uid == resource.data.ownerUid))
-        || isSelfJoinWithInvite();
+          || (request.auth.uid == resource.data.ownerUid
+            && resource.data.ownerUid in request.resource.data.memberUids)))
+        || isSelfJoinWithInvite()
+        || isSelfLeave();
 
       allow delete: if false;
 

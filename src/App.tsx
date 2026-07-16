@@ -31,7 +31,7 @@ function Gate() {
     if (!user) return;
     let cancelled = false;
     const uid = user.uid;
-    ensureBook(db, uid).then(() => {
+    ensureBook(db, uid, user.displayName ?? user.email ?? '').then(() => {
       if (!cancelled) setReadyUid(uid);
     });
     return () => {

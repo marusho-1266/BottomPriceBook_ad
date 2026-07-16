@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { SaleBadge } from '../components/SaleBadge';
 import { useBook } from '../features/books/BookProvider';
+import { BookSwitcher } from '../features/sharing/BookSwitcher';
 import { useCategories } from '../features/categories/api';
 import { bottomPrice, type BottomResult } from '../features/prices/bottomPrice';
 import { usePriceRecords } from '../features/prices/api';
@@ -75,7 +76,7 @@ export function HomePage() {
     <div>
       <header className="rounded-b-[28px] bg-primary px-5 pt-14 pb-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-extrabold tracking-wider text-white">そこねこ</h1>
+          <BookSwitcher />
           <button
             type="button"
             aria-label={searchOpen ? '検索を閉じる' : '検索'}

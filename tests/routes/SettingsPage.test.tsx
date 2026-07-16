@@ -25,6 +25,8 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
   return { ...actual, updateBook };
 });
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
+// 共有セクションは専用テストで検証済み。実 Firestore 購読を避けるためモックする
+vi.mock('../../src/features/sharing/ShareSettings', () => ({ ShareSettings: () => null }));
 
 import { SettingsPage } from '../../src/routes/SettingsPage';
 import { db } from '../../src/lib/firebase';

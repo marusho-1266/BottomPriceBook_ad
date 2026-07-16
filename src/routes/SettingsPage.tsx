@@ -7,6 +7,7 @@ import {
   updateBook,
 } from '../features/books/api';
 import { useBook } from '../features/books/BookProvider';
+import { ShareSettings } from '../features/sharing/ShareSettings';
 import { db } from '../lib/firebase';
 
 function SettingsLink({
@@ -94,6 +95,8 @@ export function SettingsPage() {
           ))}
         </div>
       </section>
+
+      <ShareSettings />
 
       <div className="mx-4 mt-4 rounded-2xl bg-surface">
         <SettingsLink

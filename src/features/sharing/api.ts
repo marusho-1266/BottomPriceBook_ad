@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Timestamp,
   arrayRemove,
@@ -10,7 +11,9 @@ import {
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
-import type { Book, Invite, WithId } from '../../types/models';
+import { db } from '../../lib/firebase';
+import { useCollection } from '../../lib/firestoreHooks';
+import type { Book, Invite, Member, WithId } from '../../types/models';
 
 /** 招待コードの有効期限(日) */
 export const INVITE_TTL_DAYS = 7;
@@ -54,6 +57,12 @@ export function isInviteValid(invite: Pick<Invite, 'expiresAt'>, now: Date = new
 /** 招待リンクを組み立てる */
 export function buildInviteUrl(code: string, origin: string = window.location.origin): string {
   return `${origin}/join/${code}`;
+}
+
+/** book のメンバープロフィール一覧を購読する */
+export function useMembers(bookId: string): { data: WithId<Member>[]; loading: boolean } {
+  const membersQuery = useMemo(() => collection(db, 'books', bookId, 'members'), [bookId]);
+  return useCollection<Member>(membersQuery);
 }
 
 /**

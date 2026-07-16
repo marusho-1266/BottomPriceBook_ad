@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { db } from '../../lib/firebase';
+import { useAuth } from '../auth/AuthProvider';
 import { useBook } from '../books/BookProvider';
 import {
   INVITE_TTL_DAYS,
   buildInviteUrl,
   createInvite,
+  leaveBook,
   removeMember,
   useMembers,
 } from './api';
@@ -15,11 +17,13 @@ const UNNAMED = '(名前未設定)';
 /** 設定画面の「共有」セクション */
 export function ShareSettings() {
   const { bookId, book, isOwner } = useBook();
+  const { user } = useAuth();
   const { data: members } = useMembers(bookId);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ uid: string; name: string } | null>(null);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
 
   if (!book) return null;
 
@@ -52,6 +56,13 @@ export function ShareSettings() {
     if (!removeTarget) return;
     await removeMember(db, bookId, removeTarget.uid);
     setRemoveTarget(null);
+  }
+
+  async function handleLeave() {
+    if (!user) return;
+    // 退出後は BookProvider のリストクエリから消え、自分の book に自動フォールバックする
+    await leaveBook(db, bookId, user.uid);
+    setConfirmingLeave(false);
   }
 
   return (
@@ -111,6 +122,18 @@ export function ShareSettings() {
         </div>
       )}
 
+      {!isOwner && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setConfirmingLeave(true)}
+            className="h-11 w-full rounded-xl border border-chevron bg-surface text-sm font-bold text-sale"
+          >
+            この底値帳から退出
+          </button>
+        </div>
+      )}
+
       {removeTarget && (
         <ConfirmDialog
           title="メンバーを削除"
@@ -118,6 +141,16 @@ export function ShareSettings() {
           confirmLabel="削除する"
           onConfirm={handleRemove}
           onCancel={() => setRemoveTarget(null)}
+        />
+      )}
+
+      {confirmingLeave && (
+        <ConfirmDialog
+          title="底値帳から退出"
+          description={`「${book.name}」から退出します。退出しても、これまでの価格記録は残ります。再参加には新しい招待が必要です。`}
+          confirmLabel="退出する"
+          onConfirm={handleLeave}
+          onCancel={() => setConfirmingLeave(false)}
         />
       )}
     </section>

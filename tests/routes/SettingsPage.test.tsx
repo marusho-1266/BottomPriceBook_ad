@@ -3,23 +3,29 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { updateBook, signOut } = vi.hoisted(() => ({
+const { updateBook, signOut, useBook } = vi.hoisted(() => ({
   updateBook: vi.fn().mockResolvedValue(undefined),
   signOut: vi.fn().mockResolvedValue(undefined),
+  useBook: vi.fn(),
 }));
 
-vi.mock('../../src/features/books/BookProvider', () => ({
-  useBook: () => ({
+function setBook(isOwner: boolean) {
+  useBook.mockReturnValue({
     bookId: 'u1',
     book: {
       id: 'u1',
       name: 'わたしの底値帳',
-      ownerUid: 'u1',
+      ownerUid: isOwner ? 'u1' : 'someone-else',
       memberUids: ['u1'],
       bottomWindowMonths: 6,
     },
-  }),
-}));
+    books: [],
+    isOwner,
+    setCurrentBookId: vi.fn(),
+  });
+}
+
+vi.mock('../../src/features/books/BookProvider', () => ({ useBook }));
 vi.mock('../../src/features/books/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/features/books/api')>();
   return { ...actual, updateBook };
@@ -34,6 +40,7 @@ import { db } from '../../src/lib/firebase';
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setBook(true);
   });
 
   it('底値の対象期間を変更できる', async () => {
@@ -86,5 +93,20 @@ describe('SettingsPage', () => {
     );
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
     expect(signOut).toHaveBeenCalled();
+  });
+
+  it('参加中の book(非オーナー)では名前・期間の編集 UI が出ない(Issue #7)', () => {
+    setBook(false);
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByLabelText('底値帳の名前')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '名前を保存' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '3ヶ月' })).not.toBeInTheDocument();
+    // 閲覧表示はされる
+    expect(screen.getByText('わたしの底値帳')).toBeInTheDocument();
+    expect(screen.getByText('6ヶ月')).toBeInTheDocument();
   });
 });

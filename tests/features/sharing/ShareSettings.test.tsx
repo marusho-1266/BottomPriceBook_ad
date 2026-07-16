@@ -12,19 +12,26 @@ const CODE = 'new-invite-code-123456';
 const mocks = vi.hoisted(() => ({
   createInvite: vi.fn(),
   removeMember: vi.fn(),
+  leaveBook: vi.fn(),
   useMembers: vi.fn(),
   useBook: vi.fn(),
+  useAuth: vi.fn(),
 }));
 
 vi.mock('../../../src/features/sharing/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../src/features/sharing/api')>()),
   createInvite: mocks.createInvite,
   removeMember: mocks.removeMember,
+  leaveBook: mocks.leaveBook,
   useMembers: mocks.useMembers,
 }));
 
 vi.mock('../../../src/features/books/BookProvider', () => ({
   useBook: mocks.useBook,
+}));
+
+vi.mock('../../../src/features/auth/AuthProvider', () => ({
+  useAuth: mocks.useAuth,
 }));
 
 const { ShareSettings } = await import('../../../src/features/sharing/ShareSettings');
@@ -44,7 +51,12 @@ function member(id: string, displayName: string): WithId<Member> {
   return { id, displayName, joinedAt: Timestamp.now() };
 }
 
-function setBook(memberUids: string[], members: WithId<Member>[], isOwner = true) {
+function setBook(
+  memberUids: string[],
+  members: WithId<Member>[],
+  isOwner = true,
+  currentUid = isOwner ? ALICE : CHARLIE,
+) {
   const book = makeBook(memberUids);
   mocks.useBook.mockReturnValue({
     bookId: book.id,
@@ -54,6 +66,7 @@ function setBook(memberUids: string[], members: WithId<Member>[], isOwner = true
     setCurrentBookId: vi.fn(),
   });
   mocks.useMembers.mockReturnValue({ data: members, loading: false });
+  mocks.useAuth.mockReturnValue({ user: { uid: currentUid }, loading: false });
 }
 
 beforeEach(() => {
@@ -130,5 +143,37 @@ describe('ShareSettings(オーナー)', () => {
     expect(screen.queryByRole('button', { name: /を削除/ })).not.toBeInTheDocument();
     // 一覧は閲覧できる
     expect(screen.getByText('ボブ')).toBeInTheDocument();
+  });
+});
+
+describe('ShareSettings(参加中の book からの退出)', () => {
+  it('非オーナーは確認ダイアログを経て退出できる', async () => {
+    const user = userEvent.setup();
+    setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス')], false);
+    mocks.leaveBook.mockResolvedValue(undefined);
+    render(<ShareSettings />);
+
+    await user.click(screen.getByRole('button', { name: 'この底値帳から退出' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '退出する' }));
+
+    expect(mocks.leaveBook).toHaveBeenCalledWith(expect.anything(), ALICE, CHARLIE);
+  });
+
+  it('退出をキャンセルすると leaveBook を呼ばない', async () => {
+    const user = userEvent.setup();
+    setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス')], false);
+    render(<ShareSettings />);
+
+    await user.click(screen.getByRole('button', { name: 'この底値帳から退出' }));
+    await user.click(screen.getByRole('button', { name: 'キャンセル' }));
+
+    expect(mocks.leaveBook).not.toHaveBeenCalled();
+  });
+
+  it('オーナーには退出ボタンが表示されない', () => {
+    render(<ShareSettings />);
+
+    expect(screen.queryByRole('button', { name: 'この底値帳から退出' })).not.toBeInTheDocument();
   });
 });

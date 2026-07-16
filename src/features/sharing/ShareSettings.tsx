@@ -25,6 +25,9 @@ export function ShareSettings() {
   const [copied, setCopied] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ uid: string; name: string } | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!book) return null;
 
@@ -38,10 +41,13 @@ export function ShareSettings() {
   async function handleIssue() {
     if (!book) return;
     setIssuing(true);
+    setError(null);
     try {
       const code = await createInvite(db, { id: book.id, name: book.name, ownerUid: book.ownerUid });
       setInviteUrl(buildInviteUrl(code));
       setCopied(false);
+    } catch {
+      setError('招待リンクの発行に失敗しました。もう一度お試しください。');
     } finally {
       setIssuing(false);
     }
@@ -49,21 +55,42 @@ export function ShareSettings() {
 
   async function handleCopy() {
     if (!inviteUrl) return;
-    await navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+    } catch {
+      setError('リンクのコピーに失敗しました。もう一度お試しください。');
+    }
   }
 
   async function handleRemove() {
     if (!removeTarget) return;
-    await removeMember(db, bookId, removeTarget.uid);
-    setRemoveTarget(null);
+    setRemoving(true);
+    setError(null);
+    try {
+      await removeMember(db, bookId, removeTarget.uid);
+      setRemoveTarget(null);
+    } catch {
+      setError('メンバーの削除に失敗しました。もう一度お試しください。');
+    } finally {
+      setRemoving(false);
+    }
   }
 
   async function handleLeave() {
     if (!user) return;
-    // 退出後は BookProvider のリストクエリから消え、自分の book に自動フォールバックする
-    await leaveBook(db, bookId, user.uid);
-    setConfirmingLeave(false);
+    setLeaving(true);
+    setError(null);
+    try {
+      // 退出後は BookProvider のリストクエリから消え、自分の book に自動フォールバックする
+      await leaveBook(db, bookId, user.uid);
+      setConfirmingLeave(false);
+    } catch {
+      setError('退出に失敗しました。もう一度お試しください。');
+    } finally {
+      setLeaving(false);
+    }
   }
 
   return (
@@ -135,6 +162,12 @@ export function ShareSettings() {
         </div>
       )}
 
+      {error && (
+        <p role="alert" className="mt-3 text-xs font-bold text-sale">
+          {error}
+        </p>
+      )}
+
       <p className="mt-3 text-center">
         <Link to="/join" className="text-xs font-bold text-primary">
           招待コードを入力して参加
@@ -146,6 +179,7 @@ export function ShareSettings() {
           title="メンバーを削除"
           description={`${removeTarget.name} をこの底値帳から削除します。削除しても、これまでの価格記録は残ります。`}
           confirmLabel="削除する"
+          confirmDisabled={removing}
           onConfirm={handleRemove}
           onCancel={() => setRemoveTarget(null)}
         />
@@ -156,6 +190,7 @@ export function ShareSettings() {
           title="底値帳から退出"
           description={`「${book.name}」から退出します。退出しても、これまでの価格記録は残ります。再参加には新しい招待が必要です。`}
           confirmLabel="退出する"
+          confirmDisabled={leaving}
           onConfirm={handleLeave}
           onCancel={() => setConfirmingLeave(false)}
         />

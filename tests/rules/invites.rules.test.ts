@@ -34,14 +34,14 @@ function validBook(uid: string) {
   };
 }
 
-/** 有効期限 days 日後の invite ドキュメント */
-function validInvite(bookId: string, createdBy: string, days = 7) {
+/** 招待ドキュメント。days は createdAt の「今からの相対日数」(7=ちょうど発行、 -1=期限切れ相当) */
+function validInvite(bookId: string, createdBy: string, days = 0) {
   return {
     bookId,
     bookName: 'わたしの底値帳',
     createdBy,
-    createdAt: serverTimestamp(),
-    expiresAt: Timestamp.fromMillis(Date.now() + days * 24 * 60 * 60 * 1000),
+    // ルール経由の create は serverTimestamp 必須。テストの失敗ケース用に Timestamp も渡せる
+    createdAt: days === 0 ? serverTimestamp() : Timestamp.fromMillis(Date.now() + days * 24 * 60 * 60 * 1000),
   };
 }
 
@@ -91,14 +91,19 @@ describe('invites の作成', () => {
     await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, BOB)));
   });
 
-  it('expiresAt が過去の招待は作成できない', async () => {
+  it('createdAt が serverTimestamp でない招待は作成できない', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE, -1)));
   });
 
-  it('expiresAt が 8 日超の招待は作成できない', async () => {
+  it('expiresAt など余分なフィールド付きの招待は作成できない', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE, 30)));
+    await assertFails(
+      setDoc(doc(db, 'invites', CODE), {
+        ...validInvite(ALICE, ALICE),
+        expiresAt: Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      }),
+    );
   });
 
   it('未認証では作成できない', async () => {
@@ -151,7 +156,7 @@ describe('invites の更新・削除', () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertFails(
       updateDoc(doc(db, 'invites', CODE), {
-        expiresAt: Timestamp.fromMillis(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        bookName: '書き換え',
       }),
     );
   });

@@ -161,6 +161,48 @@ describe('ShareSettings(オーナー)', () => {
     // 一覧は閲覧できる
     expect(screen.getByText('ボブ')).toBeInTheDocument();
   });
+
+  it('招待発行に失敗するとエラーを表示する', async () => {
+    const user = userEvent.setup();
+    mocks.createInvite.mockRejectedValue(new Error('fail'));
+    renderShareSettings();
+
+    await user.click(screen.getByRole('button', { name: '招待リンクを発行' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/発行に失敗/);
+  });
+
+  it('メンバー削除の API 失敗時はエラーを表示する', async () => {
+    const user = userEvent.setup();
+    mocks.removeMember.mockRejectedValue(new Error('fail'));
+    renderShareSettings();
+
+    await user.click(screen.getByRole('button', { name: 'ボブ を削除' }));
+    await user.click(screen.getByRole('button', { name: '削除する' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/削除に失敗/);
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('削除確認ボタンは処理中に無効になる', async () => {
+    const user = userEvent.setup();
+    let resolveRemove!: () => void;
+    mocks.removeMember.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRemove = resolve;
+        }),
+    );
+    renderShareSettings();
+
+    await user.click(screen.getByRole('button', { name: 'ボブ を削除' }));
+    const confirm = screen.getByRole('button', { name: '削除する' });
+    await user.click(confirm);
+    expect(confirm).toBeDisabled();
+
+    resolveRemove();
+    expect(await screen.findByRole('button', { name: 'ボブ を削除' })).toBeInTheDocument();
+  });
 });
 
 describe('ShareSettings(参加中の book からの退出)', () => {
@@ -192,5 +234,39 @@ describe('ShareSettings(参加中の book からの退出)', () => {
     renderShareSettings();
 
     expect(screen.queryByRole('button', { name: 'この底値帳から退出' })).not.toBeInTheDocument();
+  });
+
+  it('退出に失敗するとエラーを表示する', async () => {
+    const user = userEvent.setup();
+    setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス')], false);
+    mocks.leaveBook.mockRejectedValue(new Error('fail'));
+    renderShareSettings();
+
+    await user.click(screen.getByRole('button', { name: 'この底値帳から退出' }));
+    await user.click(screen.getByRole('button', { name: '退出する' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/退出に失敗/);
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('退出確認ボタンは処理中に無効になる', async () => {
+    const user = userEvent.setup();
+    setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス')], false);
+    let resolveLeave!: () => void;
+    mocks.leaveBook.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLeave = resolve;
+        }),
+    );
+    renderShareSettings();
+
+    await user.click(screen.getByRole('button', { name: 'この底値帳から退出' }));
+    const confirm = screen.getByRole('button', { name: '退出する' });
+    await user.click(confirm);
+    expect(confirm).toBeDisabled();
+
+    resolveLeave();
+    expect(await screen.findByRole('button', { name: 'この底値帳から退出' })).toBeInTheDocument();
   });
 });

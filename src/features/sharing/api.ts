@@ -20,8 +20,14 @@ export const INVITE_TTL_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** サーバー付与の createdAt から表示・クライアント判定用の expiresAt を導出する */
+export function inviteExpiresAt(createdAt: Timestamp): Timestamp {
+  return Timestamp.fromMillis(createdAt.toMillis() + INVITE_TTL_DAYS * DAY_MS);
+}
+
 /**
  * 招待コードを発行する(オーナーのみ。ルールで強制)。
+ * 有効期限はクライアント時計ではなく createdAt(serverTimestamp) + 7 日をソースオブトゥルースとする。
  * 戻り値は invites の自動 ID = 招待コード。ログ等に出力しないこと
  */
 export async function createInvite(
@@ -34,24 +40,39 @@ export async function createInvite(
     bookName: book.name,
     createdBy: book.ownerUid,
     createdAt: serverTimestamp(),
-    expiresAt: Timestamp.fromMillis(Date.now() + INVITE_TTL_DAYS * DAY_MS),
   });
   return ref.id;
 }
 
 /**
  * 招待コードから招待を取得する。存在しなければ null。
- * オフラインキャッシュの stale な招待で参加させないため、常にサーバーから読む
+ * オフラインキャッシュの stale な招待で参加させないため、常にサーバーから読む。
+ * expiresAt はサーバーの createdAt から導出し、クライアント時計に依存しない
  */
 export async function fetchInvite(db: Firestore, code: string): Promise<WithId<Invite> | null> {
   const snapshot = await getDocFromServer(doc(db, 'invites', code));
   if (!snapshot.exists()) return null;
-  return { id: snapshot.id, ...(snapshot.data() as Invite) };
+  const data = snapshot.data() as Omit<Invite, 'expiresAt'> & Partial<Pick<Invite, 'expiresAt'>>;
+  return {
+    id: snapshot.id,
+    ...data,
+    expiresAt: inviteExpiresAt(data.createdAt),
+  };
 }
 
-/** 期限内なら true。境界はルールの request.time < expiresAt と揃える */
-export function isInviteValid(invite: Pick<Invite, 'expiresAt'>, now: Date = new Date()): boolean {
-  return now.getTime() < invite.expiresAt.toMillis();
+/**
+ * 期限内なら true。境界はルールの request.time < createdAt + 7d と揃える。
+ * expiresAt がある場合はそれを使い、なければ createdAt から導出する
+ */
+export function isInviteValid(
+  invite: Pick<Invite, 'expiresAt'> | Pick<Invite, 'createdAt'>,
+  now: Date = new Date(),
+): boolean {
+  const expiresMs =
+    'expiresAt' in invite && invite.expiresAt
+      ? invite.expiresAt.toMillis()
+      : inviteExpiresAt((invite as Pick<Invite, 'createdAt'>).createdAt).toMillis();
+  return now.getTime() < expiresMs;
 }
 
 /** 招待リンクを組み立てる */

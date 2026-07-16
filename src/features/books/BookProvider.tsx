@@ -60,8 +60,11 @@ export function BookProvider({ uid, children }: { uid: string; children: ReactNo
     setPendingId(null);
   }
 
+  // 反映待ちの選択は books に無くても現在の選択として扱う(uid への一時フォールバックと
+  // その localStorage への永続化を防ぐ)。book は null になるが消費側がデフォルト値で吸収する。
   // ロード完了までは保存値(なければ自分の book)を暫定使用し、フォールバック判定しない
-  const bookId = loading ? (selectedId ?? uid) : resolveCurrentBookId(books, selectedId, uid);
+  const bookId =
+    pendingId ?? (loading ? (selectedId ?? uid) : resolveCurrentBookId(books, selectedId, uid));
 
   // 退出・削除などで選択中の book が参照不能になったら state もフォールバック先へ揃える
   // (レンダー中の状態調整パターン。effect での setState を避ける)。

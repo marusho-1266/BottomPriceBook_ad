@@ -134,8 +134,12 @@ describe('BookProvider', () => {
     );
     await user.click(screen.getByRole('button', { name: '切替' }));
 
-    // 反映までは自分の book を暫定表示(選択は保持される)
-    expect(screen.getByTestId('bookId').textContent).toBe(UID);
+    // 反映前でも選択した book ID が現在の選択として維持される(uid へフォールバックしない)。
+    // book 本体は未取得のため null(消費側がデフォルト表示で吸収する)
+    expect(screen.getByTestId('bookId').textContent).toBe(OTHER_BOOK);
+    expect(screen.getByTestId('bookName').textContent).toBe('(なし)');
+    // フォールバック値ではなく選択が永続化される
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(OTHER_BOOK);
 
     // スナップショットに参加先が反映される
     mocks.useCollection.mockReturnValue({ data: [MY_BOOK, JOINED_BOOK], loading: false });

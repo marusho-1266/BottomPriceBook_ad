@@ -46,13 +46,13 @@ function validBook(uid: string) {
   };
 }
 
-function invite(bookId: string, createdBy: string, days = 7) {
+/** createdAt 基準。ageDays 日前に発行された招待(7 超で期限切れ) */
+function invite(bookId: string, createdBy: string, ageDays = 0) {
   return {
     bookId,
     bookName: 'わたしの底値帳',
     createdBy,
-    createdAt: serverTimestamp(),
-    expiresAt: Timestamp.fromMillis(Date.now() + days * 24 * 60 * 60 * 1000),
+    createdAt: Timestamp.fromMillis(Date.now() - ageDays * 24 * 60 * 60 * 1000),
   };
 }
 
@@ -99,7 +99,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'books', ALICE), validBook(ALICE));
     await setDoc(doc(db, 'books', CHARLIE), validBook(CHARLIE));
     await setDoc(doc(db, 'invites', CODE), invite(ALICE, ALICE));
-    await setDoc(doc(db, 'invites', EXPIRED_CODE), invite(ALICE, ALICE, -1));
+    await setDoc(doc(db, 'invites', EXPIRED_CODE), invite(ALICE, ALICE, 8));
     await setDoc(doc(db, 'invites', OTHER_BOOK_CODE), invite(CHARLIE, CHARLIE));
   });
 });
@@ -218,6 +218,16 @@ describe('members サブコレクション', () => {
     const db = dbAs(BOB);
     await assertSucceeds(
       setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc()),
+    );
+  });
+
+  it('displayName / joinedAt 以外のフィールドを含む members doc は作成できない', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await deleteDoc(doc(context.firestore(), 'books', ALICE, 'members', BOB));
+    });
+    const db = dbAs(BOB);
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE, 'members', BOB), { ...memberDoc(), role: 'admin' }),
     );
   });
 

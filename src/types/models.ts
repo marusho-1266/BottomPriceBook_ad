@@ -49,6 +49,7 @@ export interface Invite {
   bookName: string;
   createdBy: string;
   createdAt: Timestamp;
+  /** createdAt + 7 日。永続化せず fetchInvite が serverTimestamp の createdAt から導出 */
   expiresAt: Timestamp;
 }
 

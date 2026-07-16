@@ -8,15 +8,15 @@ service cloud.firestore {
       allow get: if request.auth != null;
       allow list: if false;
 
-      // 対象 book のオーナーのみ発行可。期限は未来かつ 8 日以内(クライアント時計ずれの許容込み)
+      // 対象 book のオーナーのみ発行可。createdAt は serverTimestamp 必須(クライアント時計に依存しない)。
+      // 有効期限は join 側で createdAt + 7 日を request.time と比較する
       allow create: if request.auth != null
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.bookId is string
         && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
             .data.ownerUid == request.auth.uid
-        && request.resource.data.expiresAt is timestamp
-        && request.resource.data.expiresAt > request.time
-        && request.resource.data.expiresAt <= request.time + duration.value(8, 'd');
+        && request.resource.data.keys().hasOnly(['bookId', 'bookName', 'createdBy', 'createdAt'])
+        && request.resource.data.createdAt == request.time;
 
       // 期限延長を防ぐため update は不可。削除は発行者のみ
       allow update: if false;
@@ -42,12 +42,14 @@ service cloud.firestore {
           && request.auth.uid
             in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }
-      // 招待コードがこの book のもので期限内かを検証(Issue #7)
+      // 招待コードがこの book のもので期限内かを検証(Issue #7)。
+      // 上限 7 日はサーバー時刻 request.time と createdAt(serverTimestamp) で判定する
       function isValidInviteFor(code) {
         return code is string
           && get(/databases/$(database)/documents/invites/$(code)).data.bookId == bookId
           && request.time
-            < get(/databases/$(database)/documents/invites/$(code)).data.expiresAt;
+            < get(/databases/$(database)/documents/invites/$(code)).data.createdAt
+              + duration.value(7, 'd');
       }
       // 参加(join): 「memberUids のみ・自分の uid の追加のみ」の更新を、
       // 同一バッチで書かれた joinTokens doc の招待コードを getAfter で読んで検証する。
@@ -115,6 +117,7 @@ service cloud.firestore {
         // getAfter でメンバーになるため可。単独作成は既存メンバーの補完のみ
         allow create: if request.auth != null
           && request.auth.uid == memberUid
+          && request.resource.data.keys().hasOnly(['displayName', 'joinedAt'])
           && request.resource.data.displayName is string
           && isBookMemberAfterWrite();
         // 表示名の書き換えを防ぐため update は不可

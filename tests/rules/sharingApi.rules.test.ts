@@ -72,6 +72,10 @@ describe('sharing api(セキュリティルール下での統合)', () => {
     expect(invite).not.toBeNull();
     expect(invite?.bookId).toBe(ALICE);
     expect(invite?.bookName).toBe('アリスの底値帳');
+    // expiresAt はサーバーの createdAt + 7 日から導出される
+    expect(invite?.expiresAt.toMillis()).toBe(
+      invite!.createdAt.toMillis() + 7 * 24 * 60 * 60 * 1000,
+    );
 
     // 参加
     await joinBook(dbAs(BOB), {

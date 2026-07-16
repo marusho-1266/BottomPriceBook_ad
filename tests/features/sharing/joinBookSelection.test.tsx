@@ -94,10 +94,10 @@ describe('参加直後の book 切替(BookProvider × JoinPage 統合)', () => {
 
     await user.click(await screen.findByRole('button', { name: '参加する' }));
 
-    // ホームへ遷移するが、クエリ反映前は自分の book を暫定表示
-    expect(await screen.findByTestId('currentBookId')).toHaveTextContent(UID);
+    // ホームへ遷移し、クエリ反映前でも参加先の book ID が現在の選択になる
+    expect(await screen.findByTestId('currentBookId')).toHaveTextContent(BOOK_ID);
 
-    // スナップショットに参加先が反映されたら、選択していた参加先へ切り替わる
+    // スナップショットに参加先が反映されても選択はそのまま維持される
     mocks.useCollection.mockReturnValue({ data: [MY_BOOK, JOINED_BOOK], loading: false });
     rerender(<App />);
 

@@ -39,6 +39,9 @@ export function JoinPage() {
   const [joinError, setJoinError] = useState(false);
 
   useEffect(() => {
+    // /join と /join/:inviteCode は同じコンポーネントを共有するため、
+    // コード変更時に前の招待の状態が残らないようリセットする
+    setState({ status: 'loading' });
     if (!inviteCode) return;
     let cancelled = false;
     fetchInvite(db, inviteCode)
@@ -87,17 +90,17 @@ export function JoinPage() {
         {inviteCode && state.status === 'loading' && (
           <p className="text-sm font-bold text-ink-faint">招待を確認中…</p>
         )}
-        {state.status === 'notFound' && (
+        {inviteCode && state.status === 'notFound' && (
           <p className="text-sm font-bold text-ink-sub">
             招待が見つかりません。リンクが正しいか、発行者に確認してください。
           </p>
         )}
-        {state.status === 'fetchError' && (
+        {inviteCode && state.status === 'fetchError' && (
           <p className="text-sm font-bold text-ink-sub">
             招待を確認できませんでした。通信状態を確認して開き直してください。
           </p>
         )}
-        {state.status === 'loaded' && (
+        {inviteCode && state.status === 'loaded' && (
           <InviteBody
             invite={state.invite}
             alreadyJoined={books.some((book) => book.id === state.invite.bookId)}
@@ -120,9 +123,15 @@ export function JoinPage() {
 
 /** 招待リンクを貼り付けた場合もコード部分だけを取り出す */
 function extractInviteCode(input: string): string {
-  const trimmed = input.trim();
-  const lastSlash = trimmed.lastIndexOf('/');
-  return lastSlash >= 0 ? trimmed.slice(lastSlash + 1) : trimmed;
+  let value = input.trim();
+  try {
+    // URL ならクエリ・フラグメントを除いたパスからコードを取り出す
+    value = new URL(value).pathname;
+  } catch {
+    // URL でなければコード直接入力(またはパス断片)として扱う
+  }
+  const segments = value.split('/').filter((segment) => segment !== '');
+  return segments.length > 0 ? segments[segments.length - 1] : '';
 }
 
 /** 招待コードの手入力フォーム(/join)。spec の「リンクまたはコード入力から参加」 */

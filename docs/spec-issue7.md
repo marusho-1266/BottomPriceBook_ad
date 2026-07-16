@@ -1,6 +1,6 @@
 # Spec: Issue #7 底値帳の共有機能
 
-> Status: **Draft(レビュー待ち)** / 作成: 2026-07-16
+> Status: **Implemented(実装済み・2026-07-16。E2E 手動検証とデプロイは未実施)** / 作成: 2026-07-16
 > 対象 Issue: [#7 共有機能](https://github.com/marusho-1266/BottomPriceBook_ad/issues/7)
 > 親仕様: `docs/spec.md`(共有モデル・将来スコープ「底値帳の共有」を MVP 化する)
 

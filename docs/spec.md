@@ -1,7 +1,8 @@
 # Spec: 底値帳 Web アプリ「そこねこ」
 
-> Status: **Approved(承認済み・2026-07-12)** / 最終更新: 2026-07-15
+> Status: **Approved(承認済み・2026-07-12)** / 最終更新: 2026-07-16
 > (2026-07-15: Issue #3 によりカテゴリ baseUnit の事後変更を許可。詳細は `docs/spec-issue3.md`)
+> (2026-07-16: Issue #7 により底値帳の共有(招待コード方式)を実装。詳細は `docs/spec-issue7.md`)
 >
 > このドキュメントは spec-driven development の Phase 1 (Specify) 成果物。
 > レビュー記録: `docs/spec-review-2026-07-12.md`
@@ -285,7 +286,7 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 ## 将来スコープ(MVP に含めない)
 
 - 価格履歴のグラフ表示
-- 底値帳の共有(book への複数メンバー招待)
+- ~~底値帳の共有(book への複数メンバー招待)~~ → Issue #7 で実装済み(`docs/spec-issue7.md`)
 - 買い物リスト、バーコードスキャン、商品写真
 - クラウドソーシング型の価格共有(サービス化)
 - 匿名認証 → アカウント連携

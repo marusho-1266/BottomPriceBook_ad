@@ -42,6 +42,29 @@ service cloud.firestore {
           && request.auth.uid
             in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }
+      // 招待コードがこの book のもので期限内かを検証(Issue #7)
+      function isValidInviteFor(code) {
+        return code is string
+          && get(/databases/$(database)/documents/invites/$(code)).data.bookId == bookId
+          && request.time
+            < get(/databases/$(database)/documents/invites/$(code)).data.expiresAt;
+      }
+      // 参加(join): 「自分の uid の追加のみ + 他フィールド不変」の更新を、
+      // 同一バッチで書かれた members doc の招待コードを getAfter で読んで検証する
+      function isSelfJoinWithInvite() {
+        return request.auth != null
+          && !(request.auth.uid in resource.data.memberUids)
+          && request.resource.data.memberUids.toSet()
+            == resource.data.memberUids.toSet().union([request.auth.uid].toSet())
+          && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
+          && request.resource.data.name == resource.data.name
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.bottomWindowMonths == resource.data.bottomWindowMonths
+          && isValidInviteFor(
+            getAfter(/databases/$(database)/documents/books/$(bookId)/members/$(request.auth.uid))
+              .data.inviteCode);
+      }
 
       // 自分の bookId は未作成でも読める(初期化時の存在確認に必要)。それ以外はメンバーのみ
       allow read: if isSignedIn() && (bookId == request.auth.uid || isMember());
@@ -52,12 +75,14 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids;
 
-      // ownerUid / createdAt は不変。memberUids の変更は owner のみ(M-3)
-      allow update: if isMember()
+      // ownerUid / createdAt は不変。memberUids の変更は owner のみ(M-3)。
+      // 例外として、有効な招待コードによる自分自身の参加を許可(Issue #7)
+      allow update: if (isMember()
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.createdAt == resource.data.createdAt
         && (request.resource.data.memberUids == resource.data.memberUids
-          || request.auth.uid == resource.data.ownerUid);
+          || request.auth.uid == resource.data.ownerUid))
+        || isSelfJoinWithInvite();
 
       allow delete: if false;
 
@@ -65,6 +90,26 @@ service cloud.firestore {
         allow read: if isBookMember();
         // book 作成トランザクションでのシード書き込みがあるため getAfter 判定
         allow write: if isBookMemberAfterWrite();
+      }
+
+      // メンバープロフィール(表示名 + join のルール検証マーカー)(Issue #7)。
+      // メンバーシップの真実のソースはあくまで books.memberUids
+      match /members/{memberUid} {
+        allow read: if isBookMember();
+        // 本人のみ作成可。join バッチ中は book 側の isSelfJoinWithInvite が招待を検証するため
+        // getAfter でメンバーになっていれば可。単独作成は既存メンバーの補完か有効な招待が必要
+        allow create: if request.auth != null
+          && request.auth.uid == memberUid
+          && request.resource.data.displayName is string
+          && (isBookMemberAfterWrite()
+            || isValidInviteFor(request.resource.data.inviteCode));
+        // 表示名の書き換えや招待コードのすり替えを防ぐため update は不可
+        allow update: if false;
+        // 退出(本人)またはオーナーによる削除
+        allow delete: if request.auth != null
+          && (request.auth.uid == memberUid
+            || request.auth.uid
+              == get(/databases/$(database)/documents/books/$(bookId)).data.ownerUid);
       }
 
       match /stores/{storeId} {

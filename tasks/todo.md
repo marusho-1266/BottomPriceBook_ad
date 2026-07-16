@@ -16,7 +16,7 @@
 
 ## Phase 3: 切替基盤
 
-- [ ] T6: BookProvider の currentBookId 対応(M)— 既存テスト無修正 green が条件
+- [x] T6: BookProvider の currentBookId 対応(M)— 既存テスト無修正 green が条件(App.test は firestore モックに where 追加のみ)
 - [ ] ✅ チェックポイント 2: test / test:rules / lint / build 全 green + 手動スモーク
 
 ## Phase 4: UI(T7 ∥ T8 ∥ T10、T9 は T8 の後)

@@ -1,22 +1,89 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { doc } from 'firebase/firestore';
+import {
+  Fragment,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { useDoc } from '../../lib/firestoreHooks';
+import { useCollection } from '../../lib/firestoreHooks';
 import type { Book, WithId } from '../../types/models';
 
 interface BookState {
-  /** MVP では bookId = uid */
+  /** 現在表示中の book。自分の book は bookId = uid(H-4) */
   bookId: string;
   book: WithId<Book> | null;
+  /** 参加中の全 book(自分の book を含む) */
+  books: WithId<Book>[];
+  /** 現在の book のオーナーが自分か */
+  isOwner: boolean;
+  setCurrentBookId: (bookId: string) => void;
 }
 
 const BookContext = createContext<BookState | null>(null);
 
-export function BookProvider({ uid, children }: { uid: string; children: ReactNode }) {
-  const bookRef = useMemo(() => doc(db, 'books', uid), [uid]);
-  const { data: book } = useDoc<Book>(bookRef);
+function storageKey(uid: string): string {
+  // 共有端末での uid 混線を防ぐためキーに uid を含める
+  return `sokoneko:currentBookId:${uid}`;
+}
 
-  return <BookContext.Provider value={{ bookId: uid, book }}>{children}</BookContext.Provider>;
+/** 保存された book ID が参加中リストにあればそれを、無ければ自分の book を返す */
+// eslint-disable-next-line react-refresh/only-export-components
+export function resolveCurrentBookId(
+  books: ReadonlyArray<{ id: string }>,
+  storedId: string | null,
+  uid: string,
+): string {
+  if (storedId !== null && books.some((book) => book.id === storedId)) return storedId;
+  return uid;
+}
+
+export function BookProvider({ uid, children }: { uid: string; children: ReactNode }) {
+  const booksQuery = useMemo(
+    () => query(collection(db, 'books'), where('memberUids', 'array-contains', uid)),
+    [uid],
+  );
+  const { data: books, loading } = useCollection<Book>(booksQuery);
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    localStorage.getItem(storageKey(uid)),
+  );
+
+  // ロード完了までは保存値(なければ自分の book)を暫定使用し、フォールバック判定しない
+  const bookId = loading ? (selectedId ?? uid) : resolveCurrentBookId(books, selectedId, uid);
+
+  // 退出・削除などで選択中の book が参照不能になったら state もフォールバック先へ揃える
+  // (レンダー中の状態調整パターン。effect での setState を避ける)
+  if (!loading && selectedId !== null && selectedId !== bookId) {
+    setSelectedId(bookId);
+  }
+
+  const setCurrentBookId = useCallback((nextBookId: string) => {
+    setSelectedId(nextBookId);
+  }, []);
+
+  // 選択の永続化(フォールバック時の書き戻しを含む)
+  useEffect(() => {
+    localStorage.setItem(storageKey(uid), bookId);
+  }, [uid, bookId]);
+
+  const book = books.find((candidate) => candidate.id === bookId) ?? null;
+  const isOwner = book !== null && book.ownerUid === uid;
+
+  const value = useMemo(
+    () => ({ bookId, book, books, isOwner, setCurrentBookId }),
+    [bookId, book, books, isOwner, setCurrentBookId],
+  );
+
+  return (
+    <BookContext.Provider value={value}>
+      {/* book 切替時に全購読・画面 state を key 再マウントで張り直す */}
+      <Fragment key={bookId}>{children}</Fragment>
+    </BookContext.Provider>
+  );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

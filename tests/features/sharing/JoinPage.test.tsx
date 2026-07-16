@@ -46,10 +46,11 @@ function makeInvite(expiresInMs = 7 * 24 * 60 * 60 * 1000): WithId<Invite> {
   };
 }
 
-function renderJoinPage() {
+function renderJoinPage(initialEntry = `/join/${CODE}`) {
   return render(
-    <MemoryRouter initialEntries={[`/join/${CODE}`]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
+        <Route path="/join" element={<JoinPage />} />
         <Route path="/join/:inviteCode" element={<JoinPage />} />
         <Route path="/" element={<div>ホーム</div>} />
       </Routes>
@@ -125,6 +126,34 @@ describe('JoinPage', () => {
 
     expect(await screen.findByRole('button', { name: '参加する' })).toBeDisabled();
     expect(screen.getByText(/オンラインで参加してください/)).toBeInTheDocument();
+  });
+
+  it('/join でコードを手入力すると招待の確認へ進める', async () => {
+    const user = userEvent.setup();
+    mocks.fetchInvite.mockResolvedValue(makeInvite());
+    renderJoinPage('/join');
+
+    const input = screen.getByLabelText('招待コード');
+    expect(screen.getByRole('button', { name: '招待を確認' })).toBeDisabled();
+
+    await user.type(input, CODE);
+    await user.click(screen.getByRole('button', { name: '招待を確認' }));
+
+    expect(mocks.fetchInvite).toHaveBeenCalledWith(expect.anything(), CODE);
+    expect(await screen.findByText('アリスの底値帳')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '参加する' })).toBeInTheDocument();
+  });
+
+  it('招待リンクを貼り付けてもコード部分を取り出して確認へ進める', async () => {
+    const user = userEvent.setup();
+    mocks.fetchInvite.mockResolvedValue(makeInvite());
+    renderJoinPage('/join');
+
+    await user.type(screen.getByLabelText('招待コード'), `https://example.com/join/${CODE}`);
+    await user.click(screen.getByRole('button', { name: '招待を確認' }));
+
+    expect(mocks.fetchInvite).toHaveBeenCalledWith(expect.anything(), CODE);
+    expect(await screen.findByText('アリスの底値帳')).toBeInTheDocument();
   });
 
   it('参加済みの book なら切替導線のみ表示する', async () => {

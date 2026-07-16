@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Timestamp } from 'firebase/firestore';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Book, Member, WithId } from '../../../src/types/models';
 
@@ -35,6 +36,15 @@ vi.mock('../../../src/features/auth/AuthProvider', () => ({
 }));
 
 const { ShareSettings } = await import('../../../src/features/sharing/ShareSettings');
+
+/** ShareSettings は /join への Link を含むため Router でラップして描画する */
+function renderShareSettings() {
+  return render(
+    <MemoryRouter>
+      <ShareSettings />
+    </MemoryRouter>,
+  );
+}
 
 function makeBook(memberUids: string[]): WithId<Book> {
   return {
@@ -78,7 +88,7 @@ describe('ShareSettings(オーナー)', () => {
   it('招待リンクを発行すると URL と有効期限が表示される', async () => {
     const user = userEvent.setup();
     mocks.createInvite.mockResolvedValue(CODE);
-    render(<ShareSettings />);
+    renderShareSettings();
 
     await user.click(screen.getByRole('button', { name: '招待リンクを発行' }));
 
@@ -89,7 +99,7 @@ describe('ShareSettings(オーナー)', () => {
   });
 
   it('メンバー一覧が表示名付きで表示され、オーナーにはバッジが付く', () => {
-    render(<ShareSettings />);
+    renderShareSettings();
 
     expect(screen.getByText('アリス')).toBeInTheDocument();
     expect(screen.getByText('ボブ')).toBeInTheDocument();
@@ -98,13 +108,13 @@ describe('ShareSettings(オーナー)', () => {
 
   it('members doc が無いメンバーは「(名前未設定)」と表示される', () => {
     setBook([ALICE, BOB], [member(ALICE, 'アリス')]);
-    render(<ShareSettings />);
+    renderShareSettings();
 
     expect(screen.getByText('(名前未設定)')).toBeInTheDocument();
   });
 
   it('オーナー自身の行には削除ボタンが無い', () => {
-    render(<ShareSettings />);
+    renderShareSettings();
 
     // 削除ボタンはボブの行の 1 つだけ
     expect(screen.getAllByRole('button', { name: /を削除/ })).toHaveLength(1);
@@ -114,7 +124,7 @@ describe('ShareSettings(オーナー)', () => {
   it('メンバー削除は確認ダイアログを経て removeMember を呼ぶ', async () => {
     const user = userEvent.setup();
     mocks.removeMember.mockResolvedValue(undefined);
-    render(<ShareSettings />);
+    renderShareSettings();
 
     await user.click(screen.getByRole('button', { name: 'ボブ を削除' }));
     // 確認ダイアログ
@@ -126,7 +136,7 @@ describe('ShareSettings(オーナー)', () => {
 
   it('確認ダイアログでキャンセルすると削除しない', async () => {
     const user = userEvent.setup();
-    render(<ShareSettings />);
+    renderShareSettings();
 
     await user.click(screen.getByRole('button', { name: 'ボブ を削除' }));
     await user.click(screen.getByRole('button', { name: 'キャンセル' }));
@@ -135,9 +145,16 @@ describe('ShareSettings(オーナー)', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
+  it('招待コード手入力(/join)への導線が表示される', () => {
+    renderShareSettings();
+
+    const link = screen.getByRole('link', { name: '招待コードを入力して参加' });
+    expect(link).toHaveAttribute('href', '/join');
+  });
+
   it('非オーナーには招待発行・削除ボタンが表示されない', () => {
     setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス'), member(BOB, 'ボブ')], false);
-    render(<ShareSettings />);
+    renderShareSettings();
 
     expect(screen.queryByRole('button', { name: '招待リンクを発行' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /を削除/ })).not.toBeInTheDocument();
@@ -151,7 +168,7 @@ describe('ShareSettings(参加中の book からの退出)', () => {
     const user = userEvent.setup();
     setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス')], false);
     mocks.leaveBook.mockResolvedValue(undefined);
-    render(<ShareSettings />);
+    renderShareSettings();
 
     await user.click(screen.getByRole('button', { name: 'この底値帳から退出' }));
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
@@ -163,7 +180,7 @@ describe('ShareSettings(参加中の book からの退出)', () => {
   it('退出をキャンセルすると leaveBook を呼ばない', async () => {
     const user = userEvent.setup();
     setBook([ALICE, BOB, CHARLIE], [member(ALICE, 'アリス')], false);
-    render(<ShareSettings />);
+    renderShareSettings();
 
     await user.click(screen.getByRole('button', { name: 'この底値帳から退出' }));
     await user.click(screen.getByRole('button', { name: 'キャンセル' }));
@@ -172,7 +189,7 @@ describe('ShareSettings(参加中の book からの退出)', () => {
   });
 
   it('オーナーには退出ボタンが表示されない', () => {
-    render(<ShareSettings />);
+    renderShareSettings();
 
     expect(screen.queryByRole('button', { name: 'この底値帳から退出' })).not.toBeInTheDocument();
   });

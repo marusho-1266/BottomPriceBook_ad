@@ -123,6 +123,33 @@ describe('BookProvider', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBe(UID);
   });
 
+  it('クエリ未反映の book を選択しても、反映されたらその book が開く(参加直後の競合)', async () => {
+    const user = userEvent.setup();
+    // 参加直後: books クエリにはまだ自分の book しか無い
+    mocks.useCollection.mockReturnValue({ data: [MY_BOOK], loading: false });
+    const { rerender } = render(
+      <BookProvider uid={UID}>
+        <Probe />
+      </BookProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: '切替' }));
+
+    // 反映までは自分の book を暫定表示(選択は保持される)
+    expect(screen.getByTestId('bookId').textContent).toBe(UID);
+
+    // スナップショットに参加先が反映される
+    mocks.useCollection.mockReturnValue({ data: [MY_BOOK, JOINED_BOOK], loading: false });
+    rerender(
+      <BookProvider uid={UID}>
+        <Probe />
+      </BookProvider>,
+    );
+
+    expect(screen.getByTestId('bookId').textContent).toBe(OTHER_BOOK);
+    expect(screen.getByTestId('bookName').textContent).toBe('ボブの底値帳');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(OTHER_BOOK);
+  });
+
   it('ロード中は保存値を尊重しフォールバックしない', () => {
     localStorage.setItem(STORAGE_KEY, OTHER_BOOK);
     mocks.useCollection.mockReturnValue({ data: [], loading: true });

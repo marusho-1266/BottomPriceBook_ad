@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthProvider';
@@ -133,6 +134,12 @@ export function ShareSettings() {
           </button>
         </div>
       )}
+
+      <p className="mt-3 text-center">
+        <Link to="/join" className="text-xs font-bold text-primary">
+          招待コードを入力して参加
+        </Link>
+      </p>
 
       {removeTarget && (
         <ConfirmDialog

@@ -56,18 +56,23 @@ function invite(bookId: string, createdBy: string, days = 7) {
   };
 }
 
-function memberDoc(inviteCode?: string) {
+function memberDoc() {
   return {
     displayName: 'ボブ',
-    ...(inviteCode !== undefined ? { inviteCode } : {}),
     joinedAt: serverTimestamp(),
   };
 }
 
-/** members doc 作成 + memberUids への自 uid 追加を 1 バッチで行う(実装と同じ join 手順) */
+/**
+ * members doc + joinTokens doc の作成と memberUids への自 uid 追加を
+ * 1 バッチで行う(実装と同じ join 手順)。inviteCode 省略時は joinTokens を書かない
+ */
 async function joinBatch(db: Firestore, bookId: string, uid: string, inviteCode?: string) {
   const batch = writeBatch(db);
-  batch.set(doc(db, 'books', bookId, 'members', uid), memberDoc(inviteCode));
+  batch.set(doc(db, 'books', bookId, 'members', uid), memberDoc());
+  if (inviteCode !== undefined) {
+    batch.set(doc(db, 'books', bookId, 'joinTokens', uid), { inviteCode });
+  }
   batch.update(doc(db, 'books', bookId), { memberUids: arrayUnion(uid) });
   return batch.commit();
 }
@@ -110,7 +115,7 @@ describe('招待コードによる参加(join バッチ)', () => {
     await assertFails(updateDoc(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB) }));
   });
 
-  it('コードなしの members doc では参加できない', async () => {
+  it('joinTokens(コード)なしのバッチでは参加できない', async () => {
     const db = dbAs(BOB);
     await assertFails(joinBatch(db, ALICE, BOB));
   });
@@ -133,7 +138,8 @@ describe('招待コードによる参加(join バッチ)', () => {
   it('自分以外の uid は追加できない', async () => {
     const db = dbAs(BOB);
     const batch = writeBatch(db);
-    batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE));
+    batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc());
+    batch.set(doc(db, 'books', ALICE, 'joinTokens', BOB), { inviteCode: CODE });
     batch.update(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB, CHARLIE) });
     await assertFails(batch.commit());
   });
@@ -141,8 +147,18 @@ describe('招待コードによる参加(join バッチ)', () => {
   it('参加と同時に他フィールドは変更できない', async () => {
     const db = dbAs(BOB);
     const batch = writeBatch(db);
-    batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE));
+    batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc());
+    batch.set(doc(db, 'books', ALICE, 'joinTokens', BOB), { inviteCode: CODE });
     batch.update(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB), name: '乗っ取り' });
+    await assertFails(batch.commit());
+  });
+
+  it('参加と同時に未知のトップレベルフィールドは追加できない', async () => {
+    const db = dbAs(BOB);
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc());
+    batch.set(doc(db, 'books', ALICE, 'joinTokens', BOB), { inviteCode: CODE });
+    batch.update(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB), injected: true });
     await assertFails(batch.commit());
   });
 
@@ -181,7 +197,7 @@ describe('members サブコレクション', () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const db = context.firestore();
       await updateDoc(doc(db, 'books', ALICE), { memberUids: [ALICE, BOB] });
-      await setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE));
+      await setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc());
     });
   });
 
@@ -215,7 +231,7 @@ describe('members サブコレクション', () => {
   it('他人名義の members doc は作成できない', async () => {
     const db = dbAs(CHARLIE);
     await assertFails(
-      setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE)),
+      setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc()),
     );
   });
 
@@ -244,5 +260,73 @@ describe('members サブコレクション', () => {
     });
     const db = dbAs(CHARLIE);
     await assertFails(deleteDoc(doc(db, 'books', ALICE, 'members', BOB)));
+  });
+});
+
+describe('joinTokens サブコレクション(招待コードの秘匿)', () => {
+  beforeEach(async () => {
+    // BOB が CODE で参加済みの状態(joinTokens にコードが残っている)
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await updateDoc(doc(db, 'books', ALICE), { memberUids: [ALICE, BOB] });
+      await setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc());
+      await setDoc(doc(db, 'books', ALICE, 'joinTokens', BOB), { inviteCode: CODE });
+    });
+  });
+
+  it('本人でも joinTokens(招待コード)を読めない', async () => {
+    const db = dbAs(BOB);
+    await assertFails(getDoc(doc(db, 'books', ALICE, 'joinTokens', BOB)));
+  });
+
+  it('オーナーでも他メンバーの joinTokens を読めない', async () => {
+    const db = dbAs(ALICE);
+    await assertFails(getDoc(doc(db, 'books', ALICE, 'joinTokens', BOB)));
+  });
+
+  it('メンバーでも joinTokens を list できない(コードの再取得・再配布の防止)', async () => {
+    const db = dbAs(BOB);
+    await assertFails(getDocs(collection(db, 'books', ALICE, 'joinTokens')));
+  });
+
+  it('joinTokens は update できない(コードのすり替え防止)', async () => {
+    const db = dbAs(BOB);
+    await assertFails(
+      updateDoc(doc(db, 'books', ALICE, 'joinTokens', BOB), { inviteCode: EXPIRED_CODE }),
+    );
+  });
+
+  it('有効な招待コードなしでは joinTokens を作成できない', async () => {
+    const db = dbAs(CHARLIE);
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE, 'joinTokens', CHARLIE), { inviteCode: EXPIRED_CODE }),
+    );
+  });
+
+  it('他人名義の joinTokens は作成できない', async () => {
+    const db = dbAs(CHARLIE);
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE, 'joinTokens', BOB), { inviteCode: CODE }),
+    );
+  });
+
+  it('inviteCode 以外のフィールドを持つ joinTokens は作成できない', async () => {
+    const db = dbAs(CHARLIE);
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE, 'joinTokens', CHARLIE), {
+        inviteCode: CODE,
+        injected: true,
+      }),
+    );
+  });
+
+  it('本人は自分の joinTokens を削除できる(退出時の掃除)', async () => {
+    const db = dbAs(BOB);
+    await assertSucceeds(deleteDoc(doc(db, 'books', ALICE, 'joinTokens', BOB)));
+  });
+
+  it('オーナーはメンバーの joinTokens を削除できる(メンバー削除時の掃除)', async () => {
+    const db = dbAs(ALICE);
+    await assertSucceeds(deleteDoc(doc(db, 'books', ALICE, 'joinTokens', BOB)));
   });
 });

@@ -82,15 +82,34 @@ describe('sharing api(セキュリティルール下での統合)', () => {
     });
     const bookAfterJoin = await getDoc(doc(dbAs(BOB), 'books', ALICE));
     expect(bookAfterJoin.data()?.memberUids).toEqual([ALICE, BOB]);
+    // members doc は表示名のみで、招待コードを含まない(メンバーに露出させない)
     const memberDoc = await getDoc(doc(dbAs(BOB), 'books', ALICE, 'members', BOB));
-    expect(memberDoc.data()).toMatchObject({ displayName: 'ボブ', inviteCode: code });
+    expect(memberDoc.data()).toMatchObject({ displayName: 'ボブ' });
+    expect(memberDoc.data()).not.toHaveProperty('inviteCode');
 
-    // 本人退出(members doc も掃除される)
+    // 本人退出(members / joinTokens doc も掃除される)
     await leaveBook(dbAs(BOB), ALICE, BOB);
     const bookAfterLeave = await getDoc(doc(dbAs(ALICE), 'books', ALICE));
     expect(bookAfterLeave.data()?.memberUids).toEqual([ALICE]);
     const memberDocAfterLeave = await getDoc(doc(dbAs(ALICE), 'books', ALICE, 'members', BOB));
     expect(memberDocAfterLeave.exists()).toBe(false);
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const tokenDoc = await getDoc(doc(context.firestore(), 'books', ALICE, 'joinTokens', BOB));
+      expect(tokenDoc.exists()).toBe(false);
+    });
+  });
+
+  it('参加後も本人・オーナーとも joinTokens から招待コードを読み出せない', async () => {
+    const code = await createInvite(dbAs(ALICE), { id: ALICE, name: 'アリスの底値帳', ownerUid: ALICE });
+    await joinBook(dbAs(BOB), {
+      bookId: ALICE,
+      inviteCode: code,
+      uid: BOB,
+      displayName: 'ボブ',
+    });
+
+    await assertFails(getDoc(doc(dbAs(BOB), 'books', ALICE, 'joinTokens', BOB)));
+    await assertFails(getDoc(doc(dbAs(ALICE), 'books', ALICE, 'joinTokens', BOB)));
   });
 
   it('オーナーが removeMember でメンバーを削除できる(members doc も掃除)', async () => {

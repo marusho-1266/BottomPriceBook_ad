@@ -57,7 +57,9 @@ function Gate() {
             <Route path="settings/stores" element={<StoresPage />} />
             <Route path="products/:productId" element={<ProductDetailPage />} />
           </Route>
-          {/* 参加フローにタブバーを出さないため AppShell の外に置く(Issue #7) */}
+          {/* 参加フローにタブバーを出さないため AppShell の外に置く(Issue #7)。
+              /join はコード手入力用の入り口 */}
+          <Route path="join" element={<JoinPage />} />
           <Route path="join/:inviteCode" element={<JoinPage />} />
         </Routes>
       </BrowserRouter>

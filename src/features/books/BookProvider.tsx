@@ -51,18 +51,28 @@ export function BookProvider({ uid, children }: { uid: string; children: ReactNo
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     localStorage.getItem(storageKey(uid)),
   );
+  // 明示的に選択したがクエリ未反映の book ID。参加直後はスナップショットに参加先が
+  // 届くまでラグがあるため、反映までフォールバックで選択を潰さないよう保持する(Issue #7)
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  // 選択がクエリに反映されたら保留を解除(レンダー中の状態調整パターン)
+  if (pendingId !== null && books.some((book) => book.id === pendingId)) {
+    setPendingId(null);
+  }
 
   // ロード完了までは保存値(なければ自分の book)を暫定使用し、フォールバック判定しない
   const bookId = loading ? (selectedId ?? uid) : resolveCurrentBookId(books, selectedId, uid);
 
   // 退出・削除などで選択中の book が参照不能になったら state もフォールバック先へ揃える
-  // (レンダー中の状態調整パターン。effect での setState を避ける)
-  if (!loading && selectedId !== null && selectedId !== bookId) {
+  // (レンダー中の状態調整パターン。effect での setState を避ける)。
+  // 反映待ちの選択は消えたのではなくまだ届いていないだけなので揃えない
+  if (!loading && pendingId === null && selectedId !== null && selectedId !== bookId) {
     setSelectedId(bookId);
   }
 
   const setCurrentBookId = useCallback((nextBookId: string) => {
     setSelectedId(nextBookId);
+    setPendingId(nextBookId);
   }, []);
 
   // 選択の永続化(フォールバック時の書き戻しを含む)

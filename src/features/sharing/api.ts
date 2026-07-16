@@ -66,8 +66,9 @@ export function useMembers(bookId: string): { data: WithId<Member>[]; loading: b
 }
 
 /**
- * book に参加する。members doc 作成と memberUids への追加を 1 バッチで行い、
- * セキュリティルールが招待コードの有効性を検証する(要オンライン)
+ * book に参加する。members doc / joinTokens doc の作成と memberUids への追加を
+ * 1 バッチで行い、セキュリティルールが招待コードの有効性を検証する(要オンライン)。
+ * コードは秘密情報のため、メンバーが読める members ではなく誰も読めない joinTokens に置く
  */
 export async function joinBook(
   db: Firestore,
@@ -76,17 +77,20 @@ export async function joinBook(
   const batch = writeBatch(db);
   batch.set(doc(db, 'books', params.bookId, 'members', params.uid), {
     displayName: params.displayName,
-    inviteCode: params.inviteCode,
     joinedAt: serverTimestamp(),
+  });
+  batch.set(doc(db, 'books', params.bookId, 'joinTokens', params.uid), {
+    inviteCode: params.inviteCode,
   });
   batch.update(doc(db, 'books', params.bookId), { memberUids: arrayUnion(params.uid) });
   await batch.commit();
 }
 
-/** members doc の削除と memberUids からの除去を 1 バッチで行う */
+/** members doc / joinTokens doc の削除と memberUids からの除去を 1 バッチで行う */
 async function removeFromBook(db: Firestore, bookId: string, targetUid: string): Promise<void> {
   const batch = writeBatch(db);
   batch.delete(doc(db, 'books', bookId, 'members', targetUid));
+  batch.delete(doc(db, 'books', bookId, 'joinTokens', targetUid));
   batch.update(doc(db, 'books', bookId), { memberUids: arrayRemove(targetUid) });
   await batch.commit();
 }

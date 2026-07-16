@@ -49,20 +49,19 @@ service cloud.firestore {
           && request.time
             < get(/databases/$(database)/documents/invites/$(code)).data.expiresAt;
       }
-      // 参加(join): 「自分の uid の追加のみ + 他フィールド不変」の更新を、
-      // 同一バッチで書かれた members doc の招待コードを getAfter で読んで検証する
+      // 参加(join): 「memberUids のみ・自分の uid の追加のみ」の更新を、
+      // 同一バッチで書かれた joinTokens doc の招待コードを getAfter で読んで検証する。
+      // affectedKeys で任意フィールドの追加・変更も拒否する
       function isSelfJoinWithInvite() {
         return request.auth != null
           && !(request.auth.uid in resource.data.memberUids)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
           && request.resource.data.memberUids.toSet()
             == resource.data.memberUids.toSet().union([request.auth.uid].toSet())
           && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
-          && request.resource.data.name == resource.data.name
-          && request.resource.data.ownerUid == resource.data.ownerUid
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.bottomWindowMonths == resource.data.bottomWindowMonths
           && isValidInviteFor(
-            getAfter(/databases/$(database)/documents/books/$(bookId)/members/$(request.auth.uid))
+            getAfter(
+              /databases/$(database)/documents/books/$(bookId)/joinTokens/$(request.auth.uid))
               .data.inviteCode);
       }
 
@@ -75,18 +74,16 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids;
 
-      // 退出: 自分の uid の除去のみ + 他フィールド不変。オーナー自身は退出不可(Issue #7)
+      // 退出: memberUids のみ・自分の uid の除去のみ。オーナー自身は退出不可(Issue #7)。
+      // affectedKeys で任意フィールドの追加・変更も拒否する
       function isSelfLeave() {
         return request.auth != null
           && request.auth.uid in resource.data.memberUids
           && request.auth.uid != resource.data.ownerUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
           && request.resource.data.memberUids.toSet()
             == resource.data.memberUids.toSet().difference([request.auth.uid].toSet())
-          && request.resource.data.memberUids.size() == resource.data.memberUids.size() - 1
-          && request.resource.data.name == resource.data.name
-          && request.resource.data.ownerUid == resource.data.ownerUid
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.bottomWindowMonths == resource.data.bottomWindowMonths;
+          && request.resource.data.memberUids.size() == resource.data.memberUids.size() - 1;
       }
 
       // ownerUid / createdAt は不変。memberUids の変更は owner のみ(M-3)。
@@ -109,20 +106,38 @@ service cloud.firestore {
         allow write: if isBookMemberAfterWrite();
       }
 
-      // メンバープロフィール(表示名 + join のルール検証マーカー)(Issue #7)。
-      // メンバーシップの真実のソースはあくまで books.memberUids
+      // メンバープロフィール(表示名のみ。Issue #7)。
+      // メンバーシップの真実のソースはあくまで books.memberUids。
+      // 招待コードは秘密情報のためここには置かない(joinTokens に分離)
       match /members/{memberUid} {
         allow read: if isBookMember();
-        // 本人のみ作成可。join バッチ中は book 側の isSelfJoinWithInvite が招待を検証するため
-        // getAfter でメンバーになっていれば可。単独作成は既存メンバーの補完か有効な招待が必要
+        // 本人のみ作成可。join バッチでは book 側の isSelfJoinWithInvite が招待を検証し、
+        // getAfter でメンバーになるため可。単独作成は既存メンバーの補完のみ
         allow create: if request.auth != null
           && request.auth.uid == memberUid
           && request.resource.data.displayName is string
-          && (isBookMemberAfterWrite()
-            || isValidInviteFor(request.resource.data.inviteCode));
-        // 表示名の書き換えや招待コードのすり替えを防ぐため update は不可
+          && isBookMemberAfterWrite();
+        // 表示名の書き換えを防ぐため update は不可
         allow update: if false;
         // 退出(本人)またはオーナーによる削除
+        allow delete: if request.auth != null
+          && (request.auth.uid == memberUid
+            || request.auth.uid
+              == get(/databases/$(database)/documents/books/$(bookId)).data.ownerUid);
+      }
+
+      // 参加検証用の招待コード置き場(Issue #7)。コード自体が秘密情報のため誰も読めない。
+      // book update の isSelfJoinWithInvite が同一バッチ内の doc を getAfter で参照する
+      match /joinTokens/{memberUid} {
+        allow read: if false;
+        // 本人のみ・有効な招待コードのみ・フィールドは inviteCode のみ
+        allow create: if request.auth != null
+          && request.auth.uid == memberUid
+          && request.resource.data.keys().hasOnly(['inviteCode'])
+          && isValidInviteFor(request.resource.data.inviteCode);
+        // コードのすり替えを防ぐため update は不可
+        allow update: if false;
+        // 退出(本人)またはオーナーによる削除(members doc と同じ掃除経路)
         allow delete: if request.auth != null
           && (request.auth.uid == memberUid
             || request.auth.uid

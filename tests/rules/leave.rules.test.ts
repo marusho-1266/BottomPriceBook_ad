@@ -36,10 +36,11 @@ function sharedBook(owner: string, members: string[]) {
   };
 }
 
-/** members doc 削除 + memberUids からの除去を 1 バッチで行う(実装と同じ退出/削除手順) */
+/** members/joinTokens doc 削除 + memberUids からの除去を 1 バッチで行う(実装と同じ退出/削除手順) */
 async function leaveBatch(db: Firestore, bookId: string, targetUid: string) {
   const batch = writeBatch(db);
   batch.delete(doc(db, 'books', bookId, 'members', targetUid));
+  batch.delete(doc(db, 'books', bookId, 'joinTokens', targetUid));
   batch.update(doc(db, 'books', bookId), { memberUids: arrayRemove(targetUid) });
   return batch.commit();
 }
@@ -67,6 +68,9 @@ beforeEach(async () => {
     await setDoc(doc(db, 'books', ALICE, 'members', BOB), {
       displayName: 'ボブ',
       joinedAt: serverTimestamp(),
+    });
+    await setDoc(doc(db, 'books', ALICE, 'joinTokens', BOB), {
+      inviteCode: 'used-invite-code-1234',
     });
   });
 });
@@ -96,6 +100,13 @@ describe('メンバー本人の退出', () => {
     const db = dbAs(BOB);
     await assertFails(
       updateDoc(doc(db, 'books', ALICE), { memberUids: arrayRemove(BOB), name: '改名' }),
+    );
+  });
+
+  it('退出と同時に未知のトップレベルフィールドは追加できない', async () => {
+    const db = dbAs(BOB);
+    await assertFails(
+      updateDoc(doc(db, 'books', ALICE), { memberUids: arrayRemove(BOB), injected: true }),
     );
   });
 

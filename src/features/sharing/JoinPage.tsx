@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthProvider';
@@ -83,7 +83,8 @@ export function JoinPage() {
         <h2 className="text-lg font-extrabold">底値帳への招待</h2>
       </header>
       <section className="mx-4 rounded-2xl bg-surface px-4 py-5">
-        {state.status === 'loading' && (
+        {!inviteCode && <JoinCodeEntry />}
+        {inviteCode && state.status === 'loading' && (
           <p className="text-sm font-bold text-ink-faint">招待を確認中…</p>
         )}
         {state.status === 'notFound' && (
@@ -114,6 +115,51 @@ export function JoinPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+/** 招待リンクを貼り付けた場合もコード部分だけを取り出す */
+function extractInviteCode(input: string): string {
+  const trimmed = input.trim();
+  const lastSlash = trimmed.lastIndexOf('/');
+  return lastSlash >= 0 ? trimmed.slice(lastSlash + 1) : trimmed;
+}
+
+/** 招待コードの手入力フォーム(/join)。spec の「リンクまたはコード入力から参加」 */
+function JoinCodeEntry() {
+  const [input, setInput] = useState('');
+  const navigate = useNavigate();
+  const code = extractInviteCode(input);
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (code) navigate(`/join/${encodeURIComponent(code)}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <label htmlFor="invite-code-input" className="text-sm font-bold">
+        招待コード
+      </label>
+      <p className="text-xs text-ink-faint">
+        受け取った招待コード、または招待リンクを貼り付けてください。
+      </p>
+      <input
+        id="invite-code-input"
+        value={input}
+        onChange={(event) => setInput(event.target.value)}
+        placeholder="例: aB3xY9kLm2PqRs7TuVw0"
+        autoComplete="off"
+        className="h-11 rounded-xl border border-line bg-cream px-3 text-sm"
+      />
+      <button
+        type="submit"
+        disabled={code === ''}
+        className="rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-white disabled:opacity-40"
+      >
+        招待を確認
+      </button>
+    </form>
   );
 }
 

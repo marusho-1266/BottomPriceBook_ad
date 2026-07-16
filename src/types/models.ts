@@ -55,9 +55,15 @@ export interface Invite {
 /** メンバープロフィール。メンバーシップの真実のソースは Book.memberUids */
 export interface Member {
   displayName: string;
-  /** 参加に使用したコード(ルール検証用)。オーナー補完時は無し */
-  inviteCode?: string;
   joinedAt: Timestamp;
+}
+
+/**
+ * 参加検証用の招待コード置き場(books/{bookId}/joinTokens/{uid})。
+ * ルールが getAfter で読むだけで、クライアントは誰も read できない
+ */
+export interface JoinToken {
+  inviteCode: string;
 }
 
 export type WithId<T> = T & { id: string };

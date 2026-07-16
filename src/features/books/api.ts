@@ -27,13 +27,25 @@ export const SEED_CATEGORIES: ReadonlyArray<{
 /**
  * ログインユーザーの book(bookId = uid)が無ければ作成する。
  * トランザクションで存在確認+作成をアトミックに行い、既存 book は一切変更しない(M-5)。
+ * 自分の members doc(表示名。Issue #7)も無ければ補完し、既存なら上書きしない。
  */
-export async function ensureBook(db: Firestore, uid: string): Promise<void> {
+export async function ensureBook(db: Firestore, uid: string, displayName: string): Promise<void> {
   const bookRef = doc(db, 'books', uid);
+  const memberRef = doc(db, 'books', uid, 'members', uid);
   await runTransaction(db, async (tx) => {
-    const snapshot = await tx.get(bookRef);
-    if (snapshot.exists()) return;
+    const bookSnapshot = await tx.get(bookRef);
 
+    if (bookSnapshot.exists()) {
+      // book 未作成時に members を読むとルール(isBookMember の get)で拒否されるため、
+      // 存在確認は book が既にある場合のみ行う
+      const memberSnapshot = await tx.get(memberRef);
+      if (!memberSnapshot.exists()) {
+        tx.set(memberRef, { displayName, joinedAt: serverTimestamp() });
+      }
+      return;
+    }
+
+    tx.set(memberRef, { displayName, joinedAt: serverTimestamp() });
     tx.set(bookRef, {
       name: DEFAULT_BOOK_NAME,
       ownerUid: uid,

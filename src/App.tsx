@@ -12,6 +12,7 @@ import { SettingsPage } from './routes/SettingsPage';
 import { ProductDetailPage } from './routes/ProductDetailPage';
 import { CategoriesPage } from './features/categories/CategoriesPage';
 import { StoresPage } from './features/stores/StoresPage';
+import { JoinPage } from './features/sharing/JoinPage';
 import { db } from './lib/firebase';
 
 function Loading() {
@@ -31,7 +32,7 @@ function Gate() {
     if (!user) return;
     let cancelled = false;
     const uid = user.uid;
-    ensureBook(db, uid).then(() => {
+    ensureBook(db, uid, user.displayName ?? user.email ?? '').then(() => {
       if (!cancelled) setReadyUid(uid);
     });
     return () => {
@@ -56,6 +57,10 @@ function Gate() {
             <Route path="settings/stores" element={<StoresPage />} />
             <Route path="products/:productId" element={<ProductDetailPage />} />
           </Route>
+          {/* 参加フローにタブバーを出さないため AppShell の外に置く(Issue #7)。
+              /join はコード手入力用の入り口 */}
+          <Route path="join" element={<JoinPage />} />
+          <Route path="join/:inviteCode" element={<JoinPage />} />
         </Routes>
       </BrowserRouter>
     </BookProvider>

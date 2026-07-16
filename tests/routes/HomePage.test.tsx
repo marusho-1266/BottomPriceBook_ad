@@ -8,6 +8,11 @@ vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: () => ({
     bookId: 'b1',
     book: { id: 'b1', name: 'テスト', ownerUid: 'u1', memberUids: ['u1'], bottomWindowMonths: 6 },
+    books: [
+      { id: 'b1', name: 'テスト', ownerUid: 'u1', memberUids: ['u1'], bottomWindowMonths: 6 },
+    ],
+    isOwner: true,
+    setCurrentBookId: () => {},
   }),
 }));
 vi.mock('../../src/features/categories/api', () => ({

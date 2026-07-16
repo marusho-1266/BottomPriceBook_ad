@@ -7,6 +7,7 @@ import {
   updateBook,
 } from '../features/books/api';
 import { useBook } from '../features/books/BookProvider';
+import { ShareSettings } from '../features/sharing/ShareSettings';
 import { db } from '../lib/firebase';
 
 function SettingsLink({
@@ -31,7 +32,7 @@ function SettingsLink({
 }
 
 export function SettingsPage() {
-  const { bookId, book } = useBook();
+  const { bookId, book, isOwner } = useBook();
   const bookName = book?.name ?? '';
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const name = nameDraft ?? bookName;
@@ -54,46 +55,60 @@ export function SettingsPage() {
         <h2 className="text-lg font-extrabold">設定</h2>
       </header>
 
+      {/* 名前・対象期間の編集はオーナーのみ。参加中の book では閲覧表示(Issue #7) */}
       <section className="mx-4 rounded-2xl bg-surface px-4 py-4">
         <label htmlFor="book-name" className="text-xs font-bold text-ink-faint">
           底値帳の名前
         </label>
-        <div className="mt-2 flex gap-2">
-          <input
-            id="book-name"
-            value={name}
-            onChange={(e) => setNameDraft(e.target.value)}
-            className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-cream px-3 text-sm outline-none"
-          />
-          <button
-            type="button"
-            onClick={handleNameSave}
-            className="shrink-0 rounded-xl bg-primary px-4 text-xs font-bold text-white"
-          >
-            名前を保存
-          </button>
-        </div>
+        {isOwner ? (
+          <div className="mt-2 flex gap-2">
+            <input
+              id="book-name"
+              value={name}
+              onChange={(e) => setNameDraft(e.target.value)}
+              className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-cream px-3 text-sm outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleNameSave}
+              className="shrink-0 rounded-xl bg-primary px-4 text-xs font-bold text-white"
+            >
+              名前を保存
+            </button>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm font-bold">{bookName}</p>
+        )}
       </section>
 
       <section className="mx-4 mt-4 rounded-2xl bg-surface px-4 py-4">
         <div className="text-xs font-bold text-ink-faint">底値の対象期間</div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {BOTTOM_WINDOW_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleWindowChange(option.value)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${
-                windowMonths === option.value
-                  ? 'bg-primary text-white'
-                  : 'bg-cream text-ink-sub'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        {isOwner ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {BOTTOM_WINDOW_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleWindowChange(option.value)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${
+                  windowMonths === option.value
+                    ? 'bg-primary text-white'
+                    : 'bg-cream text-ink-sub'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm font-bold">
+            {BOTTOM_WINDOW_OPTIONS.find((option) => option.value === windowMonths)?.label ??
+              `${windowMonths}ヶ月`}
+          </p>
+        )}
       </section>
+
+      <ShareSettings />
 
       <div className="mx-4 mt-4 rounded-2xl bg-surface">
         <SettingsLink

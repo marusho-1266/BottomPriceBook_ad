@@ -42,4 +42,22 @@ export interface PriceRecord {
   note?: string;
 }
 
+/** 招待コード。ドキュメント ID(自動 ID)自体が秘密トークン */
+export interface Invite {
+  bookId: string;
+  /** 参加確認画面での表示用スナップショット */
+  bookName: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+}
+
+/** メンバープロフィール。メンバーシップの真実のソースは Book.memberUids */
+export interface Member {
+  displayName: string;
+  /** 参加に使用したコード(ルール検証用)。オーナー補完時は無し */
+  inviteCode?: string;
+  joinedAt: Timestamp;
+}
+
 export type WithId<T> = T & { id: string };

@@ -25,6 +25,10 @@ import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
 
+function dbAs(uid: string): Firestore {
+  return testEnv.authenticatedContext(uid).firestore() as unknown as Firestore;
+}
+
 const ALICE = 'alice-uid';
 const BOB = 'bob-uid';
 const CHARLIE = 'charlie-uid';
@@ -97,37 +101,37 @@ beforeEach(async () => {
 
 describe('招待コードによる参加(join バッチ)', () => {
   it('有効なコードなら members doc + memberUids 追加のバッチで参加できる', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertSucceeds(joinBatch(db, ALICE, BOB, CODE));
   });
 
   it('members doc なしの memberUids 単独更新では参加できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(updateDoc(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB) }));
   });
 
   it('コードなしの members doc では参加できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(joinBatch(db, ALICE, BOB));
   });
 
   it('期限切れコードでは参加できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(joinBatch(db, ALICE, BOB, EXPIRED_CODE));
   });
 
   it('他の book のコードでは参加できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(joinBatch(db, ALICE, BOB, OTHER_BOOK_CODE));
   });
 
   it('存在しないコードでは参加できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(joinBatch(db, ALICE, BOB, 'no-such-code-00000000'));
   });
 
   it('自分以外の uid は追加できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     const batch = writeBatch(db);
     batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE));
     batch.update(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB, CHARLIE) });
@@ -135,7 +139,7 @@ describe('招待コードによる参加(join バッチ)', () => {
   });
 
   it('参加と同時に他フィールドは変更できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     const batch = writeBatch(db);
     batch.set(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE));
     batch.update(doc(db, 'books', ALICE), { memberUids: arrayUnion(BOB), name: '乗っ取り' });
@@ -143,7 +147,7 @@ describe('招待コードによる参加(join バッチ)', () => {
   });
 
   it('参加後は book 配下(categories)を読み書きできる', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await joinBatch(db, ALICE, BOB, CODE);
     const ref = doc(db, 'books', ALICE, 'categories', 'food');
     await assertSucceeds(setDoc(ref, { name: '食品', baseUnit: 'g', sortOrder: 0 }));
@@ -157,14 +161,14 @@ describe('参加中 book の一覧クエリ', () => {
       await updateDoc(doc(context.firestore(), 'books', ALICE), { memberUids: [ALICE, BOB] });
       await setDoc(doc(context.firestore(), 'books', BOB), validBook(BOB));
     });
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertSucceeds(
       getDocs(query(collection(db, 'books'), where('memberUids', 'array-contains', BOB))),
     );
   });
 
   it('他人の uid での array-contains クエリは拒否される', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(
       getDocs(query(collection(db, 'books'), where('memberUids', 'array-contains', ALICE))),
     );
@@ -182,12 +186,12 @@ describe('members サブコレクション', () => {
   });
 
   it('メンバーは members を読める', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertSucceeds(getDocs(collection(db, 'books', ALICE, 'members')));
   });
 
   it('非メンバーは members を読めない', async () => {
-    const db = testEnv.authenticatedContext(CHARLIE).firestore();
+    const db = dbAs(CHARLIE);
     await assertFails(getDocs(collection(db, 'books', ALICE, 'members')));
   });
 
@@ -195,40 +199,40 @@ describe('members サブコレクション', () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await deleteDoc(doc(context.firestore(), 'books', ALICE, 'members', BOB));
     });
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertSucceeds(
       setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc()),
     );
   });
 
   it('非メンバーは招待コードなしで members doc を作成できない', async () => {
-    const db = testEnv.authenticatedContext(CHARLIE).firestore();
+    const db = dbAs(CHARLIE);
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'members', CHARLIE), memberDoc()),
     );
   });
 
   it('他人名義の members doc は作成できない', async () => {
-    const db = testEnv.authenticatedContext(CHARLIE).firestore();
+    const db = dbAs(CHARLIE);
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'members', BOB), memberDoc(CODE)),
     );
   });
 
   it('members doc は update できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(
       updateDoc(doc(db, 'books', ALICE, 'members', BOB), { displayName: '改名' }),
     );
   });
 
   it('本人は自分の members doc を削除できる', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertSucceeds(deleteDoc(doc(db, 'books', ALICE, 'members', BOB)));
   });
 
   it('オーナーはメンバーの members doc を削除できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = dbAs(ALICE);
     await assertSucceeds(deleteDoc(doc(db, 'books', ALICE, 'members', BOB)));
   });
 
@@ -238,7 +242,7 @@ describe('members サブコレクション', () => {
         memberUids: [ALICE, BOB, CHARLIE],
       });
     });
-    const db = testEnv.authenticatedContext(CHARLIE).firestore();
+    const db = dbAs(CHARLIE);
     await assertFails(deleteDoc(doc(db, 'books', ALICE, 'members', BOB)));
   });
 });

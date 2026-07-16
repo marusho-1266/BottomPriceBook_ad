@@ -11,7 +11,7 @@
 
 ## Phase 2: データ層(T4 ∥ T5)
 
-- [ ] T4: 型定義 + `src/features/sharing/api.ts`(M)
+- [x] T4: 型定義 + `src/features/sharing/api.ts`(M)
 - [ ] T5: ensureBook 拡張 — オーナー members doc の冪等補完(S)
 
 ## Phase 3: 切替基盤

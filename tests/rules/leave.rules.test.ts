@@ -18,6 +18,10 @@ import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
 
+function dbAs(uid: string): Firestore {
+  return testEnv.authenticatedContext(uid).firestore() as unknown as Firestore;
+}
+
 const ALICE = 'alice-uid';
 const BOB = 'bob-uid';
 const CHARLIE = 'charlie-uid';
@@ -69,17 +73,17 @@ beforeEach(async () => {
 
 describe('メンバー本人の退出', () => {
   it('メンバーは members doc 削除 + memberUids 除去のバッチで退出できる', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertSucceeds(leaveBatch(db, ALICE, BOB));
   });
 
   it('オーナーは自分の book から退出できない', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = dbAs(ALICE);
     await assertFails(updateDoc(doc(db, 'books', ALICE), { memberUids: arrayRemove(ALICE) }));
   });
 
   it('メンバーは他人の uid を除去できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(updateDoc(doc(db, 'books', ALICE), { memberUids: arrayRemove(CHARLIE) }));
   });
 
@@ -89,14 +93,14 @@ describe('メンバー本人の退出', () => {
   });
 
   it('退出と同時に他フィールドは変更できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(
       updateDoc(doc(db, 'books', ALICE), { memberUids: arrayRemove(BOB), name: '改名' }),
     );
   });
 
   it('退出と同時に自分以外の uid は除去できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = dbAs(BOB);
     await assertFails(
       updateDoc(doc(db, 'books', ALICE), { memberUids: [ALICE] }),
     );
@@ -105,12 +109,12 @@ describe('メンバー本人の退出', () => {
 
 describe('オーナーによるメンバー削除(既存ルールの固定化)', () => {
   it('オーナーは members doc 削除 + memberUids 除去のバッチでメンバーを削除できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = dbAs(ALICE);
     await assertSucceeds(leaveBatch(db, ALICE, BOB));
   });
 
   it('オーナー以外のメンバーは他メンバーを削除できない', async () => {
-    const db = testEnv.authenticatedContext(CHARLIE).firestore();
+    const db = dbAs(CHARLIE);
     await assertFails(leaveBatch(db, ALICE, BOB));
   });
 });

@@ -1,0 +1,97 @@
+import {
+  Timestamp,
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  getDocFromServer,
+  serverTimestamp,
+  setDoc,
+  writeBatch,
+  type Firestore,
+} from 'firebase/firestore';
+import type { Book, Invite, WithId } from '../../types/models';
+
+/** 招待コードの有効期限(日) */
+export const INVITE_TTL_DAYS = 7;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 招待コードを発行する(オーナーのみ。ルールで強制)。
+ * 戻り値は invites の自動 ID = 招待コード。ログ等に出力しないこと
+ */
+export async function createInvite(
+  db: Firestore,
+  book: Pick<WithId<Book>, 'id' | 'name' | 'ownerUid'>,
+): Promise<string> {
+  const ref = doc(collection(db, 'invites'));
+  await setDoc(ref, {
+    bookId: book.id,
+    bookName: book.name,
+    createdBy: book.ownerUid,
+    createdAt: serverTimestamp(),
+    expiresAt: Timestamp.fromMillis(Date.now() + INVITE_TTL_DAYS * DAY_MS),
+  });
+  return ref.id;
+}
+
+/**
+ * 招待コードから招待を取得する。存在しなければ null。
+ * オフラインキャッシュの stale な招待で参加させないため、常にサーバーから読む
+ */
+export async function fetchInvite(db: Firestore, code: string): Promise<WithId<Invite> | null> {
+  const snapshot = await getDocFromServer(doc(db, 'invites', code));
+  if (!snapshot.exists()) return null;
+  return { id: snapshot.id, ...(snapshot.data() as Invite) };
+}
+
+/** 期限内なら true。境界はルールの request.time < expiresAt と揃える */
+export function isInviteValid(invite: Pick<Invite, 'expiresAt'>, now: Date = new Date()): boolean {
+  return now.getTime() < invite.expiresAt.toMillis();
+}
+
+/** 招待リンクを組み立てる */
+export function buildInviteUrl(code: string, origin: string = window.location.origin): string {
+  return `${origin}/join/${code}`;
+}
+
+/**
+ * book に参加する。members doc 作成と memberUids への追加を 1 バッチで行い、
+ * セキュリティルールが招待コードの有効性を検証する(要オンライン)
+ */
+export async function joinBook(
+  db: Firestore,
+  params: { bookId: string; inviteCode: string; uid: string; displayName: string },
+): Promise<void> {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'books', params.bookId, 'members', params.uid), {
+    displayName: params.displayName,
+    inviteCode: params.inviteCode,
+    joinedAt: serverTimestamp(),
+  });
+  batch.update(doc(db, 'books', params.bookId), { memberUids: arrayUnion(params.uid) });
+  await batch.commit();
+}
+
+/** members doc の削除と memberUids からの除去を 1 バッチで行う */
+async function removeFromBook(db: Firestore, bookId: string, targetUid: string): Promise<void> {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'books', bookId, 'members', targetUid));
+  batch.update(doc(db, 'books', bookId), { memberUids: arrayRemove(targetUid) });
+  await batch.commit();
+}
+
+/** 参加中の book から本人が退出する(オーナーは不可。ルールで強制) */
+export async function leaveBook(db: Firestore, bookId: string, uid: string): Promise<void> {
+  await removeFromBook(db, bookId, uid);
+}
+
+/** オーナーがメンバーを削除する。当人の価格記録は削除しない(book に帰属) */
+export async function removeMember(
+  db: Firestore,
+  bookId: string,
+  targetUid: string,
+): Promise<void> {
+  await removeFromBook(db, bookId, targetUid);
+}

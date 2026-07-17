@@ -6,7 +6,7 @@ import { AccountDeletionError, deleteAccount, reauthenticate } from './api';
 /** 退会(アカウント削除)の確認・再認証ダイアログ */
 export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
   const { user } = useAuth();
-  const { book, isOwner } = useBook();
+  const { books } = useBook();
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +66,10 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
   if (!user) return null;
 
   const isEmailProvider = user.providerData[0]?.providerId === 'password';
-  const hasOtherMembers = isOwner && (book?.memberUids.length ?? 0) > 1;
+  // 削除対象は表示中の book ではなく常に自分の book(bookId = uid)なので、
+  // 現在表示中かどうかに関わらず自分の book のメンバー数で判定する
+  const ownBook = books.find((candidate) => candidate.ownerUid === user.uid);
+  const hasOtherMembers = (ownBook?.memberUids.length ?? 0) > 1;
   const confirmDisabled = submitting || (isEmailProvider && password.length === 0);
 
   async function handleConfirm() {

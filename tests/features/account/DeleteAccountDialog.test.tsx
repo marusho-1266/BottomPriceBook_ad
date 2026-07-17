@@ -30,11 +30,11 @@ vi.mock('../../../src/features/auth/AuthProvider', () => ({
 
 const { DeleteAccountDialog } = await import('../../../src/features/account/DeleteAccountDialog');
 
-function makeBook(memberUids: string[]): WithId<Book> {
+function makeBook(id: string, ownerUid: string, memberUids: string[]): WithId<Book> {
   return {
-    id: ALICE,
+    id,
     name: 'わたしの底値帳',
-    ownerUid: ALICE,
+    ownerUid,
     memberUids,
     bottomWindowMonths: 6,
     createdAt: Timestamp.now(),
@@ -42,15 +42,16 @@ function makeBook(memberUids: string[]): WithId<Book> {
 }
 
 function setup({
-  memberUids = [ALICE],
-  isOwner = true,
+  books = [makeBook(ALICE, ALICE, [ALICE])],
+  currentBookId = books[0].id,
   providerId = 'password',
-}: { memberUids?: string[]; isOwner?: boolean; providerId?: string } = {}) {
+}: { books?: WithId<Book>[]; currentBookId?: string; providerId?: string } = {}) {
+  const current = books.find((candidate) => candidate.id === currentBookId) ?? null;
   mocks.useBook.mockReturnValue({
-    bookId: ALICE,
-    book: makeBook(memberUids),
-    books: [makeBook(memberUids)],
-    isOwner,
+    bookId: currentBookId,
+    book: current,
+    books,
+    isOwner: current?.ownerUid === ALICE,
     setCurrentBookId: vi.fn(),
   });
   mocks.useAuth.mockReturnValue({
@@ -157,21 +158,34 @@ describe('DeleteAccountDialog(Google ユーザー)', () => {
 
 describe('DeleteAccountDialog(共有メンバーの有無)', () => {
   it('自分の book に他のメンバーがいる場合は警告を表示する', () => {
-    setup({ memberUids: [ALICE, BOB], isOwner: true });
+    setup({ books: [makeBook(ALICE, ALICE, [ALICE, BOB])] });
     render(<DeleteAccountDialog onCancel={vi.fn()} />);
 
     expect(screen.getByText(/メンバーもこの底値帳を使えなくなります/)).toBeInTheDocument();
   });
 
   it('自分だけの book では警告を表示しない', () => {
-    setup({ memberUids: [ALICE], isOwner: true });
+    setup({ books: [makeBook(ALICE, ALICE, [ALICE])] });
     render(<DeleteAccountDialog onCancel={vi.fn()} />);
 
     expect(screen.queryByText(/メンバーもこの底値帳を使えなくなります/)).not.toBeInTheDocument();
   });
 
-  it('参加中(非オーナー)の book では警告を表示しない', () => {
-    setup({ memberUids: [BOB, ALICE], isOwner: false });
+  it('参加中の他人の book を表示中でも、自分の book にメンバーがいれば警告を表示する', () => {
+    // ダイアログを開いた時点で表示中の book はボブの book(非オーナー)だが、
+    // 削除対象は常に自分の book(bookId=ALICE)なので、その方のメンバー数で判定する
+    const ownBook = makeBook(ALICE, ALICE, [ALICE, BOB]);
+    const bobsBook = makeBook(BOB, BOB, [BOB, ALICE]);
+    setup({ books: [ownBook, bobsBook], currentBookId: BOB });
+    render(<DeleteAccountDialog onCancel={vi.fn()} />);
+
+    expect(screen.getByText(/メンバーもこの底値帳を使えなくなります/)).toBeInTheDocument();
+  });
+
+  it('参加中の他人の book が大人数でも、自分の book が単独なら警告を表示しない', () => {
+    const ownBook = makeBook(ALICE, ALICE, [ALICE]);
+    const bobsBook = makeBook(BOB, BOB, [BOB, ALICE, 'charlie-uid']);
+    setup({ books: [ownBook, bobsBook], currentBookId: BOB });
     render(<DeleteAccountDialog onCancel={vi.fn()} />);
 
     expect(screen.queryByText(/メンバーもこの底値帳を使えなくなります/)).not.toBeInTheDocument();

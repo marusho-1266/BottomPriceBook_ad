@@ -1,6 +1,6 @@
 # Spec: Issue #13 アカウント削除(退会)機能
 
-> Status: **Draft(レビュー待ち)** / 作成: 2026-07-17
+> Status: **Implemented(実装済み・2026-07-17。デプロイと Blaze プラン切替は未実施)** / 作成: 2026-07-17
 > 対象 Issue: [#13 アカウント削除(退会)機能](https://github.com/marusho-1266/BottomPriceBook_ad/issues/13)
 > 親仕様: `docs/spec.md` / 関連: `docs/spec-issue7.md`(共有機能のデータモデルを前提とする)
 

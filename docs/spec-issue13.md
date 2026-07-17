@@ -70,7 +70,7 @@
 
 ## Tech Stack(追加分)
 
-- `firebase-functions` v6(v2 API)/ `firebase-admin`(functions/ 配下の独立 npm パッケージ)
+- `firebase-functions` v7(v2 API)/ `firebase-admin`(functions/ 配下の独立 npm パッケージ)
 - クライアント: `firebase/functions` の `httpsCallable`(既存 firebase パッケージに同梱。新規依存なし)
 - **Firebase プロジェクトを Blaze プランへ切替**(デプロイ前に手動作業。予算アラート設定を含む)
 

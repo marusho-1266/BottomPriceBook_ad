@@ -12,7 +12,7 @@
 - [x] **I13-T1: functions/ scaffold + firebase.json 設定**
   - 内容: `functions/` を独立 npm パッケージとして新設
     (`package.json` / `tsconfig.json` / `src/index.ts`)。
-    `firebase-functions` v6(v2 API)と `firebase-admin` を導入し、
+    `firebase-functions` v7(v2 API)と `firebase-admin` を導入し、
     リージョン `asia-northeast1` で**空の Callable `deleteAccount`**
     (auth 検証のみ → `{ ok: true }` を返す)をエクスポートする。
     `firebase.json` に `functions` 設定と emulators の functions ポート(5001)を追加。

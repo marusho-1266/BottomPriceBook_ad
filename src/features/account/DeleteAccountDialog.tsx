@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useBook } from '../books/BookProvider';
 import { AccountDeletionError, deleteAccount, reauthenticate } from './api';
@@ -10,6 +10,58 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // 呼び出し側がインライン関数を渡してもフォーカス管理の effect を張り直さないよう ref 経由で参照する
+  const onCancelRef = useRef(onCancel);
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+  const submittingRef = useRef(submitting);
+  useEffect(() => {
+    submittingRef.current = submitting;
+  }, [submitting]);
+
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusables = () =>
+      Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled])',
+        ) ?? [],
+      );
+    focusables()[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (submittingRef.current) return;
+        event.stopPropagation();
+        onCancelRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      // Tab をダイアログ内に閉じ込める(端で反対端へループ)
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const inside = active instanceof Node && panelRef.current?.contains(active);
+      if (event.shiftKey) {
+        if (!inside || active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (!inside || active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      opener?.focus();
+    };
+  }, []);
 
   if (!user) return null;
 
@@ -39,6 +91,7 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
         className="absolute inset-0 bg-ink/30"
       />
       <div
+        ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-label="アカウントを削除"

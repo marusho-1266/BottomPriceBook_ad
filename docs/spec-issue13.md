@@ -130,18 +130,29 @@ tests/features/account/        → クライアント側の単体・コンポー
 
 ## Success Criteria
 
-- [ ] 設定画面に退会ボタンがあり、確認ダイアログ → 再認証 → 削除が完走する
-- [ ] 退会後、同じアカウントでログインできない(Auth ユーザーが消えている)
-- [ ] 自分の book とサブコレクション(価格記録・商品・店舗・カテゴリ・members・joinTokens)が
-      すべて消えている(エミュレータで確認)
-- [ ] 自分が発行した招待コードが消えている
-- [ ] 参加中だった他人の book から退出済み(memberUids に uid が残っていない)で、
-      自分が記録した価格データは残っている
-- [ ] 自分の book のメンバーだったユーザーは、次回アクセス時に自分の book へフォールバックする
-- [ ] 再認証に失敗した場合、削除は実行されない
-- [ ] Firestore 削除の途中で失敗しても、再実行で完走できる(冪等)
-- [ ] 既存テスト(`npm run test` / `npm run test:rules`)がすべて通る
-- [ ] `npm run lint` / `npm run build` が通る
+検証は 2026-07-17、エミュレータ(Firestore/Auth/Functions)+ 自動テストで実施。
+「E2E」は `tests/e2e/deleteAccount.e2e.test.ts`(実クライアント API × 実エミュレータ)。
+
+- [x] 設定画面に退会ボタンがあり、確認ダイアログ → 再認証 → 削除が完走する
+      (SettingsPage/DeleteAccountDialog のコンポーネントテスト + E2E で確認)
+- [x] 退会後、同じアカウントでログインできない(Auth ユーザーが消えている)
+      (E2E: 削除後の signIn が reject、`adminAuth.getUser` も reject)
+- [x] 自分の book とサブコレクション(価格記録・商品・店舗・カテゴリ・members・joinTokens)が
+      すべて消えている(functions/deleteAccount.test.ts で recursiveDelete を確認。
+      E2E ではオーナー退会で book 本体の消滅を確認)
+- [x] 自分が発行した招待コードが消えている(functions テスト + E2E オーナー退会シナリオ)
+- [x] 参加中だった他人の book から退出済み(memberUids に uid が残っていない)で、
+      自分が記録した価格データは残っている(functions テスト + E2E メンバー退会シナリオ)
+- [x] 自分の book のメンバーだったユーザーは、次回アクセス時に自分の book へフォールバックする
+      (E2E: オーナー退会後、bob の `array-contains` クエリ結果 + `resolveCurrentBookId` で確認)
+- [x] 再認証に失敗した場合、削除は実行されない
+      (DeleteAccountDialog / account/api の単体テストで確認。E2E では未再検証)
+- [x] Firestore 削除の途中で失敗しても、再実行で完走できる(冪等)
+      (functions/deleteAccount.test.ts: 2 回実行しても失敗しないテストで確認)
+- [x] 既存テスト(`npm run test` / `npm run test:rules`)がすべて通る
+      (215/215・84/84 でグリーン。2026-07-17 時点)
+- [x] `npm run build` が通る。`npm run lint` は本 Issue の変更範囲では新規エラーなし
+      (`JoinPage.tsx` に無関係の pre-existing エラーが 1 件残存。Issue #13 のスコープ外)
 
 ## 将来スコープ(本 Issue に含めない)
 

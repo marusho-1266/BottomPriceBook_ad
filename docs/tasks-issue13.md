@@ -26,7 +26,7 @@
     `functions/src/index.ts`, `firebase.json`, `.gitignore`(functions/lib 等)
   - 依存: なし / 規模: M
 
-- [ ] **I13-T2: deleteAccount 本体(削除ロジック 4 ステップ)**
+- [x] **I13-T2: deleteAccount 本体(削除ロジック 4 ステップ)**
   - 内容: `request.auth.uid` を起点に以下を順に実行する(uid は引数で受け取らない):
     1. `invites` の `createdBy == uid` を全削除
     2. `memberUids array-contains uid` かつ `ownerUid != uid` の book すべてから退出
@@ -46,11 +46,11 @@
   - 依存: I13-T1 / 規模: M
 
 ### Checkpoint 1(= plan の Phase 1 完了)
-- [ ] エミュレータで削除の全ステップが期待どおり(消えるもの/残るもの/冪等性)
+- [x] エミュレータで削除の全ステップが期待どおり(消えるもの/残るもの/冪等性)
 
 ## Phase 2: クライアント API
 
-- [ ] **I13-T3: src/lib/firebase.ts に functions インスタンス追加**
+- [x] **I13-T3: src/lib/firebase.ts に functions インスタンス追加**
   - 内容: `getFunctions(app, 'asia-northeast1')` を export し、
     `useEmulators` 時は `connectFunctionsEmulator(functions, '127.0.0.1', 5001)` を接続する
   - Acceptance: 既存の auth / db の初期化に影響がない(全既存テストが通る)
@@ -58,7 +58,7 @@
   - Files: `src/lib/firebase.ts`
   - 依存: I13-T1(ポート・リージョンのコントラクト)/ 規模: XS
 
-- [ ] **I13-T4: src/features/account/api.ts(再認証 + 呼び出し + 後処理)**
+- [x] **I13-T4: src/features/account/api.ts(再認証 + 呼び出し + 後処理)**
   - 内容: 以下を提供する(TDD: テストを先に書く):
     - `reauthenticate(password?)`: プロバイダ判定。メール/パスワードは
       `reauthenticateWithCredential`、Google は `reauthenticateWithPopup`
@@ -75,7 +75,7 @@
 
 ## Phase 3: UI
 
-- [ ] **I13-T5: DeleteAccountDialog(確認 + 再認証 UI)**
+- [x] **I13-T5: DeleteAccountDialog(確認 + 再認証 UI)**
   - 内容: 確認ダイアログコンポーネントを新設:
     - 削除される内容の列挙(自分の底値帳と全記録・発行済み招待・参加中 book からの退出)
     - 自 book に自分以外のメンバーがいる場合のみ
@@ -91,7 +91,7 @@
     `tests/features/account/DeleteAccountDialog.test.tsx`
   - 依存: I13-T4(api のインターフェース。モック注入で並行着手可)/ 規模: M
 
-- [ ] **I13-T6: SettingsPage への退会ボタン組み込み**
+- [x] **I13-T6: SettingsPage への退会ボタン組み込み**
   - 内容: ログアウトボタンの下に「アカウントを削除(退会)」ボタン(危険色)を追加し、
     DeleteAccountDialog を開く。削除成功後は Auth 状態変化により
     ログイン画面へ遷移する(既存の auth guard 挙動を利用)。
@@ -104,7 +104,7 @@
   - 依存: I13-T5 / 規模: S
 
 ### Checkpoint 2(= plan の Phase 3 完了)
-- [ ] `npm run test` / `npm run test:rules` / `npm run lint` / `npm run build` すべてグリーン
+- [x] `npm run test` / `npm run test:rules` / `npm run lint` / `npm run build` すべてグリーン
 
 ## Phase 4: 検証・ドキュメント
 

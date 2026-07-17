@@ -9,7 +9,7 @@
 
 ## Phase 1: Functions 基盤
 
-- [ ] **I13-T1: functions/ scaffold + firebase.json 設定**
+- [x] **I13-T1: functions/ scaffold + firebase.json 設定**
   - 内容: `functions/` を独立 npm パッケージとして新設
     (`package.json` / `tsconfig.json` / `src/index.ts`)。
     `firebase-functions` v6(v2 API)と `firebase-admin` を導入し、

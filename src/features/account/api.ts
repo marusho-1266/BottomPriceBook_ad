@@ -4,8 +4,9 @@ import {
   reauthenticateWithCredential,
   reauthenticateWithPopup,
 } from 'firebase/auth';
+import { clearIndexedDbPersistence, terminate } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { auth, functions } from '../../lib/firebase';
+import { auth, db, functions } from '../../lib/firebase';
 import { storageKey } from '../books/BookProvider';
 
 export class AccountDeletionError extends Error {
@@ -82,7 +83,16 @@ export async function reauthenticate(password?: string): Promise<void> {
   }
 }
 
-/** deleteAccount Callable を呼び出し、成功時は現在の book 選択を端末から消す */
+/**
+ * deleteAccount Callable を呼び出す。成功時は端末に残るデータを消す:
+ * Firestore のオフライン永続化(IndexedDB)には削除済みアカウントのデータが
+ * キャッシュされたまま残るため、共有・貸出端末での漏洩を防ぐため消去し、
+ * 続けて現在の book 選択も端末から消す。
+ * `terminate(db)` はアプリ全体で共有しているモジュールシングルトンの
+ * Firestore クライアントを以後使用不能にするため、最後に画面を
+ * ハードリロードして新しいインスタンスで再初期化させる
+ * (リロードしないと、同一タブでの以後の Firestore 操作がすべて失敗する)
+ */
 export async function deleteAccount(uid: string): Promise<void> {
   try {
     const call = httpsCallable(functions, 'deleteAccount');
@@ -91,5 +101,8 @@ export async function deleteAccount(uid: string): Promise<void> {
     throw mapDeleteAccountError(error);
   }
 
+  await terminate(db);
+  await clearIndexedDbPersistence(db);
   localStorage.removeItem(storageKey(uid));
+  window.location.reload();
 }

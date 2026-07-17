@@ -6,21 +6,26 @@ const {
   EmailAuthProviderCredential,
   GoogleAuthProvider,
   httpsCallable,
+  terminate,
+  clearIndexedDbPersistence,
 } = vi.hoisted(() => ({
   reauthenticateWithCredential: vi.fn(),
   reauthenticateWithPopup: vi.fn(),
   EmailAuthProviderCredential: vi.fn((email: string, password: string) => ({ email, password })),
   GoogleAuthProvider: vi.fn(function GoogleAuthProviderStub(this: unknown) {}),
   httpsCallable: vi.fn(),
+  terminate: vi.fn().mockResolvedValue(undefined),
+  clearIndexedDbPersistence: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../../src/lib/firebase', () => ({ auth: {}, functions: {} }));
+vi.mock('../../../src/lib/firebase', () => ({ auth: {}, db: {}, functions: {} }));
 vi.mock('firebase/auth', () => ({
   reauthenticateWithCredential,
   reauthenticateWithPopup,
   GoogleAuthProvider,
   EmailAuthProvider: { credential: EmailAuthProviderCredential },
 }));
+vi.mock('firebase/firestore', () => ({ terminate, clearIndexedDbPersistence }));
 vi.mock('firebase/functions', () => ({ httpsCallable }));
 
 import { auth } from '../../../src/lib/firebase';
@@ -106,29 +111,50 @@ describe('reauthenticate', () => {
 });
 
 describe('deleteAccount', () => {
+  let reloadSpy: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // jsdom はナビゲーションを実装しないため reload() をスタブする
+    reloadSpy = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload: reloadSpy });
   });
 
-  it('Callable を呼び、成功したら currentBookId を localStorage から消す', async () => {
+  it('Callable を呼び、成功したら Firestore の永続化キャッシュを消してから currentBookId を localStorage から消し、画面をリロードする', async () => {
     const callable = vi.fn().mockResolvedValue({ data: { ok: true } });
     httpsCallable.mockReturnValue(callable);
     localStorage.setItem(storageKey('uid-1'), 'some-book-id');
+    const callOrder: string[] = [];
+    terminate.mockImplementation(async () => {
+      callOrder.push('terminate');
+    });
+    clearIndexedDbPersistence.mockImplementation(async () => {
+      callOrder.push('clearIndexedDbPersistence');
+    });
+    reloadSpy.mockImplementation(() => {
+      callOrder.push('reload');
+    });
 
     await deleteAccount('uid-1');
 
     expect(httpsCallable).toHaveBeenCalledWith({}, 'deleteAccount');
     expect(callable).toHaveBeenCalledTimes(1);
+    expect(terminate).toHaveBeenCalledTimes(1);
+    expect(clearIndexedDbPersistence).toHaveBeenCalledTimes(1);
+    expect(callOrder).toEqual(['terminate', 'clearIndexedDbPersistence', 'reload']);
     expect(localStorage.getItem(storageKey('uid-1'))).toBeNull();
   });
 
-  it('失敗時は AccountDeletionError に変換し、localStorage は消さない', async () => {
+  it('失敗時は AccountDeletionError に変換し、キャッシュ消去も localStorage 消去もリロードも行わない', async () => {
     const callable = vi.fn().mockRejectedValue({ code: 'functions/unauthenticated' });
     httpsCallable.mockReturnValue(callable);
     localStorage.setItem(storageKey('uid-1'), 'some-book-id');
 
     await expect(deleteAccount('uid-1')).rejects.toBeInstanceOf(AccountDeletionError);
+    expect(terminate).not.toHaveBeenCalled();
+    expect(clearIndexedDbPersistence).not.toHaveBeenCalled();
+    expect(reloadSpy).not.toHaveBeenCalled();
     expect(localStorage.getItem(storageKey('uid-1'))).toBe('some-book-id');
   });
 });

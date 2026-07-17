@@ -64,7 +64,11 @@
    - 共有メンバーがいる場合は「メンバーもこの底値帳を使えなくなります」と警告
 2. 再認証(メール: パスワード再入力 / Google: `reauthenticateWithPopup`)
 3. `deleteAccount` を呼び出し、処理中はボタンを無効化してスピナー表示
-4. 成功: localStorage の currentBookId をクリア → サインアウト状態になりログイン画面へ
+4. 成功: Firestore のオフライン永続化キャッシュ(IndexedDB)を消去
+   (`terminate` → `clearIndexedDbPersistence`。共有・貸出端末での漏洩防止)→
+   localStorage の currentBookId をクリア → 画面をハードリロード
+   (`terminate` でモジュール共有の Firestore クライアントが以後使用不能になるため、
+   新しいインスタンスで再初期化させる)→ サインアウト状態のためログイン画面へ
 5. 失敗: エラーメッセージ表示。再ログイン後に再実行すればリトライ可能(冪等に設計)
 
 ### 冪等性・失敗時の扱い

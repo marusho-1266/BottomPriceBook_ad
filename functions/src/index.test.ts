@@ -20,12 +20,42 @@ test('未認証の呼び出しは unauthenticated エラーになる', async () 
   );
 });
 
-test('認証済みの呼び出しは { ok: true } を返す(削除対象データなし)', async () => {
-  const request = {
-    auth: { uid: 'index-test-uid-no-data', token: {} },
-  } as unknown as CallableRequest;
+function requestWithAuthTime(uid: string, authTimeSecondsAgo: number | undefined): CallableRequest {
+  const auth_time =
+    authTimeSecondsAgo === undefined ? undefined : Date.now() / 1000 - authTimeSecondsAgo;
+  return { auth: { uid, token: { auth_time } } } as unknown as CallableRequest;
+}
+
+test('直近に再認証済み(auth_time が新しい)なら { ok: true } を返す(削除対象データなし)', async () => {
+  const request = requestWithAuthTime('index-test-uid-no-data', 60);
 
   const result = await handleDeleteAccount(request);
 
   assert.deepEqual(result, { ok: true });
+});
+
+test('auth_time が古い(5 分超)場合は unauthenticated エラーになり削除を実行しない', async () => {
+  const request = requestWithAuthTime('index-test-uid-stale-auth', 10 * 60);
+
+  await assert.rejects(
+    () => handleDeleteAccount(request),
+    (error: unknown) =>
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'unauthenticated' &&
+      error.message === '再認証してからもう一度お試しください',
+  );
+});
+
+test('auth_time が無い場合は unauthenticated エラーになる', async () => {
+  const request = requestWithAuthTime('index-test-uid-no-auth-time', undefined);
+
+  await assert.rejects(
+    () => handleDeleteAccount(request),
+    (error: unknown) =>
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'unauthenticated' &&
+      error.message === '再認証してからもう一度お試しください',
+  );
 });

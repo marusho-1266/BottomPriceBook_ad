@@ -33,6 +33,16 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
 // 共有セクションは専用テストで検証済み。実 Firestore 購読を避けるためモックする
 vi.mock('../../src/features/sharing/ShareSettings', () => ({ ShareSettings: () => null }));
+// 退会ダイアログ自体の挙動は専用テスト(DeleteAccountDialog.test.tsx)で検証済み
+vi.mock('../../src/features/account/DeleteAccountDialog', () => ({
+  DeleteAccountDialog: ({ onCancel }: { onCancel: () => void }) => (
+    <div role="alertdialog" aria-label="アカウントを削除(モック)">
+      <button type="button" onClick={onCancel}>
+        閉じる(モック)
+      </button>
+    </div>
+  ),
+}));
 
 import { SettingsPage } from '../../src/routes/SettingsPage';
 import { db } from '../../src/lib/firebase';
@@ -93,6 +103,22 @@ describe('SettingsPage', () => {
     );
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
     expect(signOut).toHaveBeenCalled();
+  });
+
+  it('退会ボタンから確認ダイアログを開閉できる', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'アカウントを削除(退会)' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '閉じる(モック)' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
   it('参加中の book(非オーナー)では名前・期間の編集 UI が出ない(Issue #7)', () => {

@@ -41,9 +41,23 @@ async function leaveOtherBooks(firestore: Firestore, uid: string): Promise<void>
   );
 }
 
-/** 自分の book をサブコレクション込みで再帰削除する */
+/**
+ * 自分の book をサブコレクション込みで再帰削除する。
+ * recursiveDelete はサブコレクション横断でアトミックではないため、先に
+ * `deleting: true` をトランザクションで立ててから消す。この間、
+ * firestore.rules 側で該当 book 配下への書き込みを拒否し(Issue #13)、
+ * 削除中に他メンバーが書き込んだドキュメントが親を失った孤児として
+ * 残ってしまう競合を防ぐ
+ */
 async function deleteOwnBook(firestore: Firestore, uid: string): Promise<void> {
-  await firestore.recursiveDelete(firestore.collection('books').doc(uid));
+  const bookRef = firestore.collection('books').doc(uid);
+  await firestore.runTransaction(async (tx) => {
+    const snapshot = await tx.get(bookRef);
+    if (snapshot.exists) {
+      tx.update(bookRef, { deleting: true });
+    }
+  });
+  await firestore.recursiveDelete(bookRef);
 }
 
 /** Auth ユーザーを削除する。既に存在しない場合は成功扱い(冪等) */

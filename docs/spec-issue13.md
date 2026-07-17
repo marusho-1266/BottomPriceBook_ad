@@ -16,8 +16,10 @@
 ## 前提(仮定 — 誤りがあれば指摘してください)
 
 1. 削除は **Callable Function がサーバー側(Admin SDK)で実行**する。Admin SDK はセキュリティルールを
-   バイパスするため、**firestore.rules の変更は不要**(`books` の `allow delete: if false` は
-   クライアント直接削除の禁止として維持する)
+   バイパスするため、**削除処理自体に firestore.rules の変更は不要**(`books` の `allow delete: if false` は
+   クライアント直接削除の禁止として維持する)。ただし `recursiveDelete` はサブコレクション横断で
+   アトミックではなく、削除中に他メンバーが書き込んだドキュメントが親を失った孤児として残る
+   競合があるため、`deleting: true` フラグ + firestore.rules 側の書き込み拒否を追加した(後述)
 2. Admin SDK による Auth ユーザー削除は「直近ログイン」要件の対象外だが、
    誤操作・端末貸出時の悪用防止のため **クライアント側で再認証を必須**とする
 3. 参加中の他人の book に自分が記録した価格データは**削除しない**(Issue #7 の方針
@@ -120,7 +122,8 @@ tests/features/account/        → クライアント側の単体・コンポー
   - 参加中 book の価格記録は削除しない(退出のみ)
   - Blaze 切替時に予算アラート(例: 月 500 円)を設定する
 - **Ask first**
-  - firestore.rules の変更(本 spec では不要の想定。必要になったら確認)
+  - firestore.rules のさらなる変更(削除中の書き込み拒否用に `deleting` フラグ判定を
+    book 本体+5 サブコレクションへ追加済み。2026-07-18 コードレビュー対応)
   - functions/ への新規依存パッケージ追加
   - 削除対象コレクションの追加・変更
 - **Never**

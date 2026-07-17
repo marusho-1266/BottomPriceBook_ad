@@ -42,6 +42,14 @@ service cloud.firestore {
           && request.auth.uid
             in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }
+      // アカウント削除(Issue #13)の recursiveDelete 実行中は書き込みを一切禁止し、
+      // 並行書き込みが親 book 削除後に孤児ドキュメントとして残る競合を防ぐ。
+      // book 作成トランザクション中(book 未作成)は exists() で短絡し false を返す
+      // (get() は存在しないドキュメントへのアクセスでエラーになるため)
+      function bookIsDeleting() {
+        return exists(/databases/$(database)/documents/books/$(bookId))
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
+      }
       // 招待コードがこの book のもので期限内かを検証(Issue #7)。
       // 上限 7 日はサーバー時刻 request.time と createdAt(serverTimestamp) で判定する
       function isValidInviteFor(code) {
@@ -91,21 +99,22 @@ service cloud.firestore {
       // ownerUid / createdAt は不変。memberUids の変更は owner のみ(M-3)。
       // owner による変更でも owner 自身は memberUids から外せない(Issue #7)。
       // 例外として、有効な招待コードによる参加と本人の退出を許可(Issue #7)
-      allow update: if (isMember()
-        && request.resource.data.ownerUid == resource.data.ownerUid
-        && request.resource.data.createdAt == resource.data.createdAt
-        && (request.resource.data.memberUids == resource.data.memberUids
-          || (request.auth.uid == resource.data.ownerUid
-            && resource.data.ownerUid in request.resource.data.memberUids)))
-        || isSelfJoinWithInvite()
-        || isSelfLeave();
+      allow update: if resource.data.get('deleting', false) != true
+        && ((isMember()
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.createdAt == resource.data.createdAt
+          && (request.resource.data.memberUids == resource.data.memberUids
+            || (request.auth.uid == resource.data.ownerUid
+              && resource.data.ownerUid in request.resource.data.memberUids)))
+          || isSelfJoinWithInvite()
+          || isSelfLeave());
 
       allow delete: if false;
 
       match /categories/{categoryId} {
         allow read: if isBookMember();
         // book 作成トランザクションでのシード書き込みがあるため getAfter 判定
-        allow write: if isBookMemberAfterWrite();
+        allow write: if isBookMemberAfterWrite() && !bookIsDeleting();
       }
 
       // メンバープロフィール(表示名のみ。Issue #7)。
@@ -119,11 +128,13 @@ service cloud.firestore {
           && request.auth.uid == memberUid
           && request.resource.data.keys().hasOnly(['displayName', 'joinedAt'])
           && request.resource.data.displayName is string
-          && isBookMemberAfterWrite();
+          && isBookMemberAfterWrite()
+          && !bookIsDeleting();
         // 表示名の書き換えを防ぐため update は不可
         allow update: if false;
         // 退出(本人)またはオーナーによる削除
         allow delete: if request.auth != null
+          && !bookIsDeleting()
           && (request.auth.uid == memberUid
             || request.auth.uid
               == get(/databases/$(database)/documents/books/$(bookId)).data.ownerUid);
@@ -137,22 +148,26 @@ service cloud.firestore {
         allow create: if request.auth != null
           && request.auth.uid == memberUid
           && request.resource.data.keys().hasOnly(['inviteCode'])
-          && isValidInviteFor(request.resource.data.inviteCode);
+          && isValidInviteFor(request.resource.data.inviteCode)
+          && !bookIsDeleting();
         // コードのすり替えを防ぐため update は不可
         allow update: if false;
         // 退出(本人)またはオーナーによる削除(members doc と同じ掃除経路)
         allow delete: if request.auth != null
+          && !bookIsDeleting()
           && (request.auth.uid == memberUid
             || request.auth.uid
               == get(/databases/$(database)/documents/books/$(bookId)).data.ownerUid);
       }
 
       match /stores/{storeId} {
-        allow read, write: if isBookMember();
+        allow read: if isBookMember();
+        allow write: if isBookMember() && !bookIsDeleting();
       }
 
       match /products/{productId} {
-        allow read, write: if isBookMember();
+        allow read: if isBookMember();
+        allow write: if isBookMember() && !bookIsDeleting();
       }
 
       match /priceRecords/{recordId} {
@@ -165,7 +180,7 @@ service cloud.firestore {
         }
 
         allow read, delete: if isBookMember();
-        allow create, update: if isBookMember() && isValidRecord();
+        allow create, update: if isBookMember() && isValidRecord() && !bookIsDeleting();
       }
     }
   }

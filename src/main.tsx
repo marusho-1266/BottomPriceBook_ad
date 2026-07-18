@@ -4,8 +4,10 @@ import * as Sentry from '@sentry/react';
 import './index.css';
 import { App } from './App';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
+import { initAppCheck } from './lib/appCheck';
 import { initSentry } from './lib/sentry';
 
+initAppCheck();
 initSentry();
 
 createRoot(document.getElementById('root')!).render(

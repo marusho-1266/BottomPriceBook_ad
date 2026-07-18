@@ -135,4 +135,20 @@ describe('SettingsPage', () => {
     expect(screen.getByText('わたしの底値帳')).toBeInTheDocument();
     expect(screen.getByText('6ヶ月')).toBeInTheDocument();
   });
+
+  it('利用規約・プライバシーポリシー・お問い合わせへのリンクを表示する(Issue #14)', () => {
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: /利用規約/ })).toHaveAttribute('href', '/terms');
+    expect(screen.getByRole('link', { name: /プライバシーポリシー/ })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
+    const contact = screen.getByRole('link', { name: /お問い合わせ/ });
+    expect(contact).toHaveAttribute('target', '_blank');
+    expect(contact).toHaveAttribute('rel', 'noopener noreferrer');
+  });
 });

@@ -29,7 +29,7 @@
 
 ## Phase 2: 認証 API とバリデーション
 
-- [ ] **I15-T2: パスワードバリデーション純関数(password.ts)**
+- [x] **I15-T2: パスワードバリデーション純関数(password.ts)**
   - 内容: `src/features/auth/password.ts` に
     `validatePasswordStrength(password: string): string | null`
     (問題なければ null、問題があれば日本語エラーメッセージ)を実装。

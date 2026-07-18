@@ -8,6 +8,7 @@ const {
   httpsCallable,
   terminate,
   clearIndexedDbPersistence,
+  trackEvent,
 } = vi.hoisted(() => ({
   reauthenticateWithCredential: vi.fn(),
   reauthenticateWithPopup: vi.fn(),
@@ -16,9 +17,11 @@ const {
   httpsCallable: vi.fn(),
   terminate: vi.fn().mockResolvedValue(undefined),
   clearIndexedDbPersistence: vi.fn().mockResolvedValue(undefined),
+  trackEvent: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/firebase', () => ({ auth: {}, db: {}, functions: {} }));
+vi.mock('../../../src/lib/analytics', () => ({ trackEvent }));
 vi.mock('firebase/auth', () => ({
   reauthenticateWithCredential,
   reauthenticateWithPopup,
@@ -144,6 +147,8 @@ describe('deleteAccount', () => {
     expect(clearIndexedDbPersistence).toHaveBeenCalledTimes(1);
     expect(callOrder).toEqual(['terminate', 'clearIndexedDbPersistence', 'reload']);
     expect(localStorage.getItem(storageKey('uid-1'))).toBeNull();
+    expect(trackEvent).toHaveBeenCalledWith('delete_account');
+    expect(trackEvent).toHaveBeenCalledTimes(1);
   });
 
   it('Callable 成功後に terminate が失敗しても localStorage を消してリロードする', async () => {
@@ -157,6 +162,7 @@ describe('deleteAccount', () => {
     expect(clearIndexedDbPersistence).not.toHaveBeenCalled();
     expect(localStorage.getItem(storageKey('uid-1'))).toBeNull();
     expect(reloadSpy).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith('delete_account');
   });
 
   it('失敗時は AccountDeletionError に変換し、キャッシュ消去も localStorage 消去もリロードも行わない', async () => {
@@ -169,5 +175,6 @@ describe('deleteAccount', () => {
     expect(clearIndexedDbPersistence).not.toHaveBeenCalled();
     expect(reloadSpy).not.toHaveBeenCalled();
     expect(localStorage.getItem(storageKey('uid-1'))).toBe('some-book-id');
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 });

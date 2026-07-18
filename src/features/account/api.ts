@@ -7,6 +7,7 @@ import {
 import { clearIndexedDbPersistence, terminate } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth, db, functions } from '../../lib/firebase';
+import { trackEvent } from '../../lib/analytics';
 import { storageKey } from '../books/BookProvider';
 
 export class AccountDeletionError extends Error {
@@ -97,6 +98,7 @@ export async function deleteAccount(uid: string): Promise<void> {
   try {
     const call = httpsCallable(functions, 'deleteAccount');
     await call();
+    void trackEvent('delete_account');
   } catch (error) {
     throw mapDeleteAccountError(error);
   }

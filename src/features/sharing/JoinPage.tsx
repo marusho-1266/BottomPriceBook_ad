@@ -38,10 +38,19 @@ export function JoinPage() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState(false);
 
-  useEffect(() => {
-    // /join と /join/:inviteCode は同じコンポーネントを共有するため、
-    // コード変更時に前の招待の状態が残らないようリセットする
+  // /join と /join/:inviteCode は同じコンポーネントを共有するため、
+  // コード変更時にレンダー中に前の招待の状態をリセットする(React 公式が
+  // 推奨する「レンダー中の setState」パターン。effect 内での同期 setState は
+  // カスケードレンダーを招くため避ける)
+  const [resetForCode, setResetForCode] = useState(inviteCode);
+  if (inviteCode !== resetForCode) {
+    setResetForCode(inviteCode);
     setState({ status: 'loading' });
+    setJoining(false);
+    setJoinError(false);
+  }
+
+  useEffect(() => {
     if (!inviteCode) return;
     let cancelled = false;
     fetchInvite(db, inviteCode)

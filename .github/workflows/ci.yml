@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      VITE_FIREBASE_USE_EMULATORS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
+
+      - run: npm run test
+
+      - run: npx firebase emulators:exec --only firestore,auth --project demo-sokoneko "npm run test:rules"
+
+      - run: cd functions && npm ci
+
+      - run: cd functions && npm run build
+
+      - run: npx firebase emulators:exec --only firestore,auth --project demo-sokoneko "cd functions && npm test"

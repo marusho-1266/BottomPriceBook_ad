@@ -12,6 +12,7 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { trackEvent } from '../../lib/analytics';
 import { useCollection } from '../../lib/firestoreHooks';
 import type { Book, Invite, Member, WithId } from '../../types/models';
 
@@ -41,6 +42,7 @@ export async function createInvite(
     createdBy: book.ownerUid,
     createdAt: serverTimestamp(),
   });
+  void trackEvent('create_invite');
   return ref.id;
 }
 
@@ -105,6 +107,7 @@ export async function joinBook(
   });
   batch.update(doc(db, 'books', params.bookId), { memberUids: arrayUnion(params.uid) });
   await batch.commit();
+  void trackEvent('join_book');
 }
 
 /** members doc / joinTokens doc の削除と memberUids からの除去を 1 バッチで行う */

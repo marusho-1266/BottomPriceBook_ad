@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Cat } from 'lucide-react';
+import { Link } from 'react-router';
 import { resetPassword, signInWithEmail, signInWithGoogle, signUpWithEmail } from './api';
+import { CONTACT_FORM_URL } from '../legal/contact';
 
 type Mode = 'login' | 'signup' | 'reset';
 
@@ -178,6 +180,24 @@ export function LoginScreen() {
               ログインに戻る
             </button>
           )}
+        </div>
+
+        {/* 登録前に規約・ポリシーを確認できるようにする(Issue #14) */}
+        <div className="mt-auto flex items-center justify-center gap-4 pt-6 pb-2 text-[11px] font-bold text-ink-faint">
+          <Link to="/terms" className="underline">
+            利用規約
+          </Link>
+          <Link to="/privacy" className="underline">
+            プライバシーポリシー
+          </Link>
+          <a
+            href={CONTACT_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            お問い合わせ
+          </a>
         </div>
       </div>
     </div>

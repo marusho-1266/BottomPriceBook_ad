@@ -76,7 +76,7 @@
     `tests/features/auth/VerifyEmailScreen.test.tsx`
   - 依存: I15-T3 / 規模: M
 
-- [ ] **I15-T5: Gate に emailVerified 分岐を追加**
+- [x] **I15-T5: Gate に emailVerified 分岐を追加**
   - 内容: `src/App.tsx` の `Gate` を
     「loading → 未ログイン(LoginScreen)→ **未確認(VerifyEmailScreen)** →
     book 準備(ensureBook)→ アプリ」の順に変更。
@@ -108,8 +108,8 @@
     `tests/features/auth/LoginScreen.test.tsx`
   - 依存: I15-T2 / 規模: S
 
-### Checkpoint 2(= plan の Phase 3 完了)
-- [ ] `npm run test` / `npm run test:rules` / `npm run lint` / `npm run build` グリーン
+### Checkpoint 2(= plan の Phase 3 完了、ただし T6 は未着手)
+- [x] `npm run test`(270件)/ `npm run test:rules`(100件)/ `npm run lint` / `npm run build` グリーン(T5 時点)
 
 ## Phase 4: E2E・ドキュメント
 

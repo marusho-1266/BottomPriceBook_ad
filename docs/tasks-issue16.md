@@ -80,7 +80,7 @@
   - Files: `firestore.rules`, `tests/rules/`(該当テストファイル)
   - 依存: I16-T3(同一ファイル・ヘルパー利用)/ 規模: M
 
-- [ ] **I16-T5: books 本体の hasOnly + memberUids 上限**
+- [x] **I16-T5: books 本体の hasOnly + memberUids 上限**
   - 内容: **着手前に現行スキーマの突き合わせを必須で行う**:
     `src/types/models.ts` の Book 型・book 作成/更新コード
     (`features/books/` 等)・firestore.rules 内で参照されるフィールド
@@ -92,6 +92,12 @@
       全正常系が回帰しないこと**を既存テストで確認
   - Acceptance: スキーマ突き合わせ結果がタスクコミットのメッセージまたは
     spec に記録され、新規 + 既存 rules テストがすべてグリーン
+    - **確定した許可リスト**: `['name', 'ownerUid', 'memberUids',
+      'bottomWindowMonths', 'createdAt', 'deleting']`(`src/types/models.ts`
+      の Book 型 + `features/books/api.ts` の create/update + rules 内で
+      参照される `deleting`(Admin SDK 専用)を突き合わせて確定)
+    - memberUids 上限は 20(join は常に 1 人ずつ arrayUnion で追加されるため
+      既存フローと非衝突)
   - Verify: `npm run test:rules && npm run test:e2e && npm run lint`
   - Files: `firestore.rules`, `tests/rules/`(該当テストファイル)
   - 依存: I16-T4 / 規模: M

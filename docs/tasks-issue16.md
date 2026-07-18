@@ -65,7 +65,7 @@
   - Files: `firestore.rules`, `tests/rules/`(該当テストファイル)
   - 依存: なし(T1 と独立)/ 規模: M
 
-- [ ] **I16-T4: priceRecords + members / invites のルール強化**
+- [x] **I16-T4: priceRecords + members / invites のルール強化**
   - 内容: rules テスト先行:
     - priceRecords: `keys().hasOnly(['productId','storeId','price','quantity',
       'unit','isSale','recordedAt','note'])`、productId・storeId 1〜100 文字、
@@ -97,8 +97,14 @@
   - 依存: I16-T4 / 規模: M
 
 ### Checkpoint 2(= plan の Phase 2 完了)
-- [ ] `npm run test:rules` 全グリーン(新規検証テスト + 既存回帰)
+- [x] `npm run test:rules` 全グリーン(新規検証テスト + 既存回帰。133 件)
 - [ ] `npm run test:e2e` で記録・共有の主要フローが通る
+      — **未達(既知の環境問題・本 Issue と無関係)**: `deleteAccount.*.e2e.test.ts` が
+      `auth/email-already-in-use` で失敗。T3 適用前のベースラインでも同一失敗が
+      再現することを確認済み(`git stash` で検証)。rules テスト(133 件。
+      priceRecords/招待/join/leave の主要フローを含む)と単体テスト(251 件)で
+      回帰は無いことを確認済み。e2e 環境の修復は本 Issue のスコープ外として
+      別途対応が必要
 - [ ] CI グリーン
 
 ## Phase 3: 書込レート制限

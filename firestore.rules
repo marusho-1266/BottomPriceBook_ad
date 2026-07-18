@@ -2,6 +2,16 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 悪用・スパム対策(Issue #16)のフィールド検証共通ヘルパー。
+    // トップレベルに定義し、invites(books スコープ外)からも利用する。
+    // 数値型は値の大小でストレージコストが変わらないため上限は設けない
+    function isValidString(value, minLen, maxLen) {
+      return value is string && value.size() >= minLen && value.size() <= maxLen;
+    }
+    function isValidOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
     // 招待コード。ドキュメント ID(自動 ID)自体が秘密トークンのため、
     // get は認証済なら許可するが list は禁止(コードの列挙防止)
     match /invites/{inviteCode} {
@@ -16,6 +26,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
             .data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly(['bookId', 'bookName', 'createdBy', 'createdAt'])
+        && isValidString(request.resource.data.bookName, 1, 100)
         && request.resource.data.createdAt == request.time;
 
       // 期限延長を防ぐため update は不可。削除は発行者のみ
@@ -50,15 +61,6 @@ service cloud.firestore {
         return exists(/databases/$(database)/documents/books/$(bookId))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
       }
-      // 悪用・スパム対策(Issue #16)のフィールド検証共通ヘルパー。
-      // 数値型は値の大小でストレージコストが変わらないため上限は設けない
-      function isValidString(value, minLen, maxLen) {
-        return value is string && value.size() >= minLen && value.size() <= maxLen;
-      }
-      function isValidOptionalString(data, key, maxLen) {
-        return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
-      }
-
       // 招待コードがこの book のもので期限内かを検証(Issue #7)。
       // 上限 7 日はサーバー時刻 request.time と createdAt(serverTimestamp) で判定する
       function isValidInviteFor(code) {
@@ -150,7 +152,7 @@ service cloud.firestore {
         allow create: if request.auth != null
           && request.auth.uid == memberUid
           && request.resource.data.keys().hasOnly(['displayName', 'joinedAt'])
-          && request.resource.data.displayName is string
+          && isValidString(request.resource.data.displayName, 1, 100)
           && isBookMemberAfterWrite()
           && !bookIsDeleting();
         // 表示名の書き換えを防ぐため update は不可
@@ -210,12 +212,22 @@ service cloud.firestore {
       }
 
       match /priceRecords/{recordId} {
-        // price / quantity は正の数(M-3)。上限等の業務バリデーションはクライアント責務
+        // price / quantity は正の数かつ上限あり、フィールドは許可リストのみ(M-3 / Issue #16)
         function isValidRecord() {
-          return request.resource.data.price is number
+          return request.resource.data.keys().hasOnly(
+              ['productId', 'storeId', 'price', 'quantity', 'unit', 'isSale', 'recordedAt', 'note'])
+            && isValidString(request.resource.data.productId, 1, 100)
+            && isValidString(request.resource.data.storeId, 1, 100)
+            && request.resource.data.price is number
             && request.resource.data.price > 0
+            && request.resource.data.price <= 10000000
             && request.resource.data.quantity is number
-            && request.resource.data.quantity > 0;
+            && request.resource.data.quantity > 0
+            && request.resource.data.quantity <= 1000000
+            && isValidString(request.resource.data.unit, 1, 100)
+            && request.resource.data.isSale is bool
+            && request.resource.data.recordedAt is timestamp
+            && isValidOptionalString(request.resource.data, 'note', 500);
         }
 
         allow read, delete: if isBookMember();

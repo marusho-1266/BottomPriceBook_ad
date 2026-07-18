@@ -1,6 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router';
+import type { ReactNode } from 'react';
+
+// LoginScreen は規約・ポリシーへの <Link> を含むため Router 配下で描画する(Issue #14)
+function render(ui: ReactNode) {
+  return rtlRender(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 vi.mock('../../../src/features/auth/api', () => ({
   signInWithGoogle: vi.fn().mockResolvedValue(undefined),
@@ -59,5 +66,17 @@ describe('LoginScreen', () => {
     await user.click(screen.getByRole('button', { name: 'ログイン' }));
     expect(signInWithEmail).not.toHaveBeenCalled();
     expect(screen.getByText(/メールアドレスとパスワードを入力してください/)).toBeInTheDocument();
+  });
+
+  it('利用規約・プライバシーポリシー・お問い合わせへのリンクを表示する(Issue #14)', () => {
+    render(<LoginScreen />);
+    expect(screen.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', '/terms');
+    expect(screen.getByRole('link', { name: 'プライバシーポリシー' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
+    const contact = screen.getByRole('link', { name: 'お問い合わせ' });
+    expect(contact).toHaveAttribute('target', '_blank');
+    expect(contact).toHaveAttribute('rel', 'noopener noreferrer');
   });
 });

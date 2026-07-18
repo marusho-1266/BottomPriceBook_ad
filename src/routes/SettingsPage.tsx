@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronRight, FolderTree, StoreIcon } from 'lucide-react';
+import { ChevronRight, FileText, FolderTree, Mail, ShieldCheck, StoreIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { DeleteAccountDialog } from '../features/account/DeleteAccountDialog';
+import { CONTACT_FORM_URL } from '../features/legal/contact';
 import { signOut } from '../features/auth/api';
 import {
   BOTTOM_WINDOW_OPTIONS,
@@ -123,6 +124,28 @@ export function SettingsPage() {
           label="店舗管理"
           icon={<StoreIcon className="size-5" />}
         />
+      </div>
+
+      {/* 規約・ポリシー・問い合わせ(Issue #14) */}
+      <div className="mx-4 mt-4 rounded-2xl bg-surface">
+        <SettingsLink to="/terms" label="利用規約" icon={<FileText className="size-5" />} />
+        <SettingsLink
+          to="/privacy"
+          label="プライバシーポリシー"
+          icon={<ShieldCheck className="size-5" />}
+        />
+        <a
+          href={CONTACT_FORM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 border-b border-line px-4 py-3.5 text-sm font-bold last:border-b-0"
+        >
+          <span className="text-primary">
+            <Mail className="size-5" />
+          </span>
+          <span className="flex-1">お問い合わせ</span>
+          <ChevronRight className="size-4 text-chevron" />
+        </a>
       </div>
 
       <div className="mx-4 mt-4">

@@ -22,7 +22,7 @@
 
 ## Phase 4: 確定・手動作業
 
-- [ ] (ユーザー)文面レビュー確定(事業者表記・制定日)
+- [x] (ユーザー)文面レビュー確定(事業者表記・制定日)— 2026-07-18 ドラフトのまま確定
 - [x] (ユーザー)Google フォーム作成・URL 共有 — `https://forms.gle/CmpLMKN9XWkxirNDA`
-- [ ] T7: 確定文面反映 + フォーム URL 差し替え(XS〜S)+ 手動スモーク
-- [ ] ✅ 最終チェックポイント: spec-issue14.md の Success Criteria 全達成
+- [x] T7: 確定文面反映 + フォーム URL 差し替え(XS〜S)+ 手動スモーク
+- [x] ✅ 最終チェックポイント: spec-issue14.md の Success Criteria 全達成

@@ -191,10 +191,12 @@ src/routes/SettingsPage.tsx          → メニュー行追加(変更)
 
 ## Open Questions
 
-- 事業者(運営者)の表記名をどうするか(例:「そこねこ運営者」/ ハンドルネーム)
-- 制定日を何日付にするか(公開日に合わせるか)
+(なし — すべて解決済み)
 
 ## 解決済み事項(記録)
 
 - **問い合わせフォーム URL**(2026-07-18 ユーザー作成・共有済み):
-  `https://forms.gle/CmpLMKN9XWkxirNDA` — 実装時に `CONTACT_FORM_URL` 定数に設定する
+  `https://forms.gle/CmpLMKN9XWkxirNDA` — `src/features/legal/contact.ts` の `CONTACT_FORM_URL` に設定済み
+- **事業者表記**(2026-07-18 ユーザー確定): 「そこねこ運営者」
+- **制定日**(2026-07-18 ユーザー確定): 2026 年 7 月 18 日
+- **文面**(2026-07-18 ユーザーレビュー済み): ドラフトのまま確定(修正なし)

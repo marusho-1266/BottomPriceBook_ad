@@ -84,6 +84,9 @@ describe('DeleteAccountDialog(メール/パスワードユーザー)', () => {
 
     expect(mocks.reauthenticate).toHaveBeenCalledWith('secret123');
     expect(mocks.deleteAccount).toHaveBeenCalledWith(ALICE);
+    expect(mocks.reauthenticate.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.deleteAccount.mock.invocationCallOrder[0],
+    );
   });
 
   it('再認証に失敗するとエラーを表示し、deleteAccount は呼ばれない', async () => {

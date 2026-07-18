@@ -29,6 +29,8 @@ const firebaseConfig = useEmulators
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+// 確認メール等のテンプレート言語選択に使われる(Issue #15)
+auth.languageCode = 'ja';
 
 // オフライン永続化: 一度読んだデータを端末に保持し、オフラインでも閲覧・記録できる(M-4)
 export const db = initializeFirestore(app, {

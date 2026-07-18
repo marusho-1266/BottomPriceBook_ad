@@ -40,7 +40,7 @@
   - Files: `src/features/auth/password.ts`, `tests/features/auth/password.test.ts`
   - 依存: なし(I15-T1 と並行可)/ 規模: S
 
-- [ ] **I15-T3: auth/api.ts 拡張(確認メール送信・再送・リフレッシュ)**
+- [x] **I15-T3: auth/api.ts 拡張(確認メール送信・再送・リフレッシュ)**
   - 内容:
     1. `signUpWithEmail` — `createUserWithEmailAndPassword` 成功後に
        `sendEmailVerification(userCredential.user)` を送信

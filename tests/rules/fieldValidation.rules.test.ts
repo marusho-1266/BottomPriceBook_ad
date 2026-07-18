@@ -5,7 +5,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
@@ -173,9 +173,12 @@ describe('categories のフィールド検証', () => {
 });
 
 describe('stores のフィールド検証', () => {
-  it('許可フィールドのみなら作成できる', async () => {
+  it('許可フィールドのみなら作成できる(rateLimits 同時更新)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertSucceeds(setDoc(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' }));
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' });
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(batch.commit());
   });
 
   it('許可リスト外のフィールドがあると拒否される', async () => {
@@ -195,9 +198,12 @@ describe('stores のフィールド検証', () => {
     await assertFails(setDoc(doc(db, 'books', ALICE, 'stores', 's1'), { name: LONG_101 }));
   });
 
-  it('name が100文字ちょうどなら作成できる', async () => {
+  it('name が100文字ちょうどなら作成できる(rateLimits 同時更新)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertSucceeds(setDoc(doc(db, 'books', ALICE, 'stores', 's1'), { name: LONG_100 }));
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'stores', 's1'), { name: LONG_100 });
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(batch.commit());
   });
 });
 

@@ -149,7 +149,7 @@
   - **注意**: このタスク完了時点では main にマージしない(クライアント改修と
     セットで 1 PR にする。ルールだけデプロイすると本番の書込が全部落ちる)
 
-- [ ] **I16-T7: rateLimit.ts ヘルパー + prices / stores の api.ts バッチ化**
+- [x] **I16-T7: rateLimit.ts ヘルパー + prices / stores の api.ts バッチ化**
   - 内容:
     - `src/lib/rateLimit.ts`: `withRateLimit(batch, bookId, uid)` 相当の
       共通ヘルパー(バッチに rateLimits doc の

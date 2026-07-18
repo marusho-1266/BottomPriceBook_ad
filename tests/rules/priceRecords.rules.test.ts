@@ -5,7 +5,14 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { Timestamp, deleteDoc, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  Timestamp,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  setDoc,
+  writeBatch,
+} from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
@@ -55,45 +62,69 @@ beforeEach(async () => {
 });
 
 describe('priceRecords のルール(M-3 / T12)', () => {
-  it('メンバーは正の price / quantity で記録を作成できる', async () => {
+  it('メンバーは正の price / quantity で記録を作成できる(rateLimits 同時更新)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertSucceeds(setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord()));
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(batch.commit());
   });
 
   it('price が 0 以下の記録は拒否される', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertFails(
-      setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: 0 })),
-    );
-    await assertFails(
-      setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r2'), validRecord({ price: -100 })),
-    );
+    const batch1 = writeBatch(db);
+    batch1.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: 0 }));
+    batch1.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(batch1.commit());
+
+    const batch2 = writeBatch(db);
+    batch2.set(doc(db, 'books', ALICE, 'priceRecords', 'r2'), validRecord({ price: -100 }));
+    batch2.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(batch2.commit());
   });
 
   it('quantity が 0 以下の記録は拒否される', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertFails(
-      setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ quantity: 0 })),
-    );
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ quantity: 0 }));
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(batch.commit());
   });
 
   it('price が数値でない記録は拒否される', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertFails(
-      setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: '158' })),
-    );
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: '158' }));
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(batch.commit());
   });
 
   it('更新でも正数検証が働く', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
-    await assertFails(updateDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), { price: -1 }));
-    await assertSucceeds(updateDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), { price: 99 }));
-  });
+    const seedBatch = writeBatch(db);
+    seedBatch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
+    seedBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await seedBatch.commit();
 
-  it('メンバーは記録を削除できる', async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    const failBatch = writeBatch(db);
+    failBatch.update(doc(db, 'books', ALICE, 'priceRecords', 'r1'), { price: -1 });
+    failBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(failBatch.commit());
+
+    const okBatch = writeBatch(db);
+    okBatch.update(doc(db, 'books', ALICE, 'priceRecords', 'r1'), { price: 99 });
+    okBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(okBatch.commit());
+  }, 10000);
+
+  it('メンバーは記録を削除できる(削除はレート制限対象外)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
+    const seedBatch = writeBatch(db);
+    seedBatch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
+    seedBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await seedBatch.commit();
     await assertSucceeds(deleteDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1')));
   });
 

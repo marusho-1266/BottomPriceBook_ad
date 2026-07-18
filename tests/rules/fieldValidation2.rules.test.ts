@@ -5,7 +5,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { Timestamp, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { Timestamp, doc, serverTimestamp, setDoc, writeBatch, type Firestore } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
@@ -59,6 +59,14 @@ beforeEach(async () => {
   });
 });
 
+/** priceRecords の作成をレート制限用の rateLimits 同時更新込みで行う(Issue #16) */
+function createRecordBatch(db: Firestore, recordId: string, record: Record<string, unknown>) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'books', ALICE, 'priceRecords', recordId), record);
+  batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+  return batch.commit();
+}
+
 describe('priceRecords のフィールド検証(Issue #16)', () => {
   it('許可リスト外のフィールドがあると拒否される', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -70,7 +78,7 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
   it('price が上限(10,000,000)ちょうどなら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: 10_000_000 })),
+      createRecordBatch(db, 'r1', validRecord({ price: 10_000_000 })),
     );
   });
 
@@ -86,12 +94,7 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
 
   it('quantity が上限(1,000,000)ちょうどなら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertSucceeds(
-      setDoc(
-        doc(db, 'books', ALICE, 'priceRecords', 'r1'),
-        validRecord({ quantity: 1_000_000 }),
-      ),
-    );
+    await assertSucceeds(createRecordBatch(db, 'r1', validRecord({ quantity: 1_000_000 })));
   });
 
   it('quantity が上限(1,000,000)を超えると拒否される', async () => {
@@ -120,12 +123,7 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
 
   it('note を付けても500文字以内なら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertSucceeds(
-      setDoc(
-        doc(db, 'books', ALICE, 'priceRecords', 'r1'),
-        validRecord({ note: 'a'.repeat(500) }),
-      ),
-    );
+    await assertSucceeds(createRecordBatch(db, 'r1', validRecord({ note: 'a'.repeat(500) })));
   });
 
   it('note が501文字だと拒否される', async () => {

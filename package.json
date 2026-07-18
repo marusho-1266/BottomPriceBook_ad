@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "22"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marusho-1266/BottomPriceBook_ad.git"

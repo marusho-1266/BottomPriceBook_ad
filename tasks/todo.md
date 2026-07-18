@@ -1,39 +1,28 @@
-# TODO: Issue #7 底値帳の共有機能
+# TODO: Issue #14 利用規約・プライバシーポリシー
 
-詳細: `tasks/plan.md` / 仕様: `docs/spec-issue7.md`
+詳細: `tasks/plan.md`(= `docs/plan-issue14.md`) / 仕様: `docs/spec-issue14.md`
 
-## Phase 1: セキュリティルール(TDD・直列)
+## Phase 1: ルーティング基盤
 
-- [x] T1: invites コレクションのルール(M)— `firestore.rules`, `tests/rules/invites.rules.test.ts`
-- [x] T2: join バッチ + members サブコレクションのルール(M・最重要スパイク)— `firestore.rules`, `tests/rules/join.rules.test.ts`
-- [x] T3: 退出・メンバー削除ルール(S)— `firestore.rules`, `tests/rules/leave.rules.test.ts`
-- [x] ✅ チェックポイント 1: `npm run test:rules` 全 green(64 件)
+- [ ] T1: BrowserRouter を App 直下へ移動 + `/terms` `/privacy` 公開ルート枠(M)— `src/App.tsx`, `src/features/legal/{Terms,Privacy}Page.tsx`(仮), 公開ルートテスト新規
+- [ ] T2: 利用規約・プライバシーポリシーの文面ドラフト作成 → ユーザーレビュー依頼(S・T1 と並行可)
+- [ ] ✅ チェックポイント 1: 既存テスト全 green + 未ログインで公開ルート表示 + ドラフト提示済み
 
-## Phase 2: データ層(T4 ∥ T5)
+## Phase 2: ページ実装
 
-- [x] T4: 型定義 + `src/features/sharing/api.ts`(M)
-- [x] T5: ensureBook 拡張 — オーナー members doc の冪等補完(S)
+- [ ] T3: PrivacyPage 本実装(M)— 文面・SubPageHeader・フォームリンク(`CONTACT_FORM_URL` 定数)+ テスト
+- [ ] T4: TermsPage 本実装(S)+ テスト
+- [ ] ✅ チェックポイント 2: 両ページ本文表示・テスト全 green
 
-## Phase 3: 切替基盤
+## Phase 3: リンク設置
 
-- [x] T6: BookProvider の currentBookId 対応(M)— 既存テスト無修正 green が条件(App.test は firestore モックに where 追加のみ)
-- [ ] ✅ チェックポイント 2: test / test:rules / lint / build 全 green + 手動スモーク
+- [ ] T5: LoginScreen フッターに 3 リンク(S)+ テスト
+- [ ] T6: SettingsPage にメニュー 3 行(S)+ テスト
+- [ ] ✅ チェックポイント 3: ログイン前後の両導線から到達可・test/lint/build 全 green
 
-## Phase 4: UI(T7 ∥ T8 ∥ T10、T9 は T8 の後)
+## Phase 4: 確定・手動作業
 
-- [x] T7: JoinPage + `/join/:inviteCode` ルート(M)
-- [x] T8: 共有設定(自分の book): 招待発行・メンバー一覧・削除 + ConfirmDialog 新規(M)
-- [x] T9: 共有設定(参加中の book): 退出 + オーナー限定編集(S)
-- [x] T10: ホームの book 切替 UI(M)
-
-## Phase 5: 統合検証
-
-- [x] T11(自動分): 最終回帰 — rules 71 / unit 177 / lint / build 全 green
-- [ ] T11(手動分): E2E 手動検証(emulator + 2 アカウント)
-  - [ ] 発行 → リンク参加 → 切替 → 参加先で記録追加・編集・底値閲覧
-  - [ ] メンバー一覧表示 → オーナー削除 → 削除された側がリロードで自 book にフォールバック
-  - [ ] 本人退出 → 自 book にフォールバック
-  - [ ] 期限切れコードのエラー表示(emulator で expiresAt を過去に書き換え)
-  - [ ] 未ログインで /join/xxx → ログイン → 参加画面に戻る
-  - [ ] 既存フローのスモーク(記録・比較・設定)
-- [ ] ✅ チェックポイント 3(リリース): rules 先行デプロイ(`npx firebase deploy --only firestore:rules`)→ アプリデプロイ(`npm run deploy`)→ 本番で join を 1 回確認
+- [ ] (ユーザー)文面レビュー確定(事業者表記・制定日)
+- [x] (ユーザー)Google フォーム作成・URL 共有 — `https://forms.gle/CmpLMKN9XWkxirNDA`
+- [ ] T7: 確定文面反映 + フォーム URL 差し替え(XS〜S)+ 手動スモーク
+- [ ] ✅ 最終チェックポイント: spec-issue14.md の Success Criteria 全達成

@@ -58,7 +58,7 @@
 
 ## Phase 3: UI
 
-- [ ] **I15-T4: VerifyEmailScreen(確認待ち画面)**
+- [x] **I15-T4: VerifyEmailScreen(確認待ち画面)**
   - 内容: `src/features/auth/VerifyEmailScreen.tsx` を新規作成。
     - 送信先メールアドレスの表示と案内文(迷惑メールフォルダの言及を含む)
     - 「確認しました」ボタン: `refreshEmailVerification()` →

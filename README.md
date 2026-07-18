@@ -65,3 +65,37 @@ Firebase コンソールの設定値(`.env.example` 参照)を設定する。
 
 Firestore セキュリティルール(`firestore.rules`)はアカウント削除機能のために
 変更していない(Cloud Functions は Admin SDK でルールをバイパスするため)。
+
+### エラートラッキング・Analytics のセットアップ(Issue #18)
+
+本番運用前に、以下を**手動で**セットアップする(アカウント作成を伴うため自動化していない)。
+コード側は DSN・測定 ID が未設定でも no-op で動作するため、この手順を飛ばしてもアプリは壊れない。
+
+#### 1. Sentry(エラートラッキング)
+
+1. https://sentry.io でアカウント・組織を作成(無料の Developer プラン: 5,000 エラー/月・1 メンバー)
+2. プロジェクトを作成する。**フロントエンド用(Platform: React)** と
+   **Cloud Functions 用(Platform: Node.js)** の 2 プロジェクトを作る
+   (1 プロジェクト + `environment` タグ分離でも可。運用しやすい方でよい)
+3. 各プロジェクトの Settings > Client Keys (DSN) から DSN をコピーする
+4. フロントエンド用 DSN を `.env.local` の `VITE_SENTRY_DSN` に設定
+5. Cloud Functions 用 DSN は `functions/.env.<Firebase プロジェクト ID>`
+   (例: `functions/.env.sokoneko-prod`)に `SENTRY_DSN=` を設定する。
+   Firebase Functions v2 はデプロイ時にこのファイルを自動で読み込み、
+   関数の環境変数として反映する(`firebase functions:secrets` は使わない。
+   DSN は送信専用の URL で読み取りには使えないため Secret Manager は不要。
+   前提 2 と同じ理由)。このファイルはコミットしない
+   (`functions/.env*` は `.gitignore` の `.env` パターンで除外済み)。
+   ローカルのエミュレータ動作確認だけなら `functions/.env` に設定してもよい
+6. Sentry の Alerts 設定でデフォルトのメールアラートルールが有効になっていることを確認
+   (プロジェクト作成時のデフォルトルールで通常は自動有効)
+
+#### 2. Firebase Analytics(GA4)
+
+1. Firebase コンソール > 該当プロジェクト > Analytics で有効化する(無料)
+2. プロジェクトの設定 > 全般 の「Google アナリティクス」欄に表示される
+   **測定 ID(`G-XXXXXXXXXX`)** をコピーする
+3. `.env.local` の `VITE_FIREBASE_MEASUREMENT_ID` に設定する
+
+設定後、`npm run build` が通ることを確認する(DSN・測定 ID は任意項目のため、
+未設定でもビルド・テストは通る)。

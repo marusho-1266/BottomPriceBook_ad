@@ -24,8 +24,13 @@
 2. DSN(Sentry の送信先 URL)は秘密情報ではない(公開されても送信専用で読み取りには使えない)ため、
    フロントエンドは Vite の `VITE_` プレフィックス環境変数としてビルドに埋め込んでよい。
    ただし `.env.local` 等で管理し、リポジトリにはコミットしない(既存の Firebase 設定と同様の扱い)
-3. Cloud Functions 側の Sentry DSN は `firebase functions:secrets` または `functions/.env` で管理し、
-   `functions/.env` はリポジトリにコミットしない(既存 `.gitignore` を踏襲)
+3. Cloud Functions 側の Sentry DSN は `functions/.env`(ローカル)/
+   `functions/.env.<Firebase プロジェクト ID>`(本番。デプロイ時に Firebase Functions v2 が
+   自動で読み込む)で管理する。DSN は送信専用で読み取りには使えず機密情報ではないため
+   Secret Manager(`firebase functions:secrets`)は使わない(前提 2 と同じ理由。
+   `secrets:` バインディングを使うと Secret 未作成時にデプロイ自体が失敗し、
+   「DSN 未設定でも動作する」設計と相性が悪いことが実装時に判明したため見送った)。
+   `functions/.env*` はリポジトリにコミットしない(既存 `.gitignore` の `.env` パターンで除外)
 4. 開発(エミュレータ)環境では Sentry 送信を無効化する(ローカル開発時のノイズ防止)。
    `environment` タグで `development` / `production` を区別し、`development` はイベント送信しないか
    Sentry 側でフィルタする

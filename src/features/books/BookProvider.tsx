@@ -26,7 +26,8 @@ interface BookState {
 
 const BookContext = createContext<BookState | null>(null);
 
-function storageKey(uid: string): string {
+// eslint-disable-next-line react-refresh/only-export-components
+export function storageKey(uid: string): string {
   // 共有端末での uid 混線を防ぐためキーに uid を含める
   return `sokoneko:currentBookId:${uid}`;
 }

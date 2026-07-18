@@ -6,6 +6,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from 'firebase/firestore';
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
 const useEmulators = import.meta.env.VITE_FIREBASE_USE_EMULATORS === 'true';
 
@@ -35,7 +36,11 @@ export const db = initializeFirestore(app, {
   }),
 });
 
+// Issue #13: アカウント削除(退会)用の Callable Function
+export const functions = getFunctions(app, 'asia-northeast1');
+
 if (useEmulators) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 }

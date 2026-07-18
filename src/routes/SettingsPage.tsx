@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight, FolderTree, StoreIcon } from 'lucide-react';
 import { Link } from 'react-router';
+import { DeleteAccountDialog } from '../features/account/DeleteAccountDialog';
 import { signOut } from '../features/auth/api';
 import {
   BOTTOM_WINDOW_OPTIONS,
@@ -37,6 +38,7 @@ export function SettingsPage() {
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const name = nameDraft ?? bookName;
   const windowMonths = book?.bottomWindowMonths ?? 6;
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   async function handleWindowChange(months: number) {
     await updateBook(db, bookId, { bottomWindowMonths: months });
@@ -132,6 +134,20 @@ export function SettingsPage() {
           ログアウト
         </button>
       </div>
+
+      <div className="mx-4 mt-4">
+        <button
+          type="button"
+          onClick={() => setConfirmingDelete(true)}
+          className="h-12 w-full rounded-2xl text-sm font-bold text-sale"
+        >
+          アカウントを削除(退会)
+        </button>
+      </div>
+
+      {confirmingDelete && (
+        <DeleteAccountDialog onCancel={() => setConfirmingDelete(false)} />
+      )}
     </div>
   );
 }

@@ -1,8 +1,10 @@
 # Spec: 底値帳 Web アプリ「そこねこ」
 
-> Status: **Approved(承認済み・2026-07-12)** / 最終更新: 2026-07-16
+> Status: **Approved(承認済み・2026-07-12)** / 最終更新: 2026-07-17
 > (2026-07-15: Issue #3 によりカテゴリ baseUnit の事後変更を許可。詳細は `docs/spec-issue3.md`)
 > (2026-07-16: Issue #7 により底値帳の共有(招待コード方式)を実装。詳細は `docs/spec-issue7.md`)
+> (2026-07-17: Issue #13 によりアカウント削除(退会)機能を実装。Cloud Functions(Blaze プラン)を
+> 初めて導入。詳細は `docs/spec-issue13.md`)
 >
 > このドキュメントは spec-driven development の Phase 1 (Specify) 成果物。
 > レビュー記録: `docs/spec-review-2026-07-12.md`
@@ -59,6 +61,7 @@
 | PWA / オフライン | vite-plugin-pwa (Workbox) + Firestore オフライン永続化 | アプリシェルのキャッシュ + データのオフライン書込→自動同期。永続化は `persistentLocalCache` + `persistentMultipleTabManager`(複数タブ対応)。SW 更新は `registerType: 'prompt'`(更新プロンプト方式。オフライン中の意図しない更新事故を防ぐ)(L-3) |
 | 認証 | Firebase Authentication | Google ログイン + メール/パスワード |
 | DB | Cloud Firestore | オフライン永続化が標準搭載。無料枠が広い |
+| サーバーレス関数 | Cloud Functions v2(`asia-northeast1`) | アカウント削除(退会)等、クライアントのみでは安全に実行できない処理用(Issue #13)。**Blaze プラン(従量課金)が必須**。呼び出し・削除件数とも無料枠内に収まる想定 |
 | ホスティング | Firebase Hosting | 無料枠。Firebase と一体運用 |
 | 状態管理 | Firestore onSnapshot + 自前フック(`useCollection` 等) | リアルタイム購読が主のため TanStack Query は採用しない。キャッシュの真実のソースを Firestore SDK に一本化(M-2)。ローカル UI 状態は React 標準 |
 | ルーティング | React Router v7 | SPA 標準 |
@@ -75,20 +78,28 @@
 テスト:        npm run test          (vitest run)
 テスト(監視): npm run test:watch
 ルールテスト:  npm run test:rules    (Firebase Emulator でセキュリティルール検証)
+E2E テスト:    npm run test:e2e      (Firestore/Auth/Functions エミュレータが前提)
 Lint:          npm run lint
 Format:        npm run format
-エミュレータ:  npm run emulators     (firebase emulators:start)
+エミュレータ:  npm run emulators     (firebase emulators:start。functions も含む)
 デプロイ:      npm run deploy        (build + firebase deploy)
+
+Functions ビルド: cd functions && npm run build
+Functions のみデプロイ: firebase deploy --only functions
 ```
 
 ## Project Structure
 
 ```
 docs/               → 仕様書・ADR
+functions/          → Cloud Functions(独立 npm パッケージ。アカウント削除等)
 src/
   components/       → 汎用 UI コンポーネント
   features/         → 機能単位のモジュール
+    account/        → アカウント削除(退会)。再認証 + Callable 呼び出し
     auth/           → ログイン・サインアップ
+    books/          → book(底値帳)の作成・切替
+    sharing/        → 底値帳の共有(招待・参加・退出)
     products/       → 商品(登録・一覧・詳細)
     stores/         → 店舗管理
     categories/     → カテゴリ管理(基準単位を含む)
@@ -97,6 +108,8 @@ src/
   routes/           → 画面(ページ)コンポーネント
   types/            → 型定義(Firestore ドキュメント型など)
 tests/              → 単体・コンポーネントテスト(src と同構造)
+tests/rules/        → セキュリティルールテスト
+tests/e2e/          → 実クライアント API × エミュレータの E2E テスト
 firestore.rules     → Firestore セキュリティルール
 firestore.indexes.json
 firebase.json
@@ -178,6 +191,23 @@ books/{bookId}/priceRecords/{recordId}
   単位系が異なるカテゴリへの変更は UI でブロックし、
   「新しい商品として登録し直す」ことを案内する
 
+### アカウント削除(退会。Issue #13)
+
+- ユーザーは設定画面から自分のアカウントを削除(退会)できる。処理は
+  Cloud Functions の Callable `deleteAccount`(Admin SDK・`asia-northeast1`)が担い、
+  クライアントからの直接削除は禁止のまま(`books` の `allow delete: if false` を維持)
+- **自分がオーナーの book はサブコレクション込みで完全削除**(`recursiveDelete`)する。
+  他のメンバーが参加していた場合、その book ごと削除される(メンバーは使えなくなる。
+  退会確認ダイアログで警告表示する)
+- **参加中(非オーナー)の他人の book からは退出**のみ行う。
+  `memberUids` からの除去と `members`/`joinTokens` doc の削除のみで、
+  **自分が記録した価格記録は book に残す**(Issue #7 の「メンバー削除・退出後もデータは残る」方針を踏襲)
+- 自分が発行した招待コード(`invites`)も削除する
+- 削除順序は **Firestore(invites → 退出 → 自 book 再帰削除)→ Auth ユーザー** の順。
+  各ステップは「存在すれば消す」で冪等に実装し、途中失敗しても再実行で完走できる
+  (Auth 削除を最後にすることで、失敗時もログインしたまま再実行できる)
+- 削除前に**再認証**(パスワード再入力 / Google 再ポップアップ)を必須とする
+
 ### 記録の編集・削除と参照整合性(H-1 / H-2)
 
 - **価格記録**: 編集(価格・内容量・特売フラグ・日付・店舗)と削除を MVP に含める。
@@ -209,7 +239,8 @@ books/{bookId}/priceRecords/{recordId}
    底値の対象期間(N ヶ月)設定を適用し、表示は上位50件まで(超過分は「他 N 件」注記)。
    単価換算できない記録は単価不明として末尾に表示
    (詳細: `docs/spec-issue1-category-comparison.md`)
-6. **設定** — カテゴリ管理・店舗管理(参照中は削除不可)・底値の対象期間(N ヶ月)・ログアウト
+6. **設定** — カテゴリ管理・店舗管理(参照中は削除不可)・底値の対象期間(N ヶ月)・共有・
+   ログアウト・**アカウント削除(退会)**(Issue #13)
 
 ## Code Style
 
@@ -235,6 +266,7 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 | 単体 | 単価計算・底値算出・単位換算などの純粋ロジック | Vitest |
 | コンポーネント | フォームバリデーション・一覧表示 | Vitest + React Testing Library |
 | セキュリティルール | 他人の book にアクセスできないこと | Firebase Emulator + @firebase/rules-unit-testing |
+| E2E(自動) | アカウント削除など、実クライアント API × 実エミュレータでしか検証できないフロー(Issue #13) | `npm run test:e2e`(Firestore/Auth/Functions エミュレータ前提) |
 | 手動 E2E | オフライン記録→再接続で同期、オフライン閲覧(下記前提)、PWA インストール・更新プロンプト | リリース前チェックリスト |
 
 - テストは `tests/` 配下に src と同じ構造で配置
@@ -259,6 +291,8 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
   - データモデル(Firestore コレクション構造)の変更
   - 依存パッケージの追加
   - Firebase の有料機能・従量課金が発生しうる機能の使用
+    (Issue #13 でアカウント削除用に Cloud Functions + Blaze プランの利用を承認済み。
+    無料枠(呼び出し 200 万回/月等)を大きく超える新規の有料機能利用は改めて確認する)
   - 認証方式の追加・変更
 - **Never(やらない)**
   - API キー以外のシークレット(サービスアカウント等)のコミット
@@ -287,9 +321,11 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 
 - 価格履歴のグラフ表示
 - ~~底値帳の共有(book への複数メンバー招待)~~ → Issue #7 で実装済み(`docs/spec-issue7.md`)
+- ~~アカウント削除(退会)~~ → Issue #13 で実装済み(`docs/spec-issue13.md`)
 - 買い物リスト、バーコードスキャン、商品写真
 - クラウドソーシング型の価格共有(サービス化)
 - 匿名認証 → アカウント連携
+- book の譲渡(オーナー交代)、退会前のデータエクスポート、猶予期間付きソフトデリート(Issue #13 将来スコープ)
 
 ## Open Questions
 
@@ -305,3 +341,5 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 - book の作成方法 → `bookId = uid` の決定的 ID + 冪等な setDoc(レビュー H-4)
 - 状態管理 → TanStack Query は不採用、onSnapshot + 自前フックに一本化(レビュー M-2)
 - book 初期化の冪等性 → getDoc 存在確認 + create 専用トランザクション + 決定的シード ID(再レビュー M-5)
+- アカウント削除の実装方式 → Cloud Functions(Blaze プラン)。自 book は再帰削除、
+  参加中 book は退出のみ(記録は残す)、削除順序は Firestore → Auth(Issue #13)

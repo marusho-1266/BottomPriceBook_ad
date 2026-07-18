@@ -4,21 +4,21 @@
 
 ## Phase 1: ルーティング基盤
 
-- [ ] T1: BrowserRouter を App 直下へ移動 + `/terms` `/privacy` 公開ルート枠(M)— `src/App.tsx`, `src/features/legal/{Terms,Privacy}Page.tsx`(仮), 公開ルートテスト新規
-- [ ] T2: 利用規約・プライバシーポリシーの文面ドラフト作成 → ユーザーレビュー依頼(S・T1 と並行可)
-- [ ] ✅ チェックポイント 1: 既存テスト全 green + 未ログインで公開ルート表示 + ドラフト提示済み
+- [x] T1: BrowserRouter を App 直下へ移動 + `/terms` `/privacy` 公開ルート枠(M)— `src/App.tsx`, `src/features/legal/{Terms,Privacy}Page.tsx`(仮), 公開ルートテスト新規
+- [x] T2: 利用規約・プライバシーポリシーの文面ドラフト作成 → ユーザーレビュー依頼(S・T1 と並行可)
+- [x] ✅ チェックポイント 1: 既存テスト全 green + 未ログインで公開ルート表示 + ドラフト提示済み
 
 ## Phase 2: ページ実装
 
-- [ ] T3: PrivacyPage 本実装(M)— 文面・SubPageHeader・フォームリンク(`CONTACT_FORM_URL` 定数)+ テスト
-- [ ] T4: TermsPage 本実装(S)+ テスト
-- [ ] ✅ チェックポイント 2: 両ページ本文表示・テスト全 green
+- [x] T3: PrivacyPage 本実装(M)— 文面・SubPageHeader・フォームリンク(`CONTACT_FORM_URL` 定数)+ テスト
+- [x] T4: TermsPage 本実装(S)+ テスト
+- [x] ✅ チェックポイント 2: 両ページ本文表示・テスト全 green
 
 ## Phase 3: リンク設置
 
-- [ ] T5: LoginScreen フッターに 3 リンク(S)+ テスト
-- [ ] T6: SettingsPage にメニュー 3 行(S)+ テスト
-- [ ] ✅ チェックポイント 3: ログイン前後の両導線から到達可・test/lint/build 全 green
+- [x] T5: LoginScreen フッターに 3 リンク(S)+ テスト
+- [x] T6: SettingsPage にメニュー 3 行(S)+ テスト
+- [x] ✅ チェックポイント 3: ログイン前後の両導線から到達可・test/lint/build 全 green
 
 ## Phase 4: 確定・手動作業
 

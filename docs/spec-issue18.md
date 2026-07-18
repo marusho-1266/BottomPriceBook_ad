@@ -77,7 +77,7 @@
 | 自動収集イベント | `firebase/analytics` の `getAnalytics()` を初期化するだけで得られる `page_view`・`session_start`・DAU/MAU 等(GA4 標準機能) |
 | 設定値の追加 | 現行の `src/lib/firebase.ts` の firebaseConfig には `measurementId` が無い(エミュレータ用 demo config には `appId` も無い)ため、`VITE_FIREBASE_MEASUREMENT_ID` を `.env.local` に追加し本番 config に含める |
 | 初期化ガード | エミュレータ環境(`VITE_FIREBASE_USE_EMULATORS=true`)およびテスト環境では Analytics を初期化しない。あわせて `isSupported()` で実行環境の対応可否を確認してから初期化する(jsdom 等の非対応環境でのクラッシュ防止) |
-| カスタムイベント | 主要機能の利用状況として以下を `logEvent` で送信(案。実装時に確定):価格記録の追加・book 共有(招待発行/参加)・退会実行 |
+| カスタムイベント | 主要機能の利用状況として以下を `logEvent` で送信(確定):`record_price`(価格記録の追加。パラメータ: `isSale: boolean`)/ `create_invite`(招待コード発行。パラメータなし)/ `join_book`(book への参加。パラメータなし)/ `delete_account`(退会実行。パラメータなし)。いずれも PII・自由入力値(商品名・価格・店舗名等)は含めない |
 | 実装場所 | `src/lib/analytics.ts` に薄いラッパーを作り、`features/*/api.ts` から呼び出す(Firestore アクセスと同様に集約する方針を踏襲) |
 | 同意バナー | 実装しない(前提 7 参照) |
 

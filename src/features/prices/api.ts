@@ -1,6 +1,7 @@
 import { Timestamp, addDoc, collection, deleteDoc, doc, query, updateDoc } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { db } from '../../lib/firebase';
+import { trackEvent } from '../../lib/analytics';
 import { useCollection } from '../../lib/firestoreHooks';
 import { useBook } from '../books/BookProvider';
 import type { PriceRecord } from '../../types/models';
@@ -22,6 +23,9 @@ export function addPriceRecord(bookId: string, draft: PriceRecordDraft): Promise
   return addDoc(collection(db, 'books', bookId, 'priceRecords'), {
     ...draft,
     recordedAt: Timestamp.fromDate(draft.recordedAt),
+  }).then((result) => {
+    void trackEvent('record_price', { isSale: draft.isSale });
+    return result;
   });
 }
 

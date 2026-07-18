@@ -108,7 +108,7 @@
     `tests/lib/analytics.test.ts`
   - 依存: なし(Phase 2 と独立)/ 規模: S
 
-- [ ] **I18-T6: カスタムイベント差し込み(価格記録・共有・退会)**
+- [x] **I18-T6: カスタムイベント差し込み(価格記録・共有・退会)**
   - 内容: `features/*/api.ts` の成功パスに `trackEvent` を追加(fire-and-forget):
     - 価格記録の追加(prices/api.ts): `record_price`
     - 招待コード発行(sharing/api.ts): `create_invite`

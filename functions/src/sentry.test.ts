@@ -11,6 +11,8 @@ afterEach(() => {
     void error;
   };
   sentryClient.flush = async () => true;
+  delete process.env.SENTRY_DSN;
+  delete process.env.FUNCTIONS_EMULATOR;
 });
 
 test('SENTRY_DSN 未設定なら initSentry は初期化しない', () => {

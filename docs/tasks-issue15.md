@@ -1,6 +1,6 @@
 # タスク分解: メールアドレス確認とパスワードポリシー強化(Issue #15)
 
-> Status: **Draft(レビュー待ち)** / 作成日: 2026-07-19
+> Status: **I15-T1 完了(2026-07-19)** / 作成日: 2026-07-19
 > 対象: `docs/spec-issue15.md` / 計画: `docs/plan-issue15.md`
 > 実装は 1 タスク = 1 コミット。各タスクの Verify を通してから次へ進む。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
@@ -9,7 +9,7 @@
 
 ## Phase 1: rules 強制
 
-- [ ] **I15-T1: firestore.rules に email_verified 検証を追加 + ルールテスト更新**
+- [x] **I15-T1: firestore.rules に email_verified 検証を追加 + ルールテスト更新**
   - 内容: `request.auth != null` 判定を共通ヘルパー(例: `isVerified()` =
     `request.auth != null && request.auth.token.email_verified == true`)に集約し、
     全コレクション(invites / books とサブコレクション)の判定を置き換える。
@@ -25,7 +25,7 @@
   - 依存: なし / 規模: M
 
 ### Checkpoint 1(= plan の Phase 1 完了)
-- [ ] `npm run test:rules` グリーン(既存全件 + 未確認 deny の新規ケース)
+- [x] `npm run test:rules` グリーン(既存94件 + 未確認 deny の新規6件 = 100件)
 
 ## Phase 2: 認証 API とバリデーション
 

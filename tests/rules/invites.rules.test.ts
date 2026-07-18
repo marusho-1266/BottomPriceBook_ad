@@ -69,17 +69,17 @@ beforeEach(async () => {
 
 describe('invites の作成', () => {
   it('book のオーナーは自分の book の招待を作成できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE)));
   });
 
   it('他人の book への招待は作成できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = testEnv.authenticatedContext(BOB, { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, BOB)));
   });
 
   it('createdBy を偽装した招待は作成できない', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, BOB)));
   });
 
@@ -87,17 +87,17 @@ describe('invites の作成', () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await updateDoc(doc(context.firestore(), 'books', ALICE), { memberUids: [ALICE, BOB] });
     });
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = testEnv.authenticatedContext(BOB, { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, BOB)));
   });
 
   it('createdAt が serverTimestamp でない招待は作成できない', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE, -1)));
   });
 
   it('expiresAt など余分なフィールド付きの招待は作成できない', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'invites', CODE), {
         ...validInvite(ALICE, ALICE),
@@ -120,7 +120,7 @@ describe('invites の読み取り', () => {
   });
 
   it('認証済ユーザーはコードを指定して get できる', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = testEnv.authenticatedContext(BOB, { email_verified: true }).firestore();
     await assertSucceeds(getDoc(doc(db, 'invites', CODE)));
   });
 
@@ -130,7 +130,7 @@ describe('invites の読み取り', () => {
   });
 
   it('list(コレクション全件取得)はオーナーでもできない', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(getDocs(collection(db, 'invites')));
   });
 });
@@ -143,17 +143,17 @@ describe('invites の更新・削除', () => {
   });
 
   it('発行者は招待を削除できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(deleteDoc(doc(db, 'invites', CODE)));
   });
 
   it('発行者以外は削除できない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = testEnv.authenticatedContext(BOB, { email_verified: true }).firestore();
     await assertFails(deleteDoc(doc(db, 'invites', CODE)));
   });
 
   it('発行者でも update はできない(期限延長の禁止)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       updateDoc(doc(db, 'invites', CODE), {
         bookName: '書き換え',

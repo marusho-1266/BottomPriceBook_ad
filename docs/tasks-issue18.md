@@ -43,9 +43,10 @@
   - 依存: I18-T1 / 規模: S
 
 ### Checkpoint 1(= plan の Phase 1 完了)
-- [ ] PR を作成し、全ステップ(lint / build / test / test:rules / functions)が
-  自動実行されグリーンになることを PR 画面で確認
+- [x] PR #24 を作成し、全ステップ(lint / build / test / test:rules / functions)が
+  自動実行されグリーンになることを PR 画面で確認(2m 5s で成功。226 + 94 テストパス)
 - [ ] わざと失敗するコミットで CI が赤くなる(失敗が検知される)ことを 1 度確認して revert
+      (未実施。必要なら別途実施)
 
 ## Phase 2: Sentry
 

@@ -115,7 +115,7 @@
 
 ## Phase 3: 書込レート制限
 
-- [ ] **I16-T6: rateLimits ルール + オフライン挙動検証(fail fast)**
+- [x] **I16-T6: rateLimits ルール + オフライン挙動検証(fail fast)**
   - 内容: rules テスト先行:
     - `books/{bookId}/rateLimits/{uid}`: create は本人 + メンバー +
       `lastWriteAt == request.time` + `keys().hasOnly(['lastWriteAt'])`。
@@ -133,6 +133,16 @@
     **この時点では失敗する**(クライアント未改修のため)— 失敗が
     「rateLimits 未更新」由来のみであることを確認して T7 へ進む
     (または既存テストのバッチ化修正を本タスクに含めて全グリーンにする)
+    - **実施結果**: rateLimit.rules.test.ts(10 件)グリーン。既存テストは
+      19 件が想定通り「rateLimits 未更新」由来で失敗(T7/T8 で解消予定)。
+      `ensureBook()`(book 作成トランザクションでの categories シード)は
+      同一トランザクション内で rateLimits doc も更新するよう修正が必要と判明
+      (categories と同じく `isBookMemberAfterWrite()` ベースの判定が必要
+      だったため、rateLimits の create/update も `isBookMember()` から
+      `isBookMemberAfterWrite()` に変更)。この修正込みで ensureBook.test.ts
+      は全グリーン
+    - オフライン挙動検証: spec 記載の制約により rules-unit-testing での
+      連続書込検証で代替(1 秒未満は拒否・1 秒以上で許可を確認。テスト内)
   - Verify: `npm run test:rules`(新規分)+ オフライン検証結果の記録
   - Files: `firestore.rules`, `tests/rules/`(該当テストファイル)
   - 依存: I16-T5(同一ファイル)/ 規模: L

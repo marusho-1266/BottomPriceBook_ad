@@ -13,6 +13,8 @@ import { ProductDetailPage } from './routes/ProductDetailPage';
 import { CategoriesPage } from './features/categories/CategoriesPage';
 import { StoresPage } from './features/stores/StoresPage';
 import { JoinPage } from './features/sharing/JoinPage';
+import { PrivacyPage } from './features/legal/PrivacyPage';
+import { TermsPage } from './features/legal/TermsPage';
 import { db } from './lib/firebase';
 
 function Loading() {
@@ -46,23 +48,21 @@ function Gate() {
 
   return (
     <BookProvider key={user.uid} uid={user.uid}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={<HomePage />} />
-            <Route path="record" element={<RecordPage />} />
-            <Route path="compare" element={<ComparePage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="settings/categories" element={<CategoriesPage />} />
-            <Route path="settings/stores" element={<StoresPage />} />
-            <Route path="products/:productId" element={<ProductDetailPage />} />
-          </Route>
-          {/* 参加フローにタブバーを出さないため AppShell の外に置く(Issue #7)。
-              /join はコード手入力用の入り口 */}
-          <Route path="join" element={<JoinPage />} />
-          <Route path="join/:inviteCode" element={<JoinPage />} />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<HomePage />} />
+          <Route path="record" element={<RecordPage />} />
+          <Route path="compare" element={<ComparePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/categories" element={<CategoriesPage />} />
+          <Route path="settings/stores" element={<StoresPage />} />
+          <Route path="products/:productId" element={<ProductDetailPage />} />
+        </Route>
+        {/* 参加フローにタブバーを出さないため AppShell の外に置く(Issue #7)。
+            /join はコード手入力用の入り口 */}
+        <Route path="join" element={<JoinPage />} />
+        <Route path="join/:inviteCode" element={<JoinPage />} />
+      </Routes>
     </BookProvider>
   );
 }
@@ -70,7 +70,15 @@ function Gate() {
 export function App() {
   return (
     <AuthProvider>
-      <Gate />
+      {/* 規約・ポリシーは未ログインでも閲覧できる公開ルート(Issue #14)。
+          それ以外は Gate(認証ガード)配下の入れ子 Routes が URL 全体で再マッチする */}
+      <BrowserRouter>
+        <Routes>
+          <Route path="terms" element={<TermsPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="*" element={<Gate />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

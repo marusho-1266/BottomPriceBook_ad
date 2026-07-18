@@ -101,8 +101,16 @@ export async function deleteAccount(uid: string): Promise<void> {
     throw mapDeleteAccountError(error);
   }
 
-  await terminate(db);
-  await clearIndexedDbPersistence(db);
-  localStorage.removeItem(storageKey(uid));
-  window.location.reload();
+  // この時点で Callable は成功しており Auth ユーザーは既に削除済みのため、
+  // 以降のキャッシュ消去が失敗してもエラー扱いにはせず、
+  // localStorage 消去とリロードは必ず実行する
+  try {
+    await terminate(db);
+    await clearIndexedDbPersistence(db);
+  } catch {
+    // 端末側のキャッシュ消去に失敗しても致命的ではないため無視する
+  } finally {
+    localStorage.removeItem(storageKey(uid));
+    window.location.reload();
+  }
 }

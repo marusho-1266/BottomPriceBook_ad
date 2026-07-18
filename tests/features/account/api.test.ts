@@ -146,6 +146,19 @@ describe('deleteAccount', () => {
     expect(localStorage.getItem(storageKey('uid-1'))).toBeNull();
   });
 
+  it('Callable 成功後に terminate が失敗しても localStorage を消してリロードする', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { ok: true } });
+    httpsCallable.mockReturnValue(callable);
+    localStorage.setItem(storageKey('uid-1'), 'some-book-id');
+    terminate.mockRejectedValue(new Error('terminate failed'));
+
+    await deleteAccount('uid-1');
+
+    expect(clearIndexedDbPersistence).not.toHaveBeenCalled();
+    expect(localStorage.getItem(storageKey('uid-1'))).toBeNull();
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('失敗時は AccountDeletionError に変換し、キャッシュ消去も localStorage 消去もリロードも行わない', async () => {
     const callable = vi.fn().mockRejectedValue({ code: 'functions/unauthenticated' });
     httpsCallable.mockReturnValue(callable);

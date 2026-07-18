@@ -82,7 +82,8 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && bookId == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
-        && request.auth.uid in request.resource.data.memberUids;
+        && request.auth.uid in request.resource.data.memberUids
+        && request.resource.data.get('deleting', false) == false;
 
       // 退出: memberUids のみ・自分の uid の除去のみ。オーナー自身は退出不可(Issue #7)。
       // affectedKeys で任意フィールドの追加・変更も拒否する
@@ -98,8 +99,11 @@ service cloud.firestore {
 
       // ownerUid / createdAt は不変。memberUids の変更は owner のみ(M-3)。
       // owner による変更でも owner 自身は memberUids から外せない(Issue #7)。
-      // 例外として、有効な招待コードによる参加と本人の退出を許可(Issue #7)
+      // 例外として、有効な招待コードによる参加と本人の退出を許可(Issue #7)。
+      // deleting はサーバー(Admin SDK、ルール非適用)専用フラグのため
+      // クライアントからの変更を一切禁止する(永続 DoS 防止)
       allow update: if resource.data.get('deleting', false) != true
+        && !('deleting' in request.resource.data.diff(resource.data).affectedKeys())
         && ((isMember()
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.createdAt == resource.data.createdAt

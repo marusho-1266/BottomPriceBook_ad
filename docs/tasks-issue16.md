@@ -47,7 +47,7 @@
 
 ## Phase 2: ルール検証強化
 
-- [ ] **I16-T3: 検証ヘルパー + categories / stores / products のルール強化**
+- [x] **I16-T3: 検証ヘルパー + categories / stores / products のルール強化**
   - 内容: rules テストを**先に**書く(TDD):
     - 許可リスト外フィールドの書込拒否(3 コレクション)
     - name の境界値(空文字 NG / 100 文字 OK / 101 文字 NG)

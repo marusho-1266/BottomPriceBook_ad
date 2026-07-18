@@ -9,7 +9,7 @@
 
 ## Phase 1: CI(安全網を先に張る)
 
-- [ ] **I18-T1: engines 追記 + CI ワークフロー(lint / build / test)**
+- [x] **I18-T1: engines 追記 + CI ワークフロー(lint / build / test)**
   - 内容: ルート `package.json` に `engines: { "node": "22" }` を追記
     (functions/package.json と参照元を一本化)。
     `.github/workflows/ci.yml` を新規作成:
@@ -26,7 +26,7 @@
   - Files: `.github/workflows/ci.yml`, `package.json`
   - 依存: なし / 規模: S
 
-- [ ] **I18-T2: CI に test:rules + functions ビルド/テストを追加**
+- [x] **I18-T2: CI に test:rules + functions ビルド/テストを追加**
   - 内容: ci.yml に以下のステップを追加:
     - `actions/setup-java`(Temurin JDK 21。Firestore Emulator 用)
     - `npx firebase emulators:exec --only firestore --project demo-sokoneko

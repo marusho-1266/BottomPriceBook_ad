@@ -24,6 +24,7 @@
     "deploy": "npm run build && firebase deploy"
   },
   "dependencies": {
+    "@sentry/react": "^10.66.0",
     "firebase": "^12.16.0",
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",

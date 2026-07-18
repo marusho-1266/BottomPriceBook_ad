@@ -4,8 +4,10 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
 import { runDeleteAccount } from './deleteAccount.js';
+import { initSentry, withSentry } from './sentry.js';
 
 initializeApp();
+initSentry();
 
 setGlobalOptions({ region: 'asia-northeast1' });
 
@@ -38,4 +40,4 @@ export async function handleDeleteAccount(request: CallableRequest): Promise<Del
   return { ok: true };
 }
 
-export const deleteAccount = onCall(handleDeleteAccount);
+export const deleteAccount = onCall(withSentry(handleDeleteAccount));

@@ -49,7 +49,7 @@
 
 ## Phase 2: Sentry
 
-- [ ] **I18-T3: フロントエンド Sentry(init + ErrorBoundary)**
+- [x] **I18-T3: フロントエンド Sentry(init + ErrorBoundary)**
   - 内容: `@sentry/react` を依存に追加。`src/lib/sentry.ts` に `initSentry()` を実装:
     - `VITE_SENTRY_DSN` 未設定、またはエミュレータ利用時
       (`VITE_FIREBASE_USE_EMULATORS === 'true'`)は **no-op**(init しない)
@@ -66,7 +66,7 @@
     `tests/lib/sentry.test.ts`, `package.json`
   - 依存: なし(CI 完了後を推奨)/ 規模: M
 
-- [ ] **I18-T4: Cloud Functions Sentry(init + flush ラッパー)**
+- [x] **I18-T4: Cloud Functions Sentry(init + flush ラッパー)**
   - 内容: `@sentry/node` を `functions/` の依存に追加。
     `functions/src/sentry.ts` を実装:
     - `SENTRY_DSN`(`functions/.env` または `functions:secrets`)未設定時は no-op

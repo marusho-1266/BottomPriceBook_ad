@@ -9,7 +9,7 @@
 
 ## Phase 1: App Check SDK 導入(監視期間を稼ぐ)
 
-- [ ] **I16-T1: App Check 初期化コード(no-op ガード付き)**
+- [x] **I16-T1: App Check 初期化コード(no-op ガード付き)**
   - 内容: `firebase/app-check` を使い `src/lib/appCheck.ts` に `initAppCheck()` を実装:
     - `VITE_FIREBASE_APPCHECK_SITE_KEY` 未設定、またはエミュレータ利用時
       (`VITE_FIREBASE_USE_EMULATORS === 'true'`)は **no-op**(初期化しない)

@@ -90,7 +90,7 @@
 
 ## Phase 3: Analytics
 
-- [ ] **I18-T5: Analytics 基盤(init ガード + logEvent ラッパー)**
+- [x] **I18-T5: Analytics 基盤(init ガード + logEvent ラッパー)**
   - 内容:
     - `src/lib/firebase.ts` の本番用 firebaseConfig に
       `measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID` を追加

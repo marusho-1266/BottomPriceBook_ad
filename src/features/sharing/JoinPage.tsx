@@ -46,6 +46,8 @@ export function JoinPage() {
   if (inviteCode !== resetForCode) {
     setResetForCode(inviteCode);
     setState({ status: 'loading' });
+    setJoining(false);
+    setJoinError(false);
   }
 
   useEffect(() => {

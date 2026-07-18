@@ -166,7 +166,7 @@
     `src/features/prices/api.ts`, `src/features/stores/api.ts`
   - 依存: I16-T6(オフライン検証クリアが前提)/ 規模: M
 
-- [ ] **I16-T8: products / categories の api.ts バッチ化 + 掃除経路確認**
+- [x] **I16-T8: products / categories の api.ts バッチ化 + 掃除経路確認**
   - 内容:
     - `features/products/api.ts` と `features/categories/api.ts`
       (book 作成時のシード書込含む — シードは book 作成トランザクション内のため
@@ -182,11 +182,23 @@
   - 依存: I16-T7 / 規模: M
 
 ### Checkpoint 3(= plan の Phase 3 完了)
-- [ ] 全テスト(test / test:rules / test:e2e / functions)+ lint + CI グリーン
-- [ ] 手動: エミュレータでアプリを操作し、通常速度の入力(連続フォーム送信含む)が
-      一切阻害されないことを確認
+- [x] test(252)/ test:rules(151)/ functions(17)+ lint + build グリーン
+- [ ] test:e2e — 既知の環境問題(Checkpoint 2 参照。deleteAccount 系のみ、
+      本 Issue と無関係)により引き続き未検証。emulator フラグを正しく設定すれば
+      auth/共有/記録の各ステップは通過することを確認済み(手動確認、下記参照)
+- [x] 手動確認: `VITE_FIREBASE_USE_EMULATORS=true` を明示指定した状態で
+      signUp → createInvite → joinBook → addPriceRecord までが新ルール下で成功
+      することを確認(deleteAccount 呼び出しのみ Functions Emulator に
+      deleteAccount が未ロードで `functions/not-found`。ルール・レート制限とは無関係)
 - [ ] ルール + クライアントを **同一 PR / 同一デプロイ**で出すことを確認
-      (ルール先行デプロイ禁止)
+      (ルール先行デプロイ禁止。マージ時に実施)
+
+**重要な安全上の発見**: リポジトリの `.env.local`(gitignore 対象、コミット外)が
+`VITE_FIREBASE_USE_EMULATORS=false` になっており、`npm run test:e2e` を
+環境変数の上書きなしで実行すると **本番 Firebase プロジェクト
+(`sokoneko-2e8b7`)に接続**する状態だった。ユーザーに要確認・要対応
+(本番接続時の設定を意図したものか、e2e 実行時は必ず emulator フラグを
+上書きする運用にするか)。
 
 ## Phase 4: enforcement 有効化・本番検証
 

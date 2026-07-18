@@ -124,10 +124,14 @@ describe('サブコレクション', () => {
     });
   });
 
-  it('メンバーは categories を読み書きできる', async () => {
+  it('メンバーは categories を読み書きできる(rateLimits 同時更新)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     const ref = doc(db, 'books', ALICE, 'categories', 'food');
-    await assertSucceeds(setDoc(ref, { name: '食品', baseUnit: 'g', sortOrder: 0 }));
+    const { writeBatch } = await import('firebase/firestore');
+    const batch = writeBatch(db);
+    batch.set(ref, { name: '食品', baseUnit: 'g', sortOrder: 0 });
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(batch.commit());
     await assertSucceeds(getDoc(ref));
   });
 

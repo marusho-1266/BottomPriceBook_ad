@@ -5,10 +5,12 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { Timestamp, doc, serverTimestamp, setDoc, writeBatch, type Firestore } from 'firebase/firestore';
+import { Timestamp, doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
+
+type TestFirestore = ReturnType<ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore']>;
 
 const ALICE = 'alice-uid';
 const LONG_101 = 'a'.repeat(101);
@@ -60,7 +62,7 @@ beforeEach(async () => {
 });
 
 /** priceRecords の作成をレート制限用の rateLimits 同時更新込みで行う(Issue #16) */
-function createRecordBatch(db: Firestore, recordId: string, record: Record<string, unknown>) {
+function createRecordBatch(db: TestFirestore, recordId: string, record: Record<string, unknown>) {
   const batch = writeBatch(db);
   batch.set(doc(db, 'books', ALICE, 'priceRecords', recordId), record);
   batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });

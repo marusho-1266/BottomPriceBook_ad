@@ -1,7 +1,8 @@
-import { addDoc, collection, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
+import { collection, deleteDoc, doc, orderBy, query, writeBatch } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { db } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
 import { useCollection } from '../../lib/firestoreHooks';
+import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
 import type { BaseUnit, Category } from '../../types/models';
 import {
@@ -9,6 +10,14 @@ import {
   type UpdateCategoryInput,
   type UpdateCategoryOptions,
 } from './updateCategory';
+
+function requireUid(): string {
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    throw new Error('not authenticated');
+  }
+  return uid;
+}
 
 export function useCategories() {
   const { bookId } = useBook();
@@ -23,10 +32,12 @@ export function addCategory(
   bookId: string,
   input: { name: string; baseUnit: BaseUnit },
 ): Promise<unknown> {
-  return addDoc(collection(db, 'books', bookId, 'categories'), {
-    ...input,
-    sortOrder: Date.now(),
-  });
+  const uid = requireUid();
+  const ref = doc(collection(db, 'books', bookId, 'categories'));
+  const batch = writeBatch(db);
+  batch.set(ref, { ...input, sortOrder: Date.now() });
+  withRateLimit(batch, bookId, uid);
+  return batch.commit().then(() => ref);
 }
 
 /** 名称・基準単位の更新。baseUnit 変更時は配下記録をリラベルする */
@@ -36,7 +47,7 @@ export function updateCategory(
   input: UpdateCategoryInput,
   options: UpdateCategoryOptions,
 ): Promise<void> {
-  return updateCategoryWithRecords(db, bookId, categoryId, input, options);
+  return updateCategoryWithRecords(db, bookId, categoryId, requireUid(), input, options);
 }
 
 /** 参照チェックは呼び出し側(UI)の責務。MVP の意図的な割り切り(L-7) */

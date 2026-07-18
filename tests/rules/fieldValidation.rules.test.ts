@@ -5,10 +5,12 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
+
+type TestFirestore = ReturnType<ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore']>;
 
 const ALICE = 'alice-uid';
 const LONG_101 = 'a'.repeat(101);
@@ -47,14 +49,18 @@ beforeEach(async () => {
 });
 
 describe('categories のフィールド検証', () => {
+  /** categories の作成をレート制限用の rateLimits 同時更新込みで行う(Issue #16) */
+  function createCategoryBatch(db: TestFirestore, categoryId: string, category: Record<string, unknown>) {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'categories', categoryId), category);
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    return batch.commit();
+  }
+
   it('許可フィールドのみなら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'categories', 'c1'), {
-        name: '食品',
-        baseUnit: 'g',
-        sortOrder: 0,
-      }),
+      createCategoryBatch(db, 'c1', { name: '食品', baseUnit: 'g', sortOrder: 0 }),
     );
   });
 
@@ -84,11 +90,7 @@ describe('categories のフィールド検証', () => {
   it('name が100文字ちょうどなら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'categories', 'c1'), {
-        name: LONG_100,
-        baseUnit: 'g',
-        sortOrder: 0,
-      }),
+      createCategoryBatch(db, 'c1', { name: LONG_100, baseUnit: 'g', sortOrder: 0 }),
     );
   });
 
@@ -128,11 +130,7 @@ describe('categories のフィールド検証', () => {
   it('sortOrder が Date.now() 相当の大きな整数でも作成できる(上限なし)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'categories', 'c1'), {
-        name: '食品',
-        baseUnit: 'g',
-        sortOrder: Date.now(),
-      }),
+      createCategoryBatch(db, 'c1', { name: '食品', baseUnit: 'g', sortOrder: Date.now() }),
     );
   });
 
@@ -149,14 +147,19 @@ describe('categories のフィールド検証', () => {
 
   it('更新時も許可リスト外のフィールドは拒否される', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await setDoc(doc(db, 'books', ALICE, 'categories', 'c1'), {
-      name: '食品',
-      baseUnit: 'g',
-      sortOrder: 0,
-    });
-    await assertFails(updateDoc(doc(db, 'books', ALICE, 'categories', 'c1'), { extra: 'x' }));
-    await assertSucceeds(updateDoc(doc(db, 'books', ALICE, 'categories', 'c1'), { name: '食料品' }));
-  });
+    await createCategoryBatch(db, 'c1', { name: '食品', baseUnit: 'g', sortOrder: 0 });
+
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    const failBatch = writeBatch(db);
+    failBatch.update(doc(db, 'books', ALICE, 'categories', 'c1'), { extra: 'x' });
+    failBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(failBatch.commit());
+
+    const okBatch = writeBatch(db);
+    okBatch.update(doc(db, 'books', ALICE, 'categories', 'c1'), { name: '食料品' });
+    okBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(okBatch.commit());
+  }, 10000);
 
   it('メンバーは categories を削除できる(検証対象外)', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -208,21 +211,23 @@ describe('stores のフィールド検証', () => {
 });
 
 describe('products のフィールド検証', () => {
+  /** products の作成をレート制限用の rateLimits 同時更新込みで行う(Issue #16) */
+  function createProductBatch(db: TestFirestore, productId: string, product: Record<string, unknown>) {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'books', ALICE, 'products', productId), product);
+    batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    return batch.commit();
+  }
+
   it('許可フィールドのみなら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
-    await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'products', 'p1'), { name: '牛乳', categoryId: 'food' }),
-    );
+    await assertSucceeds(createProductBatch(db, 'p1', { name: '牛乳', categoryId: 'food' }));
   });
 
   it('note を付けても作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'products', 'p1'), {
-        name: '牛乳',
-        categoryId: 'food',
-        note: 'メモ',
-      }),
+      createProductBatch(db, 'p1', { name: '牛乳', categoryId: 'food', note: 'メモ' }),
     );
   });
 
@@ -258,11 +263,7 @@ describe('products のフィールド検証', () => {
   it('note が500文字ちょうどなら作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'books', ALICE, 'products', 'p1'), {
-        name: '牛乳',
-        categoryId: 'food',
-        note: 'a'.repeat(500),
-      }),
+      createProductBatch(db, 'p1', { name: '牛乳', categoryId: 'food', note: 'a'.repeat(500) }),
     );
   });
 

@@ -4,7 +4,6 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -12,6 +11,7 @@ import {
   setDoc,
   serverTimestamp,
   Timestamp,
+  writeBatch,
   type Firestore,
 } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -53,12 +53,14 @@ describe('deleteProductWithRecords', () => {
   it('商品と配下の価格記録をセキュリティルールの下で削除する', async () => {
     const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
 
-    await setDoc(doc(db, 'books', ALICE, 'products', 'p1'), {
+    // セットアップの全書込を 1 バッチにまとめ、rateLimits 更新を 1 回で満たす(Issue #16)
+    const setupBatch = writeBatch(db);
+    setupBatch.set(doc(db, 'books', ALICE, 'products', 'p1'), {
       name: '牛乳',
       categoryId: 'drink',
     });
     for (let i = 0; i < 3; i++) {
-      await addDoc(collection(db, 'books', ALICE, 'priceRecords'), {
+      setupBatch.set(doc(collection(db, 'books', ALICE, 'priceRecords')), {
         productId: 'p1',
         storeId: 's1',
         price: 200 + i,
@@ -69,7 +71,7 @@ describe('deleteProductWithRecords', () => {
       });
     }
     // 別商品の記録は残ること
-    await addDoc(collection(db, 'books', ALICE, 'priceRecords'), {
+    setupBatch.set(doc(collection(db, 'books', ALICE, 'priceRecords')), {
       productId: 'p2',
       storeId: 's1',
       price: 100,
@@ -78,6 +80,8 @@ describe('deleteProductWithRecords', () => {
       isSale: false,
       recordedAt: Timestamp.now(),
     });
+    setupBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await setupBatch.commit();
 
     await deleteProductWithRecords(db, ALICE, 'p1');
 

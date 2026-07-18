@@ -132,7 +132,12 @@ create / update を `writeBatch`(対象 doc + rateLimits doc の 2 書込)に変
 
 | リスク | 対応 |
 |---|---|
-| オフライン書込キューの再接続時連続コミットが 1 秒間隔に違反 → 後続書込が拒否されサイレントにデータ消失 | 実装時に rules テストで挙動を確認。拒否が確認された場合は Open Question として対応方針(間隔短縮・オフライン時の書込抑止 UI 等)を協議してから実装を確定する |
+| オフライン書込キューの再接続時連続コミットが 1 秒間隔に違反 → 後続書込が拒否されサイレントにデータ消失 | 実装時に判明: 本リポジトリのテスト環境(jsdom + Node)は `persistentLocalCache` の
+  IndexedDB 永続化を利用できず(`IndexedDB persistence is only available on platforms
+  that support LocalStorage` で memory cache にフォールバックする)、実際のオフライン
+  キュー挙動を自動テストで再現できない。代替として rules-unit-testing で
+  「同一クライアントからの 2 回の書込を間隔ゼロで連続実行」した際の挙動を検証し、
+  再接続時の最悪ケース(複数書込が短時間に連続コミットされる)の代理検証とする |
 | 書込ごとに 1 ドキュメント書込が追加(書込コスト 2 倍) | 少人数利用のため無料枠内。許容する |
 | recursiveDelete(退会)で rateLimits サブコレクションも消す必要 | `deleteAccount` は book 配下を recursiveDelete するため自動で消える(確認をタスクに含める) |
 

@@ -94,7 +94,7 @@
   - Files: `src/App.tsx`, `tests/App.test.tsx`(または既存 Gate テストの拡張)
   - 依存: I15-T4 / 規模: M
 
-- [ ] **I15-T6: LoginScreen の登録時バリデーションとエラーメッセージ**
+- [x] **I15-T6: LoginScreen の登録時バリデーションとエラーメッセージ**
   - 内容: signup モードの submit 時に `validatePasswordStrength` で事前チェックし、
     NG ならリクエストせずエラー表示。パスワード欄の下に条件のヒント
     (「8 文字以上・英字と数字を含む」)を signup モードのみ表示。
@@ -108,8 +108,8 @@
     `tests/features/auth/LoginScreen.test.tsx`
   - 依存: I15-T2 / 規模: S
 
-### Checkpoint 2(= plan の Phase 3 完了、ただし T6 は未着手)
-- [x] `npm run test`(270件)/ `npm run test:rules`(100件)/ `npm run lint` / `npm run build` グリーン(T5 時点)
+### Checkpoint 2(= plan の Phase 3 完了)
+- [x] `npm run test`(274件)/ `npm run test:rules`(100件)/ `npm run lint` / `npm run build` グリーン
 
 ## Phase 4: E2E・ドキュメント
 

@@ -52,7 +52,8 @@
     - 許可リスト外フィールドの書込拒否(3 コレクション)
     - name の境界値(空文字 NG / 100 文字 OK / 101 文字 NG)
     - categories: baseUnit が `['g','ml','個','枚','組','回分']` 以外は NG、
-      sortOrder が int 0〜10,000 の範囲外は NG
+      sortOrder が int でない・負の値は NG(上限なし。`addCategory` が
+      `Date.now()` をソートキーに使うため spec 修正済み)
     - products: categoryId 1〜100 文字、note は「無し or 0〜500 文字」
     - 既存正常系(シード書込・通常 CRUD)の回帰
     実装: `firestore.rules` の books スコープ内に検証ヘルパー

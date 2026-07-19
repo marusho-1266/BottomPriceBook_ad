@@ -7,6 +7,8 @@ const ReCaptchaV3ProviderMock = vi.hoisted(() =>
   }),
 );
 
+const captureExceptionMock = vi.hoisted(() => vi.fn());
+
 vi.mock('firebase/app-check', () => ({
   initializeAppCheck: initializeAppCheckMock,
   ReCaptchaV3Provider: ReCaptchaV3ProviderMock,
@@ -16,12 +18,17 @@ vi.mock('../../src/lib/firebase', () => ({
   app: { name: 'test-app' },
 }));
 
+vi.mock('@sentry/react', () => ({
+  captureException: captureExceptionMock,
+}));
+
 describe('initAppCheck', () => {
   const originalEnv = { ...import.meta.env };
 
   beforeEach(() => {
     initializeAppCheckMock.mockClear();
     ReCaptchaV3ProviderMock.mockClear();
+    captureExceptionMock.mockClear();
     vi.stubEnv('VITE_FIREBASE_APPCHECK_SITE_KEY', '');
     vi.stubEnv('VITE_FIREBASE_USE_EMULATORS', 'false');
   });
@@ -64,5 +71,7 @@ describe('initAppCheck', () => {
     });
     const { initAppCheck } = await import('../../src/lib/appCheck');
     expect(() => initAppCheck()).not.toThrow();
+    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
+    expect(captureExceptionMock).toHaveBeenCalledWith(expect.any(Error));
   });
 });

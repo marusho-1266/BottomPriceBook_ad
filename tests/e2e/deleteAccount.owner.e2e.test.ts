@@ -35,7 +35,7 @@ beforeEach(async () => {
 
 describe('アカウント削除 E2E: オーナーの退会', () => {
   it('book ごと削除され、メンバーは自分の book へフォールバックする', async () => {
-    const alice = await signUp('alice@example.com', 'アリス');
+    const alice = await signUp('alice@example.com', 'アリス', adminAuth);
     const inviteCode = await createInvite(db, {
       id: alice.uid,
       name: 'わたしの底値帳',
@@ -43,7 +43,7 @@ describe('アカウント削除 E2E: オーナーの退会', () => {
     });
 
     await firebaseSignOut(auth);
-    const bob = await signUp('bob@example.com', 'ボブ');
+    const bob = await signUp('bob@example.com', 'ボブ', adminAuth);
     await joinBook(db, {
       bookId: alice.uid,
       inviteCode,

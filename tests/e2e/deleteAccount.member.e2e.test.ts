@@ -23,7 +23,6 @@ let adminAuth: AdminAuth;
 
 beforeAll(() => {
   ({ adminApp, adminDb, adminAuth } = initAdminApp());
-  void adminAuth;
 });
 
 afterAll(async () => {
@@ -39,7 +38,7 @@ beforeEach(async () => {
 
 describe('アカウント削除 E2E: メンバーの退会', () => {
   it('共有 book から退出するが、自分が記録した価格記録は残る', async () => {
-    const alice = await signUp('alice@example.com', 'アリス');
+    const alice = await signUp('alice@example.com', 'アリス', adminAuth);
     const inviteCode = await createInvite(db, {
       id: alice.uid,
       name: 'わたしの底値帳',
@@ -47,7 +46,7 @@ describe('アカウント削除 E2E: メンバーの退会', () => {
     });
 
     await firebaseSignOut(auth);
-    const bob = await signUp('bob@example.com', 'ボブ');
+    const bob = await signUp('bob@example.com', 'ボブ', adminAuth);
     await joinBook(db, {
       bookId: alice.uid,
       inviteCode,

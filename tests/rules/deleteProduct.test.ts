@@ -51,7 +51,7 @@ beforeEach(async () => {
 
 describe('deleteProductWithRecords', () => {
   it('商品と配下の価格記録をセキュリティルールの下で削除する', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
 
     await setDoc(doc(db, 'books', ALICE, 'products', 'p1'), {
       name: '牛乳',

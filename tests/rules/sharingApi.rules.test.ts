@@ -36,7 +36,7 @@ function validBook(uid: string) {
 }
 
 function dbAs(uid: string): Firestore {
-  return testEnv.authenticatedContext(uid).firestore() as unknown as Firestore;
+  return testEnv.authenticatedContext(uid, { email_verified: true }).firestore() as unknown as Firestore;
 }
 
 beforeAll(async () => {

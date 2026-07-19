@@ -2,15 +2,21 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 認証済みかつメールアドレス確認済みであること(Issue #15)。
+    // Google ログインは email_verified が自動で true になるため影響しない
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
     // 招待コード。ドキュメント ID(自動 ID)自体が秘密トークンのため、
     // get は認証済なら許可するが list は禁止(コードの列挙防止)
     match /invites/{inviteCode} {
-      allow get: if request.auth != null;
+      allow get: if isVerified();
       allow list: if false;
 
       // 対象 book のオーナーのみ発行可。createdAt は serverTimestamp 必須(クライアント時計に依存しない)。
       // 有効期限は join 側で createdAt + 7 日を request.time と比較する
-      allow create: if request.auth != null
+      allow create: if isVerified()
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.bookId is string
         && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
@@ -20,25 +26,29 @@ service cloud.firestore {
 
       // 期限延長を防ぐため update は不可。削除は発行者のみ
       allow update: if false;
-      allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
+      allow delete: if isVerified() && resource.data.createdBy == request.auth.uid;
     }
 
     match /books/{bookId} {
       function isSignedIn() {
-        return request.auth != null;
+        return isVerified();
       }
       function isMember() {
         return isSignedIn() && request.auth.uid in resource.data.memberUids;
       }
       // book ドキュメントを get して member か判定(サブコレクション用)
       function isBookMember() {
-        return request.auth != null
+        return isVerified()
           && request.auth.uid
             in get(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }
-      // book 作成と同一トランザクション内の書き込み(シード)も許可するため getAfter を使う
+      // book 作成と同一トランザクション内の書き込み(シード)も許可するため getAfter を使う。
+      // isVerified() の呼び出しに置き換えず email_verified チェックをインライン展開しているのは、
+      // ensureBook の1トランザクション内(members + categories 複数件)でこの関数が複数回
+      // 評価されると、Firestore エミュレータが「他の match ブロックの行」を指す誤った
+      // PERMISSION_DENIED を返す不具合を実機検証(2026-07-19)で確認したため
       function isBookMemberAfterWrite() {
-        return request.auth != null
+        return request.auth != null && request.auth.token.email_verified == true
           && request.auth.uid
             in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }
@@ -63,7 +73,7 @@ service cloud.firestore {
       // 同一バッチで書かれた joinTokens doc の招待コードを getAfter で読んで検証する。
       // affectedKeys で任意フィールドの追加・変更も拒否する
       function isSelfJoinWithInvite() {
-        return request.auth != null
+        return isVerified()
           && !(request.auth.uid in resource.data.memberUids)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
           && request.resource.data.memberUids.toSet()
@@ -88,7 +98,7 @@ service cloud.firestore {
       // 退出: memberUids のみ・自分の uid の除去のみ。オーナー自身は退出不可(Issue #7)。
       // affectedKeys で任意フィールドの追加・変更も拒否する
       function isSelfLeave() {
-        return request.auth != null
+        return isVerified()
           && request.auth.uid in resource.data.memberUids
           && request.auth.uid != resource.data.ownerUid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
@@ -128,7 +138,7 @@ service cloud.firestore {
         allow read: if isBookMember();
         // 本人のみ作成可。join バッチでは book 側の isSelfJoinWithInvite が招待を検証し、
         // getAfter でメンバーになるため可。単独作成は既存メンバーの補完のみ
-        allow create: if request.auth != null
+        allow create: if isVerified()
           && request.auth.uid == memberUid
           && request.resource.data.keys().hasOnly(['displayName', 'joinedAt'])
           && request.resource.data.displayName is string
@@ -137,7 +147,7 @@ service cloud.firestore {
         // 表示名の書き換えを防ぐため update は不可
         allow update: if false;
         // 退出(本人)またはオーナーによる削除
-        allow delete: if request.auth != null
+        allow delete: if isVerified()
           && !bookIsDeleting()
           && (request.auth.uid == memberUid
             || request.auth.uid
@@ -149,7 +159,7 @@ service cloud.firestore {
       match /joinTokens/{memberUid} {
         allow read: if false;
         // 本人のみ・有効な招待コードのみ・フィールドは inviteCode のみ
-        allow create: if request.auth != null
+        allow create: if isVerified()
           && request.auth.uid == memberUid
           && request.resource.data.keys().hasOnly(['inviteCode'])
           && isValidInviteFor(request.resource.data.inviteCode)
@@ -157,7 +167,7 @@ service cloud.firestore {
         // コードのすり替えを防ぐため update は不可
         allow update: if false;
         // 退出(本人)またはオーナーによる削除(members doc と同じ掃除経路)
-        allow delete: if request.auth != null
+        allow delete: if isVerified()
           && !bookIsDeleting()
           && (request.auth.uid == memberUid
             || request.auth.uid

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { LoginScreen } from './features/auth/LoginScreen';
+import { VerifyEmailScreen } from './features/auth/VerifyEmailScreen';
 import { ensureBook } from './features/books/api';
 import { BookProvider } from './features/books/BookProvider';
 import { AppShell } from './components/AppShell';
@@ -28,10 +29,14 @@ function Loading() {
 function Gate() {
   const { user, loading } = useAuth();
   const [readyUid, setReadyUid] = useState<string | null>(null);
+  // reload() はサーバー側の emailVerified をローカルの User オブジェクトへ反映するが
+  // onAuthStateChanged は再発火しないため、確認完了は uid ベースの state で上書きする(Issue #15)
+  const [verifiedUid, setVerifiedUid] = useState<string | null>(null);
+  const emailVerified = user != null && (user.emailVerified || verifiedUid === user.uid);
   const bookReady = user != null && readyUid === user.uid;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !emailVerified) return;
     let cancelled = false;
     const uid = user.uid;
     ensureBook(db, uid, user.displayName ?? user.email ?? '').then(() => {
@@ -40,10 +45,18 @@ function Gate() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, emailVerified]);
 
   if (loading) return <Loading />;
   if (!user) return <LoginScreen />;
+  if (!emailVerified) {
+    return (
+      <VerifyEmailScreen
+        email={user.email ?? ''}
+        onVerified={() => setVerifiedUid(user.uid)}
+      />
+    );
+  }
   if (!bookReady) return <Loading />;
 
   return (

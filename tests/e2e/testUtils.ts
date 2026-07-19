@@ -34,8 +34,12 @@ export async function clearEmulators(): Promise<void> {
   });
 }
 
-export async function signUp(email: string, displayName: string) {
+// Issue #15: firestore.rules が email_verified を要求するため、メール確認と無関係な
+// E2E シナリオでは Admin SDK で確認済みにしてから ID トークンを更新する
+export async function signUp(email: string, displayName: string, adminAuth: AdminAuth) {
   const credential = await createUserWithEmailAndPassword(auth, email, PASSWORD);
+  await adminAuth.updateUser(credential.user.uid, { emailVerified: true });
+  await credential.user.getIdToken(true);
   await ensureBook(db, credential.user.uid, displayName);
   return credential.user;
 }

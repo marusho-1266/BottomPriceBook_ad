@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Cat } from 'lucide-react';
 import { Link } from 'react-router';
 import { resetPassword, signInWithEmail, signInWithGoogle, signUpWithEmail } from './api';
+import { validatePasswordStrength } from './password';
 import { CONTACT_FORM_URL } from '../legal/contact';
 
 type Mode = 'login' | 'signup' | 'reset';
@@ -11,8 +12,10 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/user-not-found': 'このメールアドレスは登録されていません',
   'auth/wrong-password': 'パスワードが正しくありません',
   'auth/email-already-in-use': 'このメールアドレスは既に登録されています',
-  'auth/weak-password': 'パスワードは 6 文字以上にしてください',
+  'auth/weak-password': '8 文字以上・英字と数字を含めてください',
+  'auth/password-does-not-meet-requirements': '8 文字以上・英字と数字を含めてください',
   'auth/invalid-email': 'メールアドレスの形式が正しくありません',
+  'auth/too-many-requests': 'リクエストが多すぎます。しばらく時間をおいてお試しください',
 };
 
 function toMessage(error: unknown): string {
@@ -54,6 +57,13 @@ export function LoginScreen() {
     if (!email || !password) {
       setMessage({ kind: 'error', text: 'メールアドレスとパスワードを入力してください' });
       return;
+    }
+    if (mode === 'signup') {
+      const passwordError = validatePasswordStrength(password);
+      if (passwordError) {
+        setMessage({ kind: 'error', text: passwordError });
+        return;
+      }
     }
     setBusy(true);
     try {
@@ -135,6 +145,11 @@ export function LoginScreen() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-12 w-full rounded-2xl border border-chevron bg-surface px-4 text-sm outline-none focus:border-primary"
               />
+              {mode === 'signup' && (
+                <p className="mt-1 text-[11px] font-bold text-ink-faint">
+                  8 文字以上・英字と数字を含めてください
+                </p>
+              )}
             </div>
           )}
 

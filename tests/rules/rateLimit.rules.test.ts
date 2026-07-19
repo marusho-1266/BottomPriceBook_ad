@@ -89,6 +89,17 @@ describe('rateLimits ドキュメント自体のルール', () => {
     const { getDoc } = await import('firebase/firestore');
     await assertSucceeds(getDoc(doc(db, 'books', ALICE, 'rateLimits', ALICE)));
   });
+
+  it('本人(オーナー)であっても rateLimits をクライアントから削除できない', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'books', ALICE, 'rateLimits', ALICE), {
+        lastWriteAt: serverTimestamp(),
+      });
+    });
+    const { deleteDoc } = await import('firebase/firestore');
+    await assertFails(deleteDoc(doc(db, 'books', ALICE, 'rateLimits', ALICE)));
+  });
 });
 
 describe('コンテンツ書込とレート制限の連携', () => {
@@ -134,6 +145,22 @@ describe('コンテンツ書込とレート制限の連携', () => {
     batch2.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
     await assertSucceeds(batch2.commit());
   }, 10000);
+
+  it('rateLimits を削除してから即 create しても 1 秒未満なら拒否される(delete による回避不可)', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    const batch1 = writeBatch(db);
+    batch1.set(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' });
+    batch1.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertSucceeds(batch1.commit());
+
+    const { deleteDoc } = await import('firebase/firestore');
+    await assertFails(deleteDoc(doc(db, 'books', ALICE, 'rateLimits', ALICE)));
+
+    const batch2 = writeBatch(db);
+    batch2.set(doc(db, 'books', ALICE, 'stores', 's2'), { name: 'スーパーB' });
+    batch2.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
+    await assertFails(batch2.commit());
+  });
 
   it('products / categories / priceRecords も同様にレート制限される', async () => {
     const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();

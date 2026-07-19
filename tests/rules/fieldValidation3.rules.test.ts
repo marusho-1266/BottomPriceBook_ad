@@ -65,6 +65,34 @@ describe('books のフィールド検証強化(Issue #16)', () => {
     await assertFails(setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), name: '' }));
   });
 
+  it('bottomWindowMonths が文字列だと作成できない', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), bottomWindowMonths: '6' }),
+    );
+  });
+
+  it('bottomWindowMonths が負の値だと作成できない', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), bottomWindowMonths: -1 }),
+    );
+  });
+
+  it('bottomWindowMonths が120を超えると作成できない', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), bottomWindowMonths: 121 }),
+    );
+  });
+
+  it('bottomWindowMonths が120ちょうどなら作成できる', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertSucceeds(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), bottomWindowMonths: 120 }),
+    );
+  });
+
   describe('既存 book への更新', () => {
     beforeEach(async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {

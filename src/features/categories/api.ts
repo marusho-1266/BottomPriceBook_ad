@@ -1,6 +1,7 @@
 import { collection, deleteDoc, doc, orderBy, query, writeBatch } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { auth, db } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
+import { requireUid } from '../../lib/auth';
 import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
@@ -10,14 +11,6 @@ import {
   type UpdateCategoryInput,
   type UpdateCategoryOptions,
 } from './updateCategory';
-
-function requireUid(): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    throw new Error('not authenticated');
-  }
-  return uid;
-}
 
 export function useCategories() {
   const { bookId } = useBook();

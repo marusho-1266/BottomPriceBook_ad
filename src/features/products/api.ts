@@ -1,18 +1,11 @@
 import { collection, doc, orderBy, query, writeBatch } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { auth, db } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
+import { requireUid } from '../../lib/auth';
 import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
 import type { Product } from '../../types/models';
-
-function requireUid(): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    throw new Error('not authenticated');
-  }
-  return uid;
-}
 
 export function useProducts() {
   const { bookId } = useBook();

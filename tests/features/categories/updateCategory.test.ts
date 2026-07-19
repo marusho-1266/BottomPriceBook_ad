@@ -107,4 +107,50 @@ describe('updateCategoryWithRecords', () => {
     expect(batchSet).toHaveBeenCalledTimes(1); // rateLimits のみ(カテゴリ更新も同バッチ)
     expect(batchCommit).toHaveBeenCalledTimes(1);
   });
+
+  it('RECORDS_PER_BATCH(450件)を超える記録は複数バッチに分割し、1秒間隔を空けてコミットする', async () => {
+    vi.useFakeTimers();
+    try {
+      const RECORDS_PER_BATCH = 450;
+      const recordCount = RECORDS_PER_BATCH + 1;
+      const docs = Array.from({ length: recordCount }, (_, i) =>
+        makeRecordDoc(`r${i}`, 100, 'g'),
+      );
+      getDocs.mockResolvedValue({ docs });
+
+      const commitOrder: number[] = [];
+      let commitCallIndex = 0;
+      batchCommit.mockImplementation(() => {
+        commitOrder.push(commitCallIndex);
+        commitCallIndex += 1;
+        return Promise.resolve();
+      });
+
+      const promise = updateCategoryWithRecords(
+        db,
+        'b1',
+        'food',
+        UID,
+        { name: '食品', baseUnit: 'ml' },
+        { previousBaseUnit: 'g', productIds: ['p1'] },
+      );
+
+      // 1 バッチ目のコミットが完了するまで進める
+      await vi.advanceTimersByTimeAsync(0);
+      expect(batchCommit).toHaveBeenCalledTimes(1);
+
+      // 2 バッチ目の前に 1.1 秒の待機が入っていることを確認
+      await vi.advanceTimersByTimeAsync(1099);
+      expect(batchCommit).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(batchCommit).toHaveBeenCalledTimes(2);
+
+      await promise;
+
+      // writeBatch が 2 回(2 バッチ分)呼ばれている
+      expect(writeBatch).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -7,7 +7,8 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { auth, db } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
+import { requireUid } from '../../lib/auth';
 import { trackEvent } from '../../lib/analytics';
 import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
@@ -22,14 +23,6 @@ export interface PriceRecordDraft {
   unit: string;
   isSale: boolean;
   recordedAt: Date;
-}
-
-function requireUid(): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    throw new Error('not authenticated');
-  }
-  return uid;
 }
 
 export async function addPriceRecord(bookId: string, draft: PriceRecordDraft): Promise<unknown> {

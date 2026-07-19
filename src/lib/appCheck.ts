@@ -1,4 +1,5 @@
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import * as Sentry from '@sentry/react';
 import { app } from './firebase';
 
 /**
@@ -16,7 +17,9 @@ export function initAppCheck(): void {
       provider: new ReCaptchaV3Provider(siteKey),
       isTokenAutoRefreshEnabled: true,
     });
-  } catch {
-    // App Check の初期化失敗でアプリ起動自体を止めない
+  } catch (error) {
+    // App Check の初期化失敗でアプリ起動自体を止めない。原因追跡のため記録だけは残す
+    console.error('App Check initialization failed', error);
+    Sentry.captureException(error);
   }
 }

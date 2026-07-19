@@ -11,6 +11,10 @@ service cloud.firestore {
     function isValidOptionalString(data, key, maxLen) {
       return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
     }
+    function isValidOptionalInt(data, key, minVal, maxVal) {
+      return !(key in data)
+        || (data[key] is int && data[key] >= minVal && data[key] <= maxVal);
+    }
 
     // 認証済みかつメールアドレス確認済みであること(Issue #15)。
     // Google ログインは email_verified が自動で true になるため影響しない
@@ -109,7 +113,8 @@ service cloud.firestore {
         return request.resource.data.keys().hasOnly(
             ['name', 'ownerUid', 'memberUids', 'bottomWindowMonths', 'createdAt', 'deleting'])
           && isValidString(request.resource.data.name, 1, 100)
-          && request.resource.data.memberUids.size() <= 20;
+          && request.resource.data.memberUids.size() <= 20
+          && isValidOptionalInt(request.resource.data, 'bottomWindowMonths', 0, 120);
       }
 
       // 自分の bookId は未作成でも読める(初期化時の存在確認に必要)。それ以外はメンバーのみ
@@ -287,11 +292,10 @@ service cloud.firestore {
           && isBookMemberAfterWrite()
           && isValidRateLimit()
           && request.time >= resource.data.lastWriteAt + duration.value(1, 's');
-        allow delete: if isVerified()
-          && !bookIsDeleting()
-          && (request.auth.uid == memberUid
-            || request.auth.uid
-              == get(/databases/$(database)/documents/books/$(bookId)).data.ownerUid);
+        // クライアントからの delete は「delete → 直後に create」で 1 秒間隔チェックを
+        // 回避できるバイパス経路になるため常に拒否する。掃除は Admin recursiveDelete
+        // (アカウント削除・book 削除時)のみが行う想定。
+        allow delete: if false;
       }
     }
   }

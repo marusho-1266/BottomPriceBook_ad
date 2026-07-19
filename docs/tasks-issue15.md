@@ -113,7 +113,7 @@
 
 ## Phase 4: E2E・ドキュメント
 
-- [ ] **I15-T7: E2E(確認フロー完走 + 未確認 deny)**
+- [x] **I15-T7: E2E(確認フロー完走 + 未確認 deny)**
   - 内容: `tests/e2e/emailVerification.e2e.test.ts` を新規作成
     (実クライアント API × Auth/Firestore エミュレータ。deleteAccount.e2e の構成を踏襲):
     1. メール登録 → エミュレータ REST(`/emulator/v1/projects/{id}/oobCodes`)から

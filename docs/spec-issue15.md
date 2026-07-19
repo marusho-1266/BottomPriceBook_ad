@@ -175,8 +175,33 @@ tests/e2e/                           → 確認フローの E2E(OOB コード取
 
 ## Open Questions
 
-- Auth エミュレータがコンソールのパスワードポリシー設定を再現できるかは未検証。
-  再現できない場合、サーバー側強制の検証は本番プロジェクトでの手動確認とする
-  (クライアント側バリデーションのテストで代替)
+- ~~Auth エミュレータがコンソールのパスワードポリシー設定を再現できるか~~ →
+  2026-07-19 実機検証で確認: Auth エミュレータはコンソールのパスワードポリシー設定を
+  再現しない(サーバー側強制の検証はできない)。クライアント側バリデーション
+  (`validatePasswordStrength`)のテストで代替し、サーバー側強制は本番プロジェクトでの
+  手動確認とする(I15-T8 の本番反映チェックリストに記載)
 - 確認メールの action URL はデフォルト(Firebase ホストの確認ページ)のままでよいか。
   カスタムページは将来スコープとする想定
+
+## 実装中に判明した事項(2026-07-19)
+
+- **firestore.rules の関数評価バグ**: `isBookMemberAfterWrite()` から独立した
+  `isVerified()` 関数を呼び出す実装だと、1つのトランザクション内(`ensureBook` の
+  members + categories 複数件書き込み)でこの関数が複数回評価された際、Firestore
+  エミュレータが無関係な match ブロックの行を指す誤った `PERMISSION_DENIED` を返す
+  不具合を実機 E2E 検証で発見した。`rules-unit-testing`(`npm run test:rules`)では
+  再現せず、実クライアント SDK × 実エミュレータの E2E でのみ顕在化した。
+  対応: 該当関数のみ email_verified チェックをインライン展開して回避(`firestore.rules`)
+- **既存 E2E ヘルパーの追随**: `tests/e2e/testUtils.ts` の `signUp()` は Admin SDK で
+  メール未確認のユーザーを作成していたため、email_verified 必須化により
+  `deleteAccount.owner/member.e2e.test.ts` が回帰した。Admin SDK で
+  `emailVerified: true` を設定後 `getIdToken(true)` でクライアント側トークンを
+  更新するよう修正(メール確認自体を検証する新規シナリオではないため)
+- **functions/ の未ビルド + Node バージョン不一致**: この worktree では
+  `functions/node_modules` が未インストールで、`npm install && npm run build` 後も
+  functions エミュレータが「Cannot determine backend specification. Timeout」で
+  `deleteAccount` をロードできない(ホスト Node 25 vs functions 想定 Node 22 の不一致)。
+  Issue #15 の変更とは無関係の既存環境制約のため本 Issue では未対応。
+  `deleteAccount.owner/member.e2e.test.ts` は Callable 呼び出し部分のみこの制約で
+  失敗する(signUp〜joinBook〜addPriceRecord までの Firestore 操作は本 Issue の
+  修正で正常に通ることを個別検証済み)

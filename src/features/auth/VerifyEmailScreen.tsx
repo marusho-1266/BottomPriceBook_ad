@@ -75,12 +75,12 @@ export function VerifyEmailScreen({ email, onVerified }: Props) {
       <div>
         <h1 className="text-lg font-extrabold text-ink">メールアドレスの確認</h1>
         <p className="mt-2 text-sm font-bold text-ink-sub">
-          <span className="break-all">{email}</span> 宛に確認メールを送信しました。
+          <span className="break-all">{email}</span> 宛のメールアドレス確認が必要です。
         </p>
         <p className="mt-1 text-xs font-bold text-ink-faint">
           メール内のリンクを開いてから「確認しました」を押してください。
           <br />
-          迷惑メールフォルダに入っていないかもご確認ください。
+          届いていない場合は迷惑メールフォルダをご確認のうえ、再送してください。
         </p>
       </div>
 

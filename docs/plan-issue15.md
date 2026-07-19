@@ -21,7 +21,7 @@
 | rules は共通ヘルパーに `email_verified` を集約 | 全コレクションで判定が一貫し、追加漏れを防ぐ。Google ユーザーは `email_verified = true` のため影響なし |
 | 確認判定はクライアント(`user.emailVerified`)+ rules の二重 | クライアントは UX(確認待ち画面)、rules が実質の強制。片方だけでは不完全 |
 | 「確認しました」で `reload()` + `getIdToken(true)` | `emailVerified` はサーバー側で立ってもクライアントの User と ID トークンには自動反映されないため、両方を明示的に更新する |
-| パスワード検証は正規表現の純関数 + コンソール設定の二段 | クライアントは即時フィードバック、コンソール設定(8 文字・英小文字・数字)が REST 直叩きも含む最終防衛線 |
+| パスワード検証は正規表現の純関数 + コンソール設定の二段 | クライアントは即時フィードバック、コンソール設定(8 文字・英字(大/小)・数字)が REST 直叩きも含む最終防衛線 |
 | 再送クールダウンは 60 秒のクライアントタイマー | `auth/too-many-requests` の発生を予防。サーバー側クォータはFirebase 任せ |
 | VerifyEmailScreen は Gate 直下・BookProvider の外 | 未確認状態で book 関連の購読(Firestore read)を一切走らせないため |
 

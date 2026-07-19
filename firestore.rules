@@ -42,9 +42,13 @@ service cloud.firestore {
           && request.auth.uid
             in get(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }
-      // book 作成と同一トランザクション内の書き込み(シード)も許可するため getAfter を使う
+      // book 作成と同一トランザクション内の書き込み(シード)も許可するため getAfter を使う。
+      // isVerified() の呼び出しに置き換えず email_verified チェックをインライン展開しているのは、
+      // ensureBook の1トランザクション内(members + categories 複数件)でこの関数が複数回
+      // 評価されると、Firestore エミュレータが「他の match ブロックの行」を指す誤った
+      // PERMISSION_DENIED を返す不具合を実機検証(2026-07-19)で確認したため
       function isBookMemberAfterWrite() {
-        return isVerified()
+        return request.auth != null && request.auth.token.email_verified == true
           && request.auth.uid
             in getAfter(/databases/$(database)/documents/books/$(bookId)).data.memberUids;
       }

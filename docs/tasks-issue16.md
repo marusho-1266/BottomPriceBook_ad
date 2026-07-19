@@ -202,7 +202,17 @@
 
 ## Phase 4: enforcement 有効化・本番検証
 
-- [ ] **I16-T9: enforceAppCheck 付与 + デプロイ + enforcement 段階有効化(ユーザー依頼)**
+- [x] **I16-T9(前半): デプロイ(ルール検証強化 + 書込レート制限を本番反映)**
+  - 2026-07-19 実施。`firebase use sokoneko-2e8b7` でプロジェクト選択後、
+    `FUNCTIONS_DISCOVERY_TIMEOUT=60 npm run deploy` で成功
+    (初回は functions のコード解析がデフォルト 10 秒タイムアウトで失敗。
+    `.env.local` にあった `FUNCTIONS_DISCOVERY_TIMEOUT` はこの対策用の
+    Firebase CLI 環境変数だったと判明。Vite ではなく `firebase deploy`
+    プロセス自体が読む変数のため `.env.local` ではなくシェルの環境変数として
+    渡す必要がある)
+  - firestore rules・deleteAccount(functions)・hosting(クライアント)を
+    同時デプロイ。Phase 2/3 のフィールド検証・レート制限が本番で有効
+- [ ] **I16-T9(後半): App Check 有効化 + enforceAppCheck 付与 + enforcement 段階有効化(ユーザー依頼)**
   - 内容:
     - functions の `deleteAccount` に `enforceAppCheck: true` を追加し、
       functions テストを更新

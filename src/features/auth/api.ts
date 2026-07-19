@@ -19,7 +19,13 @@ export function signInWithEmail(email: string, password: string): Promise<unknow
 
 export async function signUpWithEmail(email: string, password: string): Promise<unknown> {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await sendEmailVerification(credential.user);
+  // アカウント作成後は取り消せないため、送信失敗で signup 全体を reject しない。
+  // 未送信でも VerifyEmailScreen の再送ボタンで復帰できる(Issue #15)
+  try {
+    await sendEmailVerification(credential.user);
+  } catch {
+    // 送信失敗は無視し、確認待ち画面からの再送に委ねる
+  }
   return credential;
 }
 

@@ -52,6 +52,15 @@ describe('signUpWithEmail', () => {
     await expect(signUpWithEmail('a@example.com', 'password1')).rejects.toBeTruthy();
     expect(sendEmailVerification).not.toHaveBeenCalled();
   });
+
+  it('確認メール送信が失敗しても signup 自体は成功する(Issue #15)', async () => {
+    const user = { uid: 'u1' };
+    createUserWithEmailAndPassword.mockResolvedValue({ user });
+    sendEmailVerification.mockRejectedValue({ code: 'auth/network-request-failed' });
+
+    await expect(signUpWithEmail('a@example.com', 'password1')).resolves.toEqual({ user });
+    expect(sendEmailVerification).toHaveBeenCalledWith(user);
+  });
 });
 
 describe('resendVerificationEmail', () => {

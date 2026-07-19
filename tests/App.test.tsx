@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const listeners: Array<(user: unknown) => void> = [];
@@ -14,6 +15,11 @@ vi.mock('../src/features/books/api', () => ({
   ensureBook: vi.fn().mockResolvedValue(undefined),
   DEFAULT_BOTTOM_WINDOW_MONTHS: 6,
 }));
+vi.mock('../src/features/auth/api', () => ({
+  refreshEmailVerification: vi.fn(),
+  resendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+  signOut: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(() => ({})),
   collection: vi.fn(() => ({})),
@@ -25,11 +31,13 @@ vi.mock('firebase/firestore', () => ({
 
 import { App } from '../src/App';
 import { ensureBook } from '../src/features/books/api';
+import { refreshEmailVerification } from '../src/features/auth/api';
 import { act } from 'react';
 
 describe('App(認証ガード)', () => {
   beforeEach(() => {
     vi.mocked(ensureBook).mockClear();
+    vi.mocked(refreshEmailVerification).mockReset();
   });
 
   it('未ログインならログイン画面を表示する', async () => {
@@ -56,5 +64,20 @@ describe('App(認証ガード)', () => {
     expect(await screen.findByText(/unverified@example.com/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '確認しました' })).toBeInTheDocument();
     expect(ensureBook).not.toHaveBeenCalled();
+  });
+
+  it('未確認ユーザーが確認を完了すると book を初期化してアプリ本体を表示する(Issue #15)', async () => {
+    vi.mocked(refreshEmailVerification).mockResolvedValue(true);
+    const user = userEvent.setup();
+    render(<App />);
+    await act(async () => {
+      listeners.at(-1)!({ uid: 'u3', email: 'newlyverified@example.com', emailVerified: false });
+    });
+    expect(await screen.findByText(/newlyverified@example.com/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '確認しました' }));
+
+    expect(await screen.findByRole('heading', { name: 'そこねこ' })).toBeInTheDocument();
+    expect(ensureBook).toHaveBeenCalledWith(expect.anything(), 'u3', expect.any(String));
   });
 });

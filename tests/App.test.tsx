@@ -27,6 +27,7 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(() => ({})),
   where: vi.fn(() => ({})),
   onSnapshot: vi.fn(() => () => {}),
+  Timestamp: { fromDate: vi.fn(() => ({})) },
 }));
 
 import { App } from '../src/App';

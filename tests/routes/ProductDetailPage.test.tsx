@@ -39,7 +39,7 @@ vi.mock('../../src/features/stores/api', () => ({
 const now = Timestamp.now();
 
 vi.mock('../../src/features/prices/api', () => ({
-  usePriceRecords: vi.fn(() => ({
+  useProductPriceRecords: vi.fn(() => ({
     data: [
       {
         id: 'r-sale',
@@ -135,8 +135,8 @@ describe('ProductDetailPage', () => {
 
 describe('ProductDetailPage(特売記録のみ)', () => {
   it('通常のみの底値は「—」を表示する(L-6)', async () => {
-    const { usePriceRecords } = await import('../../src/features/prices/api');
-    vi.mocked(usePriceRecords).mockReturnValue({
+    const { useProductPriceRecords } = await import('../../src/features/prices/api');
+    vi.mocked(useProductPriceRecords).mockReturnValue({
       data: [
         {
           id: 'r-sale',

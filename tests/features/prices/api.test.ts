@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { batchCommit, batchSet, batchUpdate, deleteDoc, collection, doc, trackEvent } = vi.hoisted(
-  () => ({
+const { batchCommit, batchSet, batchUpdate, deleteDoc, collection, doc, trackEvent, query, where, useCollection, useBook } =
+  vi.hoisted(() => ({
     batchCommit: vi.fn(),
     batchSet: vi.fn(),
     batchUpdate: vi.fn(),
@@ -9,14 +9,19 @@ const { batchCommit, batchSet, batchUpdate, deleteDoc, collection, doc, trackEve
     collection: vi.fn(() => 'collectionRef'),
     doc: vi.fn(() => 'docRef'),
     trackEvent: vi.fn(),
-  }),
-);
+    query: vi.fn((...args: unknown[]) => args),
+    where: vi.fn((field: string, op: string, value: unknown) => ({ field, op, value })),
+    useCollection: vi.fn(() => ({ data: [], loading: false })),
+    useBook: vi.fn(() => ({ bookId: 'book1' })),
+  }));
 
 vi.mock('../../../src/lib/firebase', () => ({
   db: {},
   auth: { currentUser: { uid: 'test-uid' } },
 }));
 vi.mock('../../../src/lib/analytics', () => ({ trackEvent }));
+vi.mock('../../../src/lib/firestoreHooks', () => ({ useCollection }));
+vi.mock('../../../src/features/books/BookProvider', () => ({ useBook }));
 vi.mock('firebase/firestore', async (importOriginal) => {
   const actual = await importOriginal<typeof import('firebase/firestore')>();
   return {
@@ -24,11 +29,20 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     collection,
     doc,
     deleteDoc,
+    query,
+    where,
     writeBatch: () => ({ set: batchSet, update: batchUpdate, commit: batchCommit }),
   };
 });
 
-import { addPriceRecord, updatePriceRecord, deletePriceRecord } from '../../../src/features/prices/api';
+import { renderHook } from '@testing-library/react';
+import {
+  addPriceRecord,
+  updatePriceRecord,
+  deletePriceRecord,
+  usePriceRecords,
+  useProductPriceRecords,
+} from '../../../src/features/prices/api';
 
 describe('addPriceRecord の trackEvent 連携', () => {
   beforeEach(() => {
@@ -106,5 +120,42 @@ describe('updatePriceRecord / deletePriceRecord は計測イベントを送ら�
     deleteDoc.mockResolvedValue(undefined);
     await deletePriceRecord('book1', 'rec1');
     expect(trackEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('usePriceRecords のクエリ絞り込み(Issue #17)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('options を渡さない場合は期間で絞り込まない(全件購読)', () => {
+    renderHook(() => usePriceRecords());
+    expect(where).not.toHaveBeenCalled();
+  });
+
+  it('windowMonths が 0(全期間)の場合は期間で絞り込まない', () => {
+    renderHook(() => usePriceRecords({ windowMonths: 0, now: new Date('2026-07-20') }));
+    expect(where).not.toHaveBeenCalled();
+  });
+
+  it('windowMonths > 0 の場合は recordedAt >= カットオフ で絞り込む', () => {
+    const now = new Date('2026-07-20');
+    renderHook(() => usePriceRecords({ windowMonths: 6, now }));
+    expect(where).toHaveBeenCalledWith('recordedAt', '>=', expect.anything());
+    const cutoff = new Date('2026-07-20');
+    cutoff.setMonth(cutoff.getMonth() - 6);
+    const [, , timestampArg] = where.mock.calls[0];
+    expect((timestampArg as { toDate(): Date }).toDate().getTime()).toBe(cutoff.getTime());
+  });
+});
+
+describe('useProductPriceRecords(Issue #17)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('productId で絞り込むクエリを発行する', () => {
+    renderHook(() => useProductPriceRecords('p1'));
+    expect(where).toHaveBeenCalledWith('productId', '==', 'p1');
   });
 });

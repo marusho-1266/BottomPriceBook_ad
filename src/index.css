@@ -1,7 +1,13 @@
-@import '@fontsource/m-plus-rounded-1c/400.css';
-@import '@fontsource/m-plus-rounded-1c/500.css';
-@import '@fontsource/m-plus-rounded-1c/700.css';
-@import '@fontsource/m-plus-rounded-1c/800.css';
+/* 日本語 UI のため japanese/latin サブセットのみ import(cyrillic 等の未使用サブセットで
+   PWA プリキャッシュが肥大化するのを防ぐ。Issue #17) */
+@import '@fontsource/m-plus-rounded-1c/japanese-400.css';
+@import '@fontsource/m-plus-rounded-1c/latin-400.css';
+@import '@fontsource/m-plus-rounded-1c/japanese-500.css';
+@import '@fontsource/m-plus-rounded-1c/latin-500.css';
+@import '@fontsource/m-plus-rounded-1c/japanese-700.css';
+@import '@fontsource/m-plus-rounded-1c/latin-700.css';
+@import '@fontsource/m-plus-rounded-1c/japanese-800.css';
+@import '@fontsource/m-plus-rounded-1c/latin-800.css';
 @import 'tailwindcss';
 
 /* デザイントークン(docs/design.md 準拠)。

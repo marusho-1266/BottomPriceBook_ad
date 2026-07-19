@@ -23,12 +23,12 @@ export function ComparePage() {
   const { data: categories } = useCategories();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
-  const { data: records } = usePriceRecords();
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
 
   const category = categories.find((c) => c.id === categoryId) ?? categories[0];
   const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
   const now = useMemo(() => new Date(), []);
+  const { data: records } = usePriceRecords({ windowMonths, now });
 
   const storeName = (storeId: string) =>
     stores.find((s) => s.id === storeId)?.name ?? '(不明な店舗)';

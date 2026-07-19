@@ -5,6 +5,8 @@
 > (2026-07-16: Issue #7 により底値帳の共有(招待コード方式)を実装。詳細は `docs/spec-issue7.md`)
 > (2026-07-17: Issue #13 によりアカウント削除(退会)機能を実装。Cloud Functions(Blaze プラン)を
 > 初めて導入。詳細は `docs/spec-issue13.md`)
+> (2026-07-19: Issue #15 によりメールアドレス確認(email verification)とパスワードポリシー
+> (8 文字以上 + 英字 + 数字)を実装。詳細は `docs/spec-issue15.md`)
 >
 > このドキュメントは spec-driven development の Phase 1 (Specify) 成果物。
 > レビュー記録: `docs/spec-review-2026-07-12.md`
@@ -59,7 +61,7 @@
 | フロントエンド | React 19 + TypeScript + Vite | SPA で十分。SSR 不要(認証必須アプリで SEO 不要) |
 | UI | Tailwind CSS v4 | モバイルファーストの実装が速い |
 | PWA / オフライン | vite-plugin-pwa (Workbox) + Firestore オフライン永続化 | アプリシェルのキャッシュ + データのオフライン書込→自動同期。永続化は `persistentLocalCache` + `persistentMultipleTabManager`(複数タブ対応)。SW 更新は `registerType: 'prompt'`(更新プロンプト方式。オフライン中の意図しない更新事故を防ぐ)(L-3) |
-| 認証 | Firebase Authentication | Google ログイン + メール/パスワード |
+| 認証 | Firebase Authentication | Google ログイン + メール/パスワード。メール/パスワード登録はメールアドレス確認(email verification)必須(Issue #15) |
 | DB | Cloud Firestore | オフライン永続化が標準搭載。無料枠が広い |
 | サーバーレス関数 | Cloud Functions v2(`asia-northeast1`) | アカウント削除(退会)等、クライアントのみでは安全に実行できない処理用(Issue #13)。**Blaze プラン(従量課金)が必須**。呼び出し・削除件数とも無料枠内に収まる想定 |
 | ホスティング | Firebase Hosting | 無料枠。Firebase と一体運用 |
@@ -226,7 +228,8 @@ books/{bookId}/priceRecords/{recordId}
 ## 画面構成(MVP)
 
 1. **ログイン / サインアップ** — Google ログイン + メール/パスワード。
-   パスワードリセット(再設定メール送信)を含む(L-1)
+   パスワードリセット(再設定メール送信)を含む(L-1)。メール/パスワード登録後は
+   確認待ち画面でメールアドレス確認(email verification)を必須とする(Issue #15)
 2. **底値一覧(ホーム)** — 商品ごとの底値・店舗・単価をカード表示。検索・カテゴリ絞り込み。
    特売由来の底値には特売バッジを表示
 3. **価格を記録** — 商品・店舗を選択(その場で新規追加可)、価格・内容量・特売フラグを入力。
@@ -280,7 +283,8 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 - **Always(常にやる)**
   - コミット前に `npm run lint` と `npm run test` を通す
   - Firestore ルールで以下を維持する(M-3):
-    - book とその配下は「memberUids に含まれる認証済ユーザーのみ読み書き可」
+    - book とその配下は「memberUids に含まれる**メール確認済み**の認証済ユーザーのみ
+      読み書き可」(`request.auth.token.email_verified == true`。Issue #15)
     - book 作成時は `ownerUid == request.auth.uid` かつ MVP では `bookId == request.auth.uid` を検証
     - `ownerUid` は作成後に変更不可
     - `memberUids` の変更は owner のみ可
@@ -303,6 +307,8 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 
 - [ ] Google ログインとメール/パスワードでサインイン・サインアウトできる
 - [ ] メール/パスワードのパスワードリセット(再設定メール)ができる
+- [x] メール/パスワード登録後、確認メールが送信され、確認完了まではアプリを利用できない
+      (Issue #15)
 - [ ] 商品・店舗・カテゴリを登録でき、価格記録(価格・内容量・特売フラグ)を追加できる
 - [ ] 価格記録をあとから編集・削除できる
 - [ ] 商品を削除すると配下の価格記録も削除される。参照中の店舗・カテゴリは削除できない
@@ -343,3 +349,5 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 - book 初期化の冪等性 → getDoc 存在確認 + create 専用トランザクション + 決定的シード ID(再レビュー M-5)
 - アカウント削除の実装方式 → Cloud Functions(Blaze プラン)。自 book は再帰削除、
   参加中 book は退出のみ(記録は残す)、削除順序は Firestore → Auth(Issue #13)
+- メール確認の強制レベル → クライアント(確認待ち画面)+ firestore.rules の
+  `email_verified` 検証の両方。パスワードは 8 文字以上 + 英字 + 数字(Issue #15)

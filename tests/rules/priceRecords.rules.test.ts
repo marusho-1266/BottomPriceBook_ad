@@ -63,7 +63,7 @@ beforeEach(async () => {
 
 describe('priceRecords のルール(M-3 / T12)', () => {
   it('メンバーは正の price / quantity で記録を作成できる(rateLimits 同時更新)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch = writeBatch(db);
     batch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
     batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -71,7 +71,7 @@ describe('priceRecords のルール(M-3 / T12)', () => {
   });
 
   it('price が 0 以下の記録は拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch1 = writeBatch(db);
     batch1.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: 0 }));
     batch1.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -84,7 +84,7 @@ describe('priceRecords のルール(M-3 / T12)', () => {
   });
 
   it('quantity が 0 以下の記録は拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch = writeBatch(db);
     batch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ quantity: 0 }));
     batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -92,7 +92,7 @@ describe('priceRecords のルール(M-3 / T12)', () => {
   });
 
   it('price が数値でない記録は拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch = writeBatch(db);
     batch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ price: '158' }));
     batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -100,7 +100,7 @@ describe('priceRecords のルール(M-3 / T12)', () => {
   });
 
   it('更新でも正数検証が働く', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const seedBatch = writeBatch(db);
     seedBatch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
     seedBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -120,7 +120,7 @@ describe('priceRecords のルール(M-3 / T12)', () => {
   }, 10000);
 
   it('メンバーは記録を削除できる(削除はレート制限対象外)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const seedBatch = writeBatch(db);
     seedBatch.set(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord());
     seedBatch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -129,7 +129,7 @@ describe('priceRecords のルール(M-3 / T12)', () => {
   });
 
   it('他人の book には正しい記録でも書き込めない', async () => {
-    const db = testEnv.authenticatedContext(BOB).firestore();
+    const db = testEnv.authenticatedContext(BOB, { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord()));
   });
 });

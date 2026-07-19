@@ -51,7 +51,7 @@ beforeEach(async () => {
 
 describe('deleteProductWithRecords', () => {
   it('商品と配下の価格記録をセキュリティルールの下で削除する', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
 
     // セットアップの全書込を 1 バッチにまとめ、rateLimits 更新を 1 回で満たす(Issue #16)
     const setupBatch = writeBatch(db);

@@ -68,6 +68,39 @@ describe('LoginScreen', () => {
     expect(screen.getByText(/メールアドレスとパスワードを入力してください/)).toBeInTheDocument();
   });
 
+  it('新規登録モードではパスワード条件のヒントを表示する', async () => {
+    const user = userEvent.setup();
+    render(<LoginScreen />);
+    await user.click(screen.getByRole('button', { name: '新規登録はこちら' }));
+    expect(screen.getByText(/8 文字以上・英字と数字を含めてください/)).toBeInTheDocument();
+  });
+
+  it('ログインモードではパスワード条件のヒントを表示しない', () => {
+    render(<LoginScreen />);
+    expect(screen.queryByText(/8 文字以上・英字と数字を含めてください/)).not.toBeInTheDocument();
+  });
+
+  it('弱いパスワードでの登録は API を呼ばずエラーを表示する(7文字)', async () => {
+    const user = userEvent.setup();
+    render(<LoginScreen />);
+    await user.click(screen.getByRole('button', { name: '新規登録はこちら' }));
+    await user.type(screen.getByLabelText('メールアドレス'), 'weak@example.com');
+    await user.type(screen.getByLabelText('パスワード'), 'abcd123');
+    await user.click(screen.getByRole('button', { name: '登録する' }));
+    expect(signUpWithEmail).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/8 文字以上・英字と数字を含めてください/);
+  });
+
+  it('弱いパスワードでの登録は API を呼ばずエラーを表示する(数字なし)', async () => {
+    const user = userEvent.setup();
+    render(<LoginScreen />);
+    await user.click(screen.getByRole('button', { name: '新規登録はこちら' }));
+    await user.type(screen.getByLabelText('メールアドレス'), 'weak2@example.com');
+    await user.type(screen.getByLabelText('パスワード'), 'abcdefgh');
+    await user.click(screen.getByRole('button', { name: '登録する' }));
+    expect(signUpWithEmail).not.toHaveBeenCalled();
+  });
+
   it('利用規約・プライバシーポリシー・お問い合わせへのリンクを表示する(Issue #14)', () => {
     render(<LoginScreen />);
     expect(screen.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', '/terms');

@@ -46,14 +46,14 @@ beforeEach(async () => {
 
 describe('rateLimits ドキュメント自体のルール', () => {
   it('本人はメンバーとして rateLimits を作成できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(
       setDoc(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() }),
     );
   });
 
   it('lastWriteAt 以外のフィールドがあると拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'rateLimits', ALICE), {
         lastWriteAt: serverTimestamp(),
@@ -63,7 +63,7 @@ describe('rateLimits ドキュメント自体のルール', () => {
   });
 
   it('lastWriteAt が serverTimestamp でないと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const { Timestamp } = await import('firebase/firestore');
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: Timestamp.now() }),
@@ -71,7 +71,7 @@ describe('rateLimits ドキュメント自体のルール', () => {
   });
 
   it('他人の rateLimits は作成できない', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'rateLimits', 'other-uid'), {
         lastWriteAt: serverTimestamp(),
@@ -80,7 +80,7 @@ describe('rateLimits ドキュメント自体のルール', () => {
   });
 
   it('本人は自分の rateLimits を読める', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'books', ALICE, 'rateLimits', ALICE), {
         lastWriteAt: serverTimestamp(),
@@ -93,14 +93,14 @@ describe('rateLimits ドキュメント自体のルール', () => {
 
 describe('コンテンツ書込とレート制限の連携', () => {
   it('rateLimits を同一バッチで更新しない単独書込は拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' }),
     );
   });
 
   it('rateLimits を同一バッチで更新する単発書込は許可される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch = writeBatch(db);
     batch.set(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' });
     batch.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -108,7 +108,7 @@ describe('コンテンツ書込とレート制限の連携', () => {
   });
 
   it('1 秒未満の間隔で連続書込すると 2 回目は拒否される(オフライン再接続時の代理検証)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch1 = writeBatch(db);
     batch1.set(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' });
     batch1.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -121,7 +121,7 @@ describe('コンテンツ書込とレート制限の連携', () => {
   });
 
   it('1 秒以上経過すれば次の書込が許可される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     const batch1 = writeBatch(db);
     batch1.set(doc(db, 'books', ALICE, 'stores', 's1'), { name: 'スーパーA' });
     batch1.set(doc(db, 'books', ALICE, 'rateLimits', ALICE), { lastWriteAt: serverTimestamp() });
@@ -136,7 +136,7 @@ describe('コンテンツ書込とレート制限の連携', () => {
   }, 10000);
 
   it('products / categories / priceRecords も同様にレート制限される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'products', 'p1'), { name: '牛乳', categoryId: 'food' }),
     );

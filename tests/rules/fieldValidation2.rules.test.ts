@@ -71,21 +71,21 @@ function createRecordBatch(db: TestFirestore, recordId: string, record: Record<s
 
 describe('priceRecords のフィールド検証(Issue #16)', () => {
   it('許可リスト外のフィールドがあると拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ extra: 'x' })),
     );
   });
 
   it('price が上限(10,000,000)ちょうどなら作成できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(
       createRecordBatch(db, 'r1', validRecord({ price: 10_000_000 })),
     );
   });
 
   it('price が上限(10,000,000)を超えると拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(
         doc(db, 'books', ALICE, 'priceRecords', 'r1'),
@@ -95,12 +95,12 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
   });
 
   it('quantity が上限(1,000,000)ちょうどなら作成できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(createRecordBatch(db, 'r1', validRecord({ quantity: 1_000_000 })));
   });
 
   it('quantity が上限(1,000,000)を超えると拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(
         doc(db, 'books', ALICE, 'priceRecords', 'r1'),
@@ -110,26 +110,26 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
   });
 
   it('unit が101文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ unit: LONG_101 })),
     );
   });
 
   it('isSale が bool でないと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ isSale: 'false' })),
     );
   });
 
   it('note を付けても500文字以内なら作成できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(createRecordBatch(db, 'r1', validRecord({ note: 'a'.repeat(500) })));
   });
 
   it('note が501文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(
         doc(db, 'books', ALICE, 'priceRecords', 'r1'),
@@ -139,7 +139,7 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
   });
 
   it('productId / storeId が空文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'priceRecords', 'r1'), validRecord({ productId: '' })),
     );
@@ -151,7 +151,7 @@ describe('priceRecords のフィールド検証(Issue #16)', () => {
 
 describe('members のフィールド検証強化(Issue #16)', () => {
   it('displayName が100文字ちょうどなら作成できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(
       setDoc(doc(db, 'books', ALICE, 'members', ALICE), {
         displayName: LONG_100,
@@ -161,7 +161,7 @@ describe('members のフィールド検証強化(Issue #16)', () => {
   });
 
   it('displayName が101文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'members', ALICE), {
         displayName: LONG_101,
@@ -171,7 +171,7 @@ describe('members のフィールド検証強化(Issue #16)', () => {
   });
 
   it('displayName が空文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'books', ALICE, 'members', ALICE), {
         displayName: '',
@@ -185,7 +185,7 @@ describe('invites のフィールド検証強化(Issue #16)', () => {
   const CODE = 'invite-code-abcdefghij';
 
   it('bookName が100文字ちょうどなら発行できる', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(
       setDoc(doc(db, 'invites', CODE), {
         bookId: ALICE,
@@ -197,7 +197,7 @@ describe('invites のフィールド検証強化(Issue #16)', () => {
   });
 
   it('bookName が101文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'invites', CODE), {
         bookId: ALICE,
@@ -209,7 +209,7 @@ describe('invites のフィールド検証強化(Issue #16)', () => {
   });
 
   it('bookName が空文字だと拒否される', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore();
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(
       setDoc(doc(db, 'invites', CODE), {
         bookId: ALICE,

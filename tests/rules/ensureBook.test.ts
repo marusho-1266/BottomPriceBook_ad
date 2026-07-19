@@ -41,7 +41,7 @@ beforeEach(async () => {
 
 describe('ensureBook', () => {
   it('初回はセキュリティルールの下で book とシードカテゴリを作成する', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
     await ensureBook(db, ALICE, 'アリス');
 
     const book = await getDoc(doc(db, 'books', ALICE));
@@ -61,7 +61,7 @@ describe('ensureBook', () => {
   });
 
   it('初回作成でオーナーの members doc も作成される(Issue #7)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
     await ensureBook(db, ALICE, 'アリス');
 
     const member = await getDoc(doc(db, 'books', ALICE, 'members', ALICE));
@@ -70,7 +70,7 @@ describe('ensureBook', () => {
   });
 
   it('2 回目の呼び出しではユーザー変更済みの設定を上書きしない(M-5)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
     await ensureBook(db, ALICE, 'アリス');
 
     await updateDoc(doc(db, 'books', ALICE), {
@@ -89,7 +89,7 @@ describe('ensureBook', () => {
   });
 
   it('members doc が無い既存 book への再ログインで補完される(Issue #7)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
     // Issue #7 以前に作成された book(members doc 無し)を再現
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'books', ALICE), {
@@ -112,7 +112,7 @@ describe('ensureBook', () => {
   });
 
   it('既存の members doc は上書きしない(冪等)(Issue #7)', async () => {
-    const db = testEnv.authenticatedContext(ALICE).firestore() as unknown as Firestore;
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
     await ensureBook(db, ALICE, '旧しい名前');
 
     // 表示名が変わった状態での再ログイン

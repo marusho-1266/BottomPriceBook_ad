@@ -60,6 +60,8 @@ export async function ensureBook(db: Firestore, uid: string, displayName: string
         sortOrder: category.sortOrder,
       });
     }
+    // categories の書込レート制限(Issue #16)を満たすため、シードと同一トランザクションで更新する
+    tx.set(doc(db, 'books', uid, 'rateLimits', uid), { lastWriteAt: serverTimestamp() });
   });
 }
 

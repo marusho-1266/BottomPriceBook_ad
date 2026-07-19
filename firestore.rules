@@ -2,6 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 悪用・スパム対策(Issue #16)のフィールド検証共通ヘルパー。
+    // トップレベルに定義し、invites(books スコープ外)からも利用する。
+    // 数値型は値の大小でストレージコストが変わらないため上限は設けない
+    function isValidString(value, minLen, maxLen) {
+      return value is string && value.size() >= minLen && value.size() <= maxLen;
+    }
+    function isValidOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+    function isValidOptionalInt(data, key, minVal, maxVal) {
+      return !(key in data)
+        || (data[key] is int && data[key] >= minVal && data[key] <= maxVal);
+    }
+
     // 認証済みかつメールアドレス確認済みであること(Issue #15)。
     // Google ログインは email_verified が自動で true になるため影響しない
     function isVerified() {
@@ -22,6 +36,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
             .data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly(['bookId', 'bookName', 'createdBy', 'createdAt'])
+        && isValidString(request.resource.data.bookName, 1, 100)
         && request.resource.data.createdAt == request.time;
 
       // 期限延長を防ぐため update は不可。削除は発行者のみ
@@ -60,6 +75,13 @@ service cloud.firestore {
         return exists(/databases/$(database)/documents/books/$(bookId))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
       }
+      // 書込レート制限(Issue #16)。コンテンツ書込と同一バッチで rateLimits doc を
+      // serverTimestamp 更新していることを強制する(間隔の妥当性は rateLimits 側のルールで検証)
+      function rateLimitOk() {
+        return getAfter(
+            /databases/$(database)/documents/books/$(bookId)/rateLimits/$(request.auth.uid))
+            .data.lastWriteAt == request.time;
+      }
       // 招待コードがこの book のもので期限内かを検証(Issue #7)。
       // 上限 7 日はサーバー時刻 request.time と createdAt(serverTimestamp) で判定する
       function isValidInviteFor(code) {
@@ -85,6 +107,16 @@ service cloud.firestore {
               .data.inviteCode);
       }
 
+      // 巨大ドキュメント・任意フィールドの書込を防ぐ(Issue #16)。
+      // deleting はサーバー(Admin SDK)専用の任意フィールドのため許可リストに含める
+      function isValidBook() {
+        return request.resource.data.keys().hasOnly(
+            ['name', 'ownerUid', 'memberUids', 'bottomWindowMonths', 'createdAt', 'deleting'])
+          && isValidString(request.resource.data.name, 1, 100)
+          && request.resource.data.memberUids.size() <= 20
+          && isValidOptionalInt(request.resource.data, 'bottomWindowMonths', 0, 120);
+      }
+
       // 自分の bookId は未作成でも読める(初期化時の存在確認に必要)。それ以外はメンバーのみ
       allow read: if isSignedIn() && (bookId == request.auth.uid || isMember());
 
@@ -93,7 +125,8 @@ service cloud.firestore {
         && bookId == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids
-        && request.resource.data.get('deleting', false) == false;
+        && request.resource.data.get('deleting', false) == false
+        && isValidBook();
 
       // 退出: memberUids のみ・自分の uid の除去のみ。オーナー自身は退出不可(Issue #7)。
       // affectedKeys で任意フィールドの追加・変更も拒否する
@@ -114,6 +147,7 @@ service cloud.firestore {
       // クライアントからの変更を一切禁止する(永続 DoS 防止)
       allow update: if resource.data.get('deleting', false) != true
         && !('deleting' in request.resource.data.diff(resource.data).affectedKeys())
+        && isValidBook()
         && ((isMember()
           && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.createdAt == resource.data.createdAt
@@ -126,9 +160,20 @@ service cloud.firestore {
       allow delete: if false;
 
       match /categories/{categoryId} {
+        // 巨大ドキュメント・任意フィールドの書込を防ぐ(Issue #16)
+        function isValidCategory() {
+          return request.resource.data.keys().hasOnly(['name', 'baseUnit', 'sortOrder'])
+            && isValidString(request.resource.data.name, 1, 100)
+            && request.resource.data.baseUnit in ['g', 'ml', '個', '枚', '組', '回分']
+            && request.resource.data.sortOrder is int
+            && request.resource.data.sortOrder >= 0;
+        }
+
         allow read: if isBookMember();
         // book 作成トランザクションでのシード書き込みがあるため getAfter 判定
-        allow write: if isBookMemberAfterWrite() && !bookIsDeleting();
+        allow create, update: if isBookMemberAfterWrite() && !bookIsDeleting()
+          && isValidCategory() && rateLimitOk();
+        allow delete: if isBookMemberAfterWrite() && !bookIsDeleting();
       }
 
       // メンバープロフィール(表示名のみ。Issue #7)。
@@ -141,7 +186,7 @@ service cloud.firestore {
         allow create: if isVerified()
           && request.auth.uid == memberUid
           && request.resource.data.keys().hasOnly(['displayName', 'joinedAt'])
-          && request.resource.data.displayName is string
+          && isValidString(request.resource.data.displayName, 1, 100)
           && isBookMemberAfterWrite()
           && !bookIsDeleting();
         // 表示名の書き換えを防ぐため update は不可
@@ -175,26 +220,82 @@ service cloud.firestore {
       }
 
       match /stores/{storeId} {
+        // 巨大ドキュメント・任意フィールドの書込を防ぐ(Issue #16)
+        function isValidStore() {
+          return request.resource.data.keys().hasOnly(['name'])
+            && isValidString(request.resource.data.name, 1, 100);
+        }
+
         allow read: if isBookMember();
-        allow write: if isBookMember() && !bookIsDeleting();
+        allow create, update: if isBookMember() && !bookIsDeleting()
+          && isValidStore() && rateLimitOk();
+        allow delete: if isBookMember() && !bookIsDeleting();
       }
 
       match /products/{productId} {
+        // 巨大ドキュメント・任意フィールドの書込を防ぐ(Issue #16)
+        function isValidProduct() {
+          return request.resource.data.keys().hasOnly(['name', 'categoryId', 'note'])
+            && isValidString(request.resource.data.name, 1, 100)
+            && isValidString(request.resource.data.categoryId, 1, 100)
+            && isValidOptionalString(request.resource.data, 'note', 500);
+        }
+
         allow read: if isBookMember();
-        allow write: if isBookMember() && !bookIsDeleting();
+        allow create, update: if isBookMember() && !bookIsDeleting()
+          && isValidProduct() && rateLimitOk();
+        allow delete: if isBookMember() && !bookIsDeleting();
       }
 
       match /priceRecords/{recordId} {
-        // price / quantity は正の数(M-3)。上限等の業務バリデーションはクライアント責務
+        // price / quantity は正の数かつ上限あり、フィールドは許可リストのみ(M-3 / Issue #16)
         function isValidRecord() {
-          return request.resource.data.price is number
+          return request.resource.data.keys().hasOnly(
+              ['productId', 'storeId', 'price', 'quantity', 'unit', 'isSale', 'recordedAt', 'note'])
+            && isValidString(request.resource.data.productId, 1, 100)
+            && isValidString(request.resource.data.storeId, 1, 100)
+            && request.resource.data.price is number
             && request.resource.data.price > 0
+            && request.resource.data.price <= 10000000
             && request.resource.data.quantity is number
-            && request.resource.data.quantity > 0;
+            && request.resource.data.quantity > 0
+            && request.resource.data.quantity <= 1000000
+            && isValidString(request.resource.data.unit, 1, 100)
+            && request.resource.data.isSale is bool
+            && request.resource.data.recordedAt is timestamp
+            && isValidOptionalString(request.resource.data, 'note', 500);
         }
 
         allow read, delete: if isBookMember();
-        allow create, update: if isBookMember() && isValidRecord() && !bookIsDeleting();
+        allow create, update: if isBookMember() && isValidRecord() && !bookIsDeleting()
+          && rateLimitOk();
+      }
+
+      // 書込レート制限用の最終書込時刻(Issue #16)。本人のみ読み書き可能。
+      // 検証対象コレクション(categories/stores/products/priceRecords)の create/update は
+      // 同一バッチでの本ドキュメント更新(rateLimitOk)を必須とし、
+      // update 側で「前回から 1 秒以上」を強制することでレート制限を実現する
+      match /rateLimits/{memberUid} {
+        function isValidRateLimit() {
+          return request.resource.data.keys().hasOnly(['lastWriteAt'])
+            && request.resource.data.lastWriteAt == request.time;
+        }
+
+        // book 作成トランザクションでのシード書き込みがあるため getAfter 判定
+        allow read: if isVerified() && request.auth.uid == memberUid;
+        allow create: if isVerified()
+          && request.auth.uid == memberUid
+          && isBookMemberAfterWrite()
+          && isValidRateLimit();
+        allow update: if isVerified()
+          && request.auth.uid == memberUid
+          && isBookMemberAfterWrite()
+          && isValidRateLimit()
+          && request.time >= resource.data.lastWriteAt + duration.value(1, 's');
+        // クライアントからの delete は「delete → 直後に create」で 1 秒間隔チェックを
+        // 回避できるバイパス経路になるため常に拒否する。掃除は Admin recursiveDelete
+        // (アカウント削除・book 削除時)のみが行う想定。
+        allow delete: if false;
       }
     }
   }

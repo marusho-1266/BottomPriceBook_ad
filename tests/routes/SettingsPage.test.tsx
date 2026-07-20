@@ -220,6 +220,23 @@ describe('SettingsPage', () => {
     expect(downloadPriceRecordsCsv).toHaveBeenCalled();
   });
 
+  it('取得に失敗した場合はエラーメッセージを表示し、ボタンを再度有効にする', async () => {
+    fetchPriceRecords.mockRejectedValue(new Error('network error'));
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    const button = screen.getByRole('button', { name: 'データをエクスポート' });
+    await user.click(button);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('エクスポートに失敗しました');
+    expect(button).not.toBeDisabled();
+    expect(downloadPriceRecordsCsv).not.toHaveBeenCalled();
+  });
+
   it('参加中の book(非オーナー)でもデータをエクスポートボタンが表示される(Issue #20)', () => {
     setBook(false);
     render(

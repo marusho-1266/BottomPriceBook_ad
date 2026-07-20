@@ -53,6 +53,7 @@ export function SettingsPage() {
   const windowMonths = book?.bottomWindowMonths ?? 6;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState(false);
 
   async function handleWindowChange(months: number) {
     await updateBook(db, bookId, { bottomWindowMonths: months });
@@ -73,6 +74,7 @@ export function SettingsPage() {
   async function handleExport() {
     if (isExporting) return;
     setIsExporting(true);
+    setExportError(false);
     try {
       const [records, products, stores] = await Promise.all([
         fetchPriceRecords(bookId),
@@ -80,6 +82,8 @@ export function SettingsPage() {
         fetchStores(bookId),
       ]);
       downloadPriceRecordsCsv(records, products, stores, book?.name ?? '');
+    } catch {
+      setExportError(true);
     } finally {
       setIsExporting(false);
     }
@@ -191,6 +195,11 @@ export function SettingsPage() {
           <Download className="size-4" />
           データをエクスポート
         </button>
+        {exportError && (
+          <p role="alert" className="mt-2 text-xs font-bold text-sale">
+            エクスポートに失敗しました。時間をおいて再度お試しください
+          </p>
+        )}
       </div>
 
       <div className="mx-4 mt-4">

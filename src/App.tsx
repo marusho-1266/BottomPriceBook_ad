@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -42,6 +42,9 @@ function Gate() {
   // (state での比較。effect 内で直接 setState すると react-hooks/set-state-in-effect に
   // 抵触するため、レンダー中の条件付き setState という React 公式の許容パターンを使う)
   const [onboardingCheckedUid, setOnboardingCheckedUid] = useState<string | null>(null);
+  // StrictMode の setup→cleanup→setup で 'onboarding_shown' が二重発火しないよう、
+  // uid ごとに送信済みかを ref で管理する(ref は effect の再実行を跨いで保持される)
+  const onboardingShownUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user || !emailVerified) return;
@@ -58,14 +61,15 @@ function Gate() {
   // 初回ログイン(book 準備完了)のタイミングで、未読ならオンボーディングを自動表示する(Issue #21)
   if (bookReady && user && onboardingCheckedUid !== user.uid) {
     setOnboardingCheckedUid(user.uid);
-    if (!hasSeenOnboarding(user.uid)) {
-      setOnboardingOpen(true);
-    }
+    setOnboardingOpen(!hasSeenOnboarding(user.uid));
   }
 
   useEffect(() => {
-    if (onboardingOpen) trackEvent('onboarding_shown');
-  }, [onboardingOpen]);
+    if (onboardingOpen && user && onboardingShownUidRef.current !== user.uid) {
+      onboardingShownUidRef.current = user.uid;
+      trackEvent('onboarding_shown');
+    }
+  }, [onboardingOpen, user]);
 
   function closeOnboarding(eventName: 'onboarding_completed' | 'onboarding_skipped') {
     if (user) markOnboardingSeen(user.uid);

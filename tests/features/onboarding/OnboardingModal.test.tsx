@@ -64,4 +64,16 @@ describe('OnboardingModal', () => {
     expect(onComplete).not.toHaveBeenCalled();
     expect(onSkip).not.toHaveBeenCalled();
   });
+
+  it('背景(オーバーレイ)タップでは閉じない(誤操作防止)', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    const onSkip = vi.fn();
+    render(<OnboardingModal onComplete={onComplete} onSkip={onSkip} />);
+
+    await user.click(screen.getByTestId('onboarding-backdrop'));
+
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(onSkip).not.toHaveBeenCalled();
+  });
 });

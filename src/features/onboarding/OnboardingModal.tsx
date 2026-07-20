@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ONBOARDING_SLIDES } from './content';
 
 /**
@@ -19,9 +19,41 @@ export function OnboardingModal({
   const isLast = pageIndex === ONBOARDING_SLIDES.length - 1;
   const Icon = slide.icon;
 
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusables = () =>
+      Array.from(panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? []);
+    focusables()[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      // Tab をダイアログ内に閉じ込める(端で反対端へループ)
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const inside = active instanceof Node && panelRef.current?.contains(active);
+      if (event.shiftKey) {
+        if (!inside || active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (!inside || active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      opener?.focus();
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-30 mx-auto flex max-w-md items-center justify-center px-6">
-      <div aria-hidden="true" className="absolute inset-0 bg-ink/30" />
+      <div aria-hidden="true" data-testid="onboarding-backdrop" className="absolute inset-0 bg-ink/30" />
       <div
         ref={panelRef}
         role="dialog"

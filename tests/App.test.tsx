@@ -118,4 +118,22 @@ describe('App(認証ガード)', () => {
     expect(trackEvent).toHaveBeenCalledWith('onboarding_skipped');
     expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
   });
+
+  it('最後まで進めて「はじめる」を押すと既読フラグが立ち onboarding_completed が送信される(Issue #21)', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await act(async () => {
+      listeners.at(-1)!({ uid: 'u7', emailVerified: true });
+    });
+    await screen.findByRole('dialog', { name: 'アプリの使い方' });
+
+    for (let i = 0; i < 3; i += 1) {
+      await user.click(screen.getByRole('button', { name: '次へ' }));
+    }
+    await user.click(screen.getByRole('button', { name: 'はじめる' }));
+
+    expect(hasSeenOnboarding('u7')).toBe(true);
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_completed');
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+  });
 });

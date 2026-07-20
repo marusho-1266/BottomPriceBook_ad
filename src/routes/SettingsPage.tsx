@@ -248,8 +248,14 @@ export function SettingsPage() {
 
       {showOnboarding && (
         <OnboardingModal
-          onComplete={() => setShowOnboarding(false)}
-          onSkip={() => setShowOnboarding(false)}
+          onComplete={() => {
+            trackEvent('onboarding_completed');
+            setShowOnboarding(false);
+          }}
+          onSkip={() => {
+            trackEvent('onboarding_skipped');
+            setShowOnboarding(false);
+          }}
         />
       )}
     </div>

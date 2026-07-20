@@ -1,11 +1,11 @@
-import { collection, deleteDoc, doc, orderBy, query, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, orderBy, query, writeBatch } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { requireUid } from '../../lib/auth';
 import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
-import type { Store } from '../../types/models';
+import type { Store, WithId } from '../../types/models';
 
 export function useStores() {
   const { bookId } = useBook();
@@ -14,6 +14,12 @@ export function useStores() {
     [bookId],
   );
   return useCollection<Store>(storesQuery);
+}
+
+/** book 内の店舗一覧を一度だけ取得する(エクスポート等、購読不要な用途) */
+export async function fetchStores(bookId: string): Promise<WithId<Store>[]> {
+  const snapshot = await getDocs(query(collection(db, 'books', bookId, 'stores'), orderBy('name')));
+  return snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Store) }));
 }
 
 export function addStore(bookId: string, name: string): Promise<unknown> {

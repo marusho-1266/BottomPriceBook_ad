@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   query,
   where,
   writeBatch,
@@ -15,7 +16,7 @@ import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
 import { windowStart } from './bottomPrice';
-import type { PriceRecord } from '../../types/models';
+import type { PriceRecord, WithId } from '../../types/models';
 
 export interface PriceRecordDraft {
   productId: string;
@@ -82,6 +83,12 @@ export function usePriceRecords(options?: { windowMonths: number; now: Date }) {
       : query(base, where('recordedAt', '>=', Timestamp.fromDate(new Date(cutoffMs))));
   }, [bookId, cutoffMs]);
   return useCollection<PriceRecord>(recordsQuery);
+}
+
+/** book 内の全期間の価格記録を一度だけ取得する(エクスポート等、購読不要な用途) */
+export async function fetchPriceRecords(bookId: string): Promise<WithId<PriceRecord>[]> {
+  const snapshot = await getDocs(collection(db, 'books', bookId, 'priceRecords'));
+  return snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as PriceRecord) }));
 }
 
 /** 特定商品の価格記録のみを購読する(商品詳細の全期間履歴表示に使用) */

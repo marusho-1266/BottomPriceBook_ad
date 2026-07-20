@@ -1,28 +1,22 @@
-# TODO: Issue #14 利用規約・プライバシーポリシー
+# TODO: Issue #20 データエクスポート(CSV等)機能
 
-詳細: `tasks/plan.md`(= `docs/plan-issue14.md`) / 仕様: `docs/spec-issue14.md`
+詳細: `tasks/plan.md`(= `docs/plan-issue20.md`) / 仕様: `docs/spec-issue20.md`
 
-## Phase 1: ルーティング基盤
+## Phase 1: CSV ユーティリティ(基盤)
 
-- [x] T1: BrowserRouter を App 直下へ移動 + `/terms` `/privacy` 公開ルート枠(M)— `src/App.tsx`, `src/features/legal/{Terms,Privacy}Page.tsx`(仮), 公開ルートテスト新規
-- [x] T2: 利用規約・プライバシーポリシーの文面ドラフト作成 → ユーザーレビュー依頼(S・T1 と並行可)
-- [x] ✅ チェックポイント 1: 既存テスト全 green + 未ログインで公開ルート表示 + ドラフト提示済み
+- [x] I20-T1: `src/lib/csv.ts`(`escapeCsvField` / `buildCsv`)(XS)+ テスト
+- [x] ✅ チェックポイント A: test/lint green・`csv.ts` に Firestore/DOM 依存なし
 
-## Phase 2: ページ実装
+## Phase 2: エクスポートドメインロジック
 
-- [x] T3: PrivacyPage 本実装(M)— 文面・SubPageHeader・フォームリンク(`CONTACT_FORM_URL` 定数)+ テスト
-- [x] T4: TermsPage 本実装(S)+ テスト
-- [x] ✅ チェックポイント 2: 両ページ本文表示・テスト全 green
+- [x] I20-T2: `buildPriceRecordsCsv` / `buildExportFilename`(純粋関数、S)+ テスト
+- [x] I20-T3: `downloadPriceRecordsCsv`(副作用ラッパー、S)+ テスト(`tests/setup.ts` は変更しない)
+- [x] ✅ チェックポイント B: test/lint green・純粋関数のテストに DOM モック混入なし
 
-## Phase 3: リンク設置
+## Phase 3: UI 配線
 
-- [x] T5: LoginScreen フッターに 3 リンク(S)+ テスト
-- [x] T6: SettingsPage にメニュー 3 行(S)+ テスト
-- [x] ✅ チェックポイント 3: ログイン前後の両導線から到達可・test/lint/build 全 green
-
-## Phase 4: 確定・手動作業
-
-- [x] (ユーザー)文面レビュー確定(事業者表記・制定日)— 2026-07-18 ドラフトのまま確定
-- [x] (ユーザー)Google フォーム作成・URL 共有 — `https://forms.gle/CmpLMKN9XWkxirNDA`
-- [x] T7: 確定文面反映 + フォーム URL 差し替え(XS〜S)+ 手動スモーク
-- [x] ✅ 最終チェックポイント: spec-issue14.md の Success Criteria 全達成
+- [x] I20-T4: `SettingsPage.tsx` にエクスポートボタン配線(S)+ テスト
+- [x] test/lint/build 全 green(319 tests / 41 files)
+- [ ] 手動スモーク(ユーザー確認待ち): 実データでのダウンロード・Excel等での文字化け確認・
+  `export_data` イベント発火確認
+- [ ] ✅ 最終チェックポイント: spec-issue20.md の Success Criteria 全達成

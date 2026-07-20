@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ChevronRight, FileText, FolderTree, Mail, ShieldCheck, StoreIcon } from 'lucide-react';
+import {
+  ChevronRight,
+  Download,
+  FileText,
+  FolderTree,
+  Mail,
+  ShieldCheck,
+  StoreIcon,
+} from 'lucide-react';
 import { Link } from 'react-router';
 import { DeleteAccountDialog } from '../features/account/DeleteAccountDialog';
 import { CONTACT_FORM_URL } from '../features/legal/contact';
@@ -9,6 +17,10 @@ import {
   updateBook,
 } from '../features/books/api';
 import { useBook } from '../features/books/BookProvider';
+import { downloadPriceRecordsCsv } from '../features/prices/export';
+import { fetchPriceRecords } from '../features/prices/api';
+import { fetchProducts } from '../features/products/api';
+import { fetchStores } from '../features/stores/api';
 import { ShareSettings } from '../features/sharing/ShareSettings';
 import { db } from '../lib/firebase';
 
@@ -40,6 +52,8 @@ export function SettingsPage() {
   const name = nameDraft ?? bookName;
   const windowMonths = book?.bottomWindowMonths ?? 6;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState(false);
 
   async function handleWindowChange(months: number) {
     await updateBook(db, bookId, { bottomWindowMonths: months });
@@ -50,6 +64,29 @@ export function SettingsPage() {
     if (!trimmed) return;
     await updateBook(db, bookId, { name: trimmed });
     setNameDraft(null);
+  }
+
+  /**
+   * 設定画面マウント中の常時購読を避けるため、エクスポート時にのみ全期間データを取得する。
+   * 3 件を並行取得してから CSV 生成するので、読み込み中の一部データだけで
+   * 不完全な CSV が出力されることもない
+   */
+  async function handleExport() {
+    if (isExporting) return;
+    setIsExporting(true);
+    setExportError(false);
+    try {
+      const [records, products, stores] = await Promise.all([
+        fetchPriceRecords(bookId),
+        fetchProducts(bookId),
+        fetchStores(bookId),
+      ]);
+      downloadPriceRecordsCsv(records, products, stores, book?.name ?? '');
+    } catch {
+      setExportError(true);
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   return (
@@ -146,6 +183,23 @@ export function SettingsPage() {
           <span className="flex-1">お問い合わせ</span>
           <ChevronRight className="size-4 text-chevron" />
         </a>
+      </div>
+
+      <div className="mx-4 mt-4">
+        <button
+          type="button"
+          disabled={isExporting}
+          onClick={handleExport}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm font-bold disabled:opacity-50"
+        >
+          <Download className="size-4" />
+          データをエクスポート
+        </button>
+        {exportError && (
+          <p role="alert" className="mt-2 text-xs font-bold text-sale">
+            エクスポートに失敗しました。時間をおいて再度お試しください
+          </p>
+        )}
       </div>
 
       <div className="mx-4 mt-4">

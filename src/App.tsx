@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -16,7 +16,10 @@ import { StoresPage } from './features/stores/StoresPage';
 import { JoinPage } from './features/sharing/JoinPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
 import { TermsPage } from './features/legal/TermsPage';
+import { OnboardingModal } from './features/onboarding/OnboardingModal';
+import { hasSeenOnboarding, markOnboardingSeen } from './features/onboarding/storage';
 import { db } from './lib/firebase';
+import { trackEvent } from './lib/analytics';
 
 function Loading() {
   return (
@@ -34,6 +37,14 @@ function Gate() {
   const [verifiedUid, setVerifiedUid] = useState<string | null>(null);
   const emailVerified = user != null && (user.emailVerified || verifiedUid === user.uid);
   const bookReady = user != null && readyUid === user.uid;
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  // bookReady が uid ごとに true になった瞬間だけ判定したいので、判定済みの uid を記録する
+  // (state での比較。effect 内で直接 setState すると react-hooks/set-state-in-effect に
+  // 抵触するため、レンダー中の条件付き setState という React 公式の許容パターンを使う)
+  const [onboardingCheckedUid, setOnboardingCheckedUid] = useState<string | null>(null);
+  // StrictMode の setup→cleanup→setup で 'onboarding_shown' が二重発火しないよう、
+  // uid ごとに送信済みかを ref で管理する(ref は effect の再実行を跨いで保持される)
+  const onboardingShownUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user || !emailVerified) return;
@@ -46,6 +57,25 @@ function Gate() {
       cancelled = true;
     };
   }, [user, emailVerified]);
+
+  // 初回ログイン(book 準備完了)のタイミングで、未読ならオンボーディングを自動表示する(Issue #21)
+  if (bookReady && user && onboardingCheckedUid !== user.uid) {
+    setOnboardingCheckedUid(user.uid);
+    setOnboardingOpen(!hasSeenOnboarding(user.uid));
+  }
+
+  useEffect(() => {
+    if (onboardingOpen && user && onboardingShownUidRef.current !== user.uid) {
+      onboardingShownUidRef.current = user.uid;
+      trackEvent('onboarding_shown');
+    }
+  }, [onboardingOpen, user]);
+
+  function closeOnboarding(eventName: 'onboarding_completed' | 'onboarding_skipped') {
+    if (user) markOnboardingSeen(user.uid);
+    trackEvent(eventName);
+    setOnboardingOpen(false);
+  }
 
   if (loading) return <Loading />;
   if (!user) return <LoginScreen />;
@@ -76,6 +106,12 @@ function Gate() {
         <Route path="join" element={<JoinPage />} />
         <Route path="join/:inviteCode" element={<JoinPage />} />
       </Routes>
+      {onboardingOpen && (
+        <OnboardingModal
+          onComplete={() => closeOnboarding('onboarding_completed')}
+          onSkip={() => closeOnboarding('onboarding_skipped')}
+        />
+      )}
     </BookProvider>
   );
 }

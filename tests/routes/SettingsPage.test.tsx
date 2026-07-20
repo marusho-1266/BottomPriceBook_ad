@@ -59,13 +59,17 @@ vi.mock('../../src/features/account/DeleteAccountDialog', () => ({
     </div>
   ),
 }));
+vi.mock('../../src/lib/analytics', () => ({ trackEvent: vi.fn() }));
 
 import { SettingsPage } from '../../src/routes/SettingsPage';
 import { db } from '../../src/lib/firebase';
+import { trackEvent } from '../../src/lib/analytics';
+import { hasSeenOnboarding, markOnboardingSeen } from '../../src/features/onboarding/storage';
 
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     setBook(true);
   });
 
@@ -245,5 +249,95 @@ describe('SettingsPage', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeInTheDocument();
+  });
+
+  it('「使い方を見る」からオンボーディングを再表示でき、閉じると設定画面に戻る(Issue #21)', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '使い方を見る' }));
+
+    expect(screen.getByRole('dialog', { name: 'アプリの使い方' })).toBeInTheDocument();
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_reopened');
+
+    await user.click(screen.getByRole('button', { name: 'スキップ' }));
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_skipped');
+  });
+
+  it('設定からの再表示ではスキップしても既読フラグが変化しない(未設定)(Issue #21)', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(hasSeenOnboarding('u1')).toBe(false);
+    await user.click(screen.getByRole('button', { name: '使い方を見る' }));
+    await user.click(screen.getByRole('button', { name: 'スキップ' }));
+    expect(hasSeenOnboarding('u1')).toBe(false);
+  });
+
+  it('設定からの再表示ではスキップしても既読フラグが変化しない(既読済み)(Issue #21)', async () => {
+    markOnboardingSeen('u1');
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(hasSeenOnboarding('u1')).toBe(true);
+    await user.click(screen.getByRole('button', { name: '使い方を見る' }));
+    await user.click(screen.getByRole('button', { name: 'スキップ' }));
+    expect(hasSeenOnboarding('u1')).toBe(true);
+  });
+
+  it('設定からの再表示で「はじめる」まで進めても既読フラグが変化しない(未設定)(Issue #21)', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(hasSeenOnboarding('u1')).toBe(false);
+    await user.click(screen.getByRole('button', { name: '使い方を見る' }));
+    let next = screen.queryByRole('button', { name: '次へ' });
+    while (next) {
+      await user.click(next);
+      next = screen.queryByRole('button', { name: '次へ' });
+    }
+    await user.click(screen.getByRole('button', { name: 'はじめる' }));
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+    expect(hasSeenOnboarding('u1')).toBe(false);
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_completed');
+  });
+
+  it('設定からの再表示で「はじめる」まで進めても既読フラグが変化しない(既読済み)(Issue #21)', async () => {
+    markOnboardingSeen('u1');
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(hasSeenOnboarding('u1')).toBe(true);
+    await user.click(screen.getByRole('button', { name: '使い方を見る' }));
+    let next = screen.queryByRole('button', { name: '次へ' });
+    while (next) {
+      await user.click(next);
+      next = screen.queryByRole('button', { name: '次へ' });
+    }
+    await user.click(screen.getByRole('button', { name: 'はじめる' }));
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+    expect(hasSeenOnboarding('u1')).toBe(true);
   });
 });

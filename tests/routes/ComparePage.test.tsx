@@ -78,6 +78,15 @@ afterEach(() => {
 });
 
 describe('ComparePage(全記録ランキング)', () => {
+  it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {
+    mockRecords([]);
+    renderPage();
+    expect(usePriceRecords).toHaveBeenCalledWith({
+      windowMonths: expect.any(Number),
+      now: expect.any(Date),
+    });
+  });
+
   it('商品へ集約せず全記録を単価の安い順に表示する(同一商品が複数行)', () => {
     mockRecords([
       priceRecord({ id: 'r1', productId: 'p1', price: 158, quantity: 240 }), // 0.658

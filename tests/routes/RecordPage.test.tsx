@@ -73,6 +73,14 @@ describe('RecordPage(電卓ファースト)', () => {
     useBookMock.mockReturnValue({ bookId: 'b1', book: null });
   });
 
+  it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {
+    renderPage();
+    expect(usePriceRecords).toHaveBeenCalledWith({
+      windowMonths: expect.any(Number),
+      now: expect.any(Date),
+    });
+  });
+
   it('テンキーで価格を入力できる', async () => {
     const user = userEvent.setup();
     renderPage();

@@ -32,12 +32,12 @@ export function HomePage() {
   const { data: categories } = useCategories();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
-  const { data: records } = usePriceRecords();
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
   const now = useMemo(() => new Date(), []);
+  const { data: records } = usePriceRecords({ windowMonths, now });
 
   const storeName = (storeId: string) =>
     stores.find((s) => s.id === storeId)?.name ?? '(不明な店舗)';

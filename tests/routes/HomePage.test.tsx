@@ -82,6 +82,7 @@ vi.mock('../../src/features/prices/api', () => ({
 }));
 
 import { HomePage } from '../../src/routes/HomePage';
+import { usePriceRecords } from '../../src/features/prices/api';
 
 function renderPage() {
   return render(
@@ -92,6 +93,14 @@ function renderPage() {
 }
 
 describe('HomePage(底値一覧)', () => {
+  it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {
+    renderPage();
+    expect(usePriceRecords).toHaveBeenCalledWith({
+      windowMonths: expect.any(Number),
+      now: expect.any(Date),
+    });
+  });
+
   it('商品ごとの底値と店舗・単価を表示する', () => {
     renderPage();
     expect(screen.getByText('¥158')).toBeInTheDocument();

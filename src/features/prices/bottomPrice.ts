@@ -33,7 +33,7 @@ function toDate(value: DateLike): Date {
   return value instanceof Date ? value : value.toDate();
 }
 
-function windowStart(now: Date, months: number): Date | null {
+export function windowStart(now: Date, months: number): Date | null {
   if (months <= 0) return null;
   const start = new Date(now);
   start.setMonth(start.getMonth() - months);

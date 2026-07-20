@@ -73,7 +73,9 @@ export function RecordPage() {
   const { data: products } = useProducts();
   const { data: stores } = useStores();
   const { data: categories } = useCategories();
-  const { data: records } = usePriceRecords();
+  const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
+  const now = useMemo(() => new Date(), []);
+  const { data: records } = usePriceRecords({ windowMonths, now });
 
   const [productId, setProductId] = useState<string | null>(null);
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -96,8 +98,6 @@ export function RecordPage() {
   const units = useMemo(() => (baseUnit ? allowedUnits(baseUnit) : []), [baseUnit]);
   const effectiveUnit = units.includes(unit) ? unit : (units[0] ?? '');
 
-  const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
-  const now = useMemo(() => new Date(), []);
   const draftRank = useMemo(() => {
     if (!product || !baseUnit || !storeId) return null;
     return rankDraftInCategory(

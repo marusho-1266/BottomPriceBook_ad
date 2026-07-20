@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 type SnapshotCallback = (snapshot: unknown) => void;
 const snapshotListeners: SnapshotCallback[] = [];
 const unsubscribe = vi.fn();
+const onSnapshot = vi.fn((_target: unknown, cb: SnapshotCallback) => {
+  snapshotListeners.push(cb);
+  return unsubscribe;
+});
 
 vi.mock('firebase/firestore', () => ({
-  onSnapshot: vi.fn((_target: unknown, cb: SnapshotCallback) => {
-    snapshotListeners.push(cb);
-    return unsubscribe;
-  }),
+  onSnapshot: (target: unknown, cb: SnapshotCallback) => onSnapshot(target, cb),
 }));
 
 import { useCollection, useDoc } from '../../src/lib/firestoreHooks';
@@ -38,6 +39,23 @@ describe('useCollection', () => {
     const { unmount } = renderHook(() => useCollection({} as never));
     unmount();
     expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it('query の中身が変わったら購読を張り直す(Issue #17: productId 変更時の回帰防止)', () => {
+    vi.clearAllMocks();
+    const queryA = { id: 'A' };
+    const queryB = { id: 'B' };
+    const { rerender } = renderHook(({ q }) => useCollection(q as never), {
+      initialProps: { q: queryA },
+    });
+    expect(onSnapshot).toHaveBeenCalledTimes(1);
+    expect(onSnapshot).toHaveBeenLastCalledWith(queryA, expect.any(Function));
+
+    rerender({ q: queryB });
+
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+    expect(onSnapshot).toHaveBeenCalledTimes(2);
+    expect(onSnapshot).toHaveBeenLastCalledWith(queryB, expect.any(Function));
   });
 });
 

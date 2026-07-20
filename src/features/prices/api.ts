@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   query,
+  where,
   writeBatch,
 } from 'firebase/firestore';
 import { useMemo } from 'react';
@@ -13,6 +14,7 @@ import { trackEvent } from '../../lib/analytics';
 import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
+import { windowStart } from './bottomPrice';
 import type { PriceRecord } from '../../types/models';
 
 export interface PriceRecordDraft {
@@ -63,9 +65,34 @@ export function deletePriceRecord(bookId: string, recordId: string): Promise<voi
   return deleteDoc(doc(db, 'books', bookId, 'priceRecords', recordId));
 }
 
-/** book 内の全価格記録を購読する(底値算出・参照カウントに使用) */
-export function usePriceRecords() {
+/**
+ * book 内の価格記録を購読する。
+ * `options` を渡すと `recordedAt` が対象期間より古い記録はクエリ段階で除外する
+ * (`windowMonths <= 0` は「全期間」を意味し、絞り込みなしで購読する)。
+ * 参照カウント(店舗削除可否判定など、全期間の記録が必要な用途)では `options` を省略すること
+ */
+export function usePriceRecords(options?: { windowMonths: number; now: Date }) {
   const { bookId } = useBook();
-  const recordsQuery = useMemo(() => query(collection(db, 'books', bookId, 'priceRecords')), [bookId]);
+  const cutoff = options ? windowStart(options.now, options.windowMonths) : null;
+  const cutoffMs = cutoff?.getTime();
+  const recordsQuery = useMemo(() => {
+    const base = collection(db, 'books', bookId, 'priceRecords');
+    return cutoffMs === undefined
+      ? query(base)
+      : query(base, where('recordedAt', '>=', Timestamp.fromDate(new Date(cutoffMs))));
+  }, [bookId, cutoffMs]);
+  return useCollection<PriceRecord>(recordsQuery);
+}
+
+/** 特定商品の価格記録のみを購読する(商品詳細の全期間履歴表示に使用) */
+export function useProductPriceRecords(productId: string | undefined) {
+  const { bookId } = useBook();
+  const recordsQuery = useMemo(
+    () =>
+      productId
+        ? query(collection(db, 'books', bookId, 'priceRecords'), where('productId', '==', productId))
+        : null,
+    [bookId, productId],
+  );
   return useCollection<PriceRecord>(recordsQuery);
 }

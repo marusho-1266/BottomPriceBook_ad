@@ -9,7 +9,7 @@ import { useCategories } from '../features/categories/api';
 import {
   deletePriceRecord,
   updatePriceRecord,
-  usePriceRecords,
+  useProductPriceRecords,
 } from '../features/prices/api';
 import {
   bottomPrice,
@@ -31,7 +31,7 @@ export function ProductDetailPage() {
   const { data: categories } = useCategories();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
-  const { data: records } = usePriceRecords();
+  const { data: productRecords } = useProductPriceRecords(productId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState('');
 
@@ -39,7 +39,6 @@ export function ProductDetailPage() {
   const category = product
     ? categories.find((c) => c.id === product.categoryId)
     : undefined;
-  const productRecords = records.filter((r) => r.productId === productId);
 
   const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
   const now = useMemo(() => new Date(), []);

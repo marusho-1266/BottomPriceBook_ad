@@ -77,8 +77,8 @@ describe('buildPriceRecordsCsv', () => {
   });
 
   it('recordedAt の昇順にソートされる(入力順に依存しない)', () => {
-    const older = record({ id: 'r-older', recordedAt: Timestamp.fromDate(new Date(2026, 0, 1)) });
-    const newer = record({ id: 'r-newer', recordedAt: Timestamp.fromDate(new Date(2026, 6, 20)) });
+    const older = record({ recordedAt: Timestamp.fromDate(new Date(2026, 0, 1)) });
+    const newer = record({ recordedAt: Timestamp.fromDate(new Date(2026, 6, 20)) });
     const csv = buildPriceRecordsCsv([newer, older], products, stores);
     const dataLines = csv.replace('﻿', '').split('\r\n').slice(1);
     expect(dataLines[0].startsWith('2026-01-01')).toBe(true);

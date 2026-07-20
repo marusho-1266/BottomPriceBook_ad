@@ -3,11 +3,16 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { updateBook, signOut, useBook } = vi.hoisted(() => ({
-  updateBook: vi.fn().mockResolvedValue(undefined),
-  signOut: vi.fn().mockResolvedValue(undefined),
-  useBook: vi.fn(),
-}));
+const { updateBook, signOut, useBook, usePriceRecords, useProducts, useStores, downloadPriceRecordsCsv } =
+  vi.hoisted(() => ({
+    updateBook: vi.fn().mockResolvedValue(undefined),
+    signOut: vi.fn().mockResolvedValue(undefined),
+    useBook: vi.fn(),
+    usePriceRecords: vi.fn(() => ({ data: [] as unknown[], loading: false })),
+    useProducts: vi.fn(() => ({ data: [] as unknown[], loading: false })),
+    useStores: vi.fn(() => ({ data: [] as unknown[], loading: false })),
+    downloadPriceRecordsCsv: vi.fn(),
+  }));
 
 function setBook(isOwner: boolean) {
   useBook.mockReturnValue({
@@ -31,6 +36,10 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
   return { ...actual, updateBook };
 });
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
+vi.mock('../../src/features/prices/api', () => ({ usePriceRecords }));
+vi.mock('../../src/features/products/api', () => ({ useProducts }));
+vi.mock('../../src/features/stores/api', () => ({ useStores }));
+vi.mock('../../src/features/prices/export', () => ({ downloadPriceRecordsCsv }));
 // 共有セクションは専用テストで検証済み。実 Firestore 購読を避けるためモックする
 vi.mock('../../src/features/sharing/ShareSettings', () => ({ ShareSettings: () => null }));
 // 退会ダイアログ自体の挙動は専用テスト(DeleteAccountDialog.test.tsx)で検証済み
@@ -150,5 +159,38 @@ describe('SettingsPage', () => {
     const contact = screen.getByRole('link', { name: /お問い合わせ/ });
     expect(contact).toHaveAttribute('target', '_blank');
     expect(contact).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('データをエクスポートボタンでダウンロード関数が正しい引数で呼ばれる(Issue #20)', async () => {
+    const records = [{ id: 'r1', productId: 'p1', storeId: 's1' }];
+    const products = [{ id: 'p1', name: 'シャンプー' }];
+    const stores = [{ id: 's1', name: 'スーパーA' }];
+    usePriceRecords.mockReturnValue({ data: records, loading: false });
+    useProducts.mockReturnValue({ data: products, loading: false });
+    useStores.mockReturnValue({ data: stores, loading: false });
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole('button', { name: 'データをエクスポート' }));
+    expect(downloadPriceRecordsCsv).toHaveBeenCalledWith(
+      records,
+      products,
+      stores,
+      'わたしの底値帳',
+    );
+  });
+
+  it('参加中の book(非オーナー)でもデータをエクスポートボタンが表示される(Issue #20)', () => {
+    setBook(false);
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeInTheDocument();
   });
 });

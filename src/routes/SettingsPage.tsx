@@ -4,6 +4,7 @@ import {
   Download,
   FileText,
   FolderTree,
+  HelpCircle,
   Mail,
   ShieldCheck,
   StoreIcon,
@@ -17,12 +18,14 @@ import {
   updateBook,
 } from '../features/books/api';
 import { useBook } from '../features/books/BookProvider';
+import { OnboardingModal } from '../features/onboarding/OnboardingModal';
 import { downloadPriceRecordsCsv } from '../features/prices/export';
 import { fetchPriceRecords } from '../features/prices/api';
 import { fetchProducts } from '../features/products/api';
 import { fetchStores } from '../features/stores/api';
 import { ShareSettings } from '../features/sharing/ShareSettings';
 import { db } from '../lib/firebase';
+import { trackEvent } from '../lib/analytics';
 
 function SettingsLink({
   to,
@@ -54,6 +57,12 @@ export function SettingsPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  function handleShowOnboarding() {
+    setShowOnboarding(true);
+    trackEvent('onboarding_reopened');
+  }
 
   async function handleWindowChange(months: number) {
     await updateBook(db, bookId, { bottomWindowMonths: months });
@@ -188,6 +197,17 @@ export function SettingsPage() {
       <div className="mx-4 mt-4">
         <button
           type="button"
+          onClick={handleShowOnboarding}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm font-bold"
+        >
+          <HelpCircle className="size-4" />
+          使い方を見る
+        </button>
+      </div>
+
+      <div className="mx-4 mt-4">
+        <button
+          type="button"
           disabled={isExporting}
           onClick={handleExport}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm font-bold disabled:opacity-50"
@@ -224,6 +244,13 @@ export function SettingsPage() {
 
       {confirmingDelete && (
         <DeleteAccountDialog onCancel={() => setConfirmingDelete(false)} />
+      )}
+
+      {showOnboarding && (
+        <OnboardingModal
+          onComplete={() => setShowOnboarding(false)}
+          onSkip={() => setShowOnboarding(false)}
+        />
       )}
     </div>
   );

@@ -59,9 +59,11 @@ vi.mock('../../src/features/account/DeleteAccountDialog', () => ({
     </div>
   ),
 }));
+vi.mock('../../src/lib/analytics', () => ({ trackEvent: vi.fn() }));
 
 import { SettingsPage } from '../../src/routes/SettingsPage';
 import { db } from '../../src/lib/firebase';
+import { trackEvent } from '../../src/lib/analytics';
 
 describe('SettingsPage', () => {
   beforeEach(() => {
@@ -245,5 +247,23 @@ describe('SettingsPage', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeInTheDocument();
+  });
+
+  it('「使い方を見る」からオンボーディングを再表示でき、閉じると設定画面に戻る(Issue #21)', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '使い方を見る' }));
+
+    expect(screen.getByRole('dialog', { name: 'アプリの使い方' })).toBeInTheDocument();
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_reopened');
+
+    await user.click(screen.getByRole('button', { name: 'スキップ' }));
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
   });
 });

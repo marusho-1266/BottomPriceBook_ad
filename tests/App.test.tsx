@@ -29,16 +29,21 @@ vi.mock('firebase/firestore', () => ({
   onSnapshot: vi.fn(() => () => {}),
   Timestamp: { fromDate: vi.fn(() => ({})) },
 }));
+vi.mock('../src/lib/analytics', () => ({ trackEvent: vi.fn() }));
 
 import { App } from '../src/App';
 import { ensureBook } from '../src/features/books/api';
 import { refreshEmailVerification } from '../src/features/auth/api';
+import { trackEvent } from '../src/lib/analytics';
+import { hasSeenOnboarding, markOnboardingSeen } from '../src/features/onboarding/storage';
 import { act } from 'react';
 
 describe('App(認証ガード)', () => {
   beforeEach(() => {
     vi.mocked(ensureBook).mockClear();
     vi.mocked(refreshEmailVerification).mockReset();
+    vi.mocked(trackEvent).mockClear();
+    localStorage.clear();
   });
 
   it('未ログインならログイン画面を表示する', async () => {
@@ -80,5 +85,37 @@ describe('App(認証ガード)', () => {
 
     expect(await screen.findByRole('heading', { name: 'そこねこ' })).toBeInTheDocument();
     expect(ensureBook).toHaveBeenCalledWith(expect.anything(), 'u3', expect.any(String));
+  });
+
+  it('未読ユーザーは book 準備完了後にオンボーディングが自動表示される(Issue #21)', async () => {
+    render(<App />);
+    await act(async () => {
+      listeners.at(-1)!({ uid: 'u4', emailVerified: true });
+    });
+    expect(await screen.findByRole('dialog', { name: 'アプリの使い方' })).toBeInTheDocument();
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_shown');
+  });
+
+  it('既読ユーザーにはオンボーディングが自動表示されない(Issue #21)', async () => {
+    markOnboardingSeen('u5');
+    render(<App />);
+    await act(async () => {
+      listeners.at(-1)!({ uid: 'u5', emailVerified: true });
+    });
+    await screen.findByRole('heading', { name: 'そこねこ' });
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
+  });
+
+  it('スキップすると既読フラグが立ち onboarding_skipped が送信される(Issue #21)', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await act(async () => {
+      listeners.at(-1)!({ uid: 'u6', emailVerified: true });
+    });
+    await user.click(await screen.findByRole('button', { name: 'スキップ' }));
+
+    expect(hasSeenOnboarding('u6')).toBe(true);
+    expect(trackEvent).toHaveBeenCalledWith('onboarding_skipped');
+    expect(screen.queryByRole('dialog', { name: 'アプリの使い方' })).not.toBeInTheDocument();
   });
 });

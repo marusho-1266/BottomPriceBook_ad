@@ -16,7 +16,10 @@ import { StoresPage } from './features/stores/StoresPage';
 import { JoinPage } from './features/sharing/JoinPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
 import { TermsPage } from './features/legal/TermsPage';
+import { OnboardingModal } from './features/onboarding/OnboardingModal';
+import { hasSeenOnboarding, markOnboardingSeen } from './features/onboarding/storage';
 import { db } from './lib/firebase';
+import { trackEvent } from './lib/analytics';
 
 function Loading() {
   return (
@@ -34,6 +37,11 @@ function Gate() {
   const [verifiedUid, setVerifiedUid] = useState<string | null>(null);
   const emailVerified = user != null && (user.emailVerified || verifiedUid === user.uid);
   const bookReady = user != null && readyUid === user.uid;
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  // bookReady が uid ごとに true になった瞬間だけ判定したいので、判定済みの uid を記録する
+  // (state での比較。effect 内で直接 setState すると react-hooks/set-state-in-effect に
+  // 抵触するため、レンダー中の条件付き setState という React 公式の許容パターンを使う)
+  const [onboardingCheckedUid, setOnboardingCheckedUid] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !emailVerified) return;
@@ -46,6 +54,24 @@ function Gate() {
       cancelled = true;
     };
   }, [user, emailVerified]);
+
+  // 初回ログイン(book 準備完了)のタイミングで、未読ならオンボーディングを自動表示する(Issue #21)
+  if (bookReady && user && onboardingCheckedUid !== user.uid) {
+    setOnboardingCheckedUid(user.uid);
+    if (!hasSeenOnboarding(user.uid)) {
+      setOnboardingOpen(true);
+    }
+  }
+
+  useEffect(() => {
+    if (onboardingOpen) trackEvent('onboarding_shown');
+  }, [onboardingOpen]);
+
+  function closeOnboarding(eventName: 'onboarding_completed' | 'onboarding_skipped') {
+    if (user) markOnboardingSeen(user.uid);
+    trackEvent(eventName);
+    setOnboardingOpen(false);
+  }
 
   if (loading) return <Loading />;
   if (!user) return <LoginScreen />;
@@ -76,6 +102,12 @@ function Gate() {
         <Route path="join" element={<JoinPage />} />
         <Route path="join/:inviteCode" element={<JoinPage />} />
       </Routes>
+      {onboardingOpen && (
+        <OnboardingModal
+          onComplete={() => closeOnboarding('onboarding_completed')}
+          onSkip={() => closeOnboarding('onboarding_skipped')}
+        />
+      )}
     </BookProvider>
   );
 }

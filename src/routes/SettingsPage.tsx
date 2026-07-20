@@ -18,9 +18,9 @@ import {
 } from '../features/books/api';
 import { useBook } from '../features/books/BookProvider';
 import { downloadPriceRecordsCsv } from '../features/prices/export';
-import { usePriceRecords } from '../features/prices/api';
-import { useProducts } from '../features/products/api';
-import { useStores } from '../features/stores/api';
+import { fetchPriceRecords } from '../features/prices/api';
+import { fetchProducts } from '../features/products/api';
+import { fetchStores } from '../features/stores/api';
 import { ShareSettings } from '../features/sharing/ShareSettings';
 import { db } from '../lib/firebase';
 
@@ -52,9 +52,7 @@ export function SettingsPage() {
   const name = nameDraft ?? bookName;
   const windowMonths = book?.bottomWindowMonths ?? 6;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const { data: priceRecords } = usePriceRecords();
-  const { data: products } = useProducts();
-  const { data: stores } = useStores();
+  const [isExporting, setIsExporting] = useState(false);
 
   async function handleWindowChange(months: number) {
     await updateBook(db, bookId, { bottomWindowMonths: months });
@@ -65,6 +63,26 @@ export function SettingsPage() {
     if (!trimmed) return;
     await updateBook(db, bookId, { name: trimmed });
     setNameDraft(null);
+  }
+
+  /**
+   * 設定画面マウント中の常時購読を避けるため、エクスポート時にのみ全期間データを取得する。
+   * 3 件を並行取得してから CSV 生成するので、読み込み中の一部データだけで
+   * 不完全な CSV が出力されることもない
+   */
+  async function handleExport() {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const [records, products, stores] = await Promise.all([
+        fetchPriceRecords(bookId),
+        fetchProducts(bookId),
+        fetchStores(bookId),
+      ]);
+      downloadPriceRecordsCsv(records, products, stores, book?.name ?? '');
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   return (
@@ -166,10 +184,9 @@ export function SettingsPage() {
       <div className="mx-4 mt-4">
         <button
           type="button"
-          onClick={() =>
-            downloadPriceRecordsCsv(priceRecords, products, stores, book?.name ?? '')
-          }
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm font-bold"
+          disabled={isExporting}
+          onClick={handleExport}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm font-bold disabled:opacity-50"
         >
           <Download className="size-4" />
           データをエクスポート

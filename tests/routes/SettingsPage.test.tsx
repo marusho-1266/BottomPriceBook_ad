@@ -1,18 +1,25 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { updateBook, signOut, useBook, usePriceRecords, useProducts, useStores, downloadPriceRecordsCsv } =
-  vi.hoisted(() => ({
-    updateBook: vi.fn().mockResolvedValue(undefined),
-    signOut: vi.fn().mockResolvedValue(undefined),
-    useBook: vi.fn(),
-    usePriceRecords: vi.fn(() => ({ data: [] as unknown[], loading: false })),
-    useProducts: vi.fn(() => ({ data: [] as unknown[], loading: false })),
-    useStores: vi.fn(() => ({ data: [] as unknown[], loading: false })),
-    downloadPriceRecordsCsv: vi.fn(),
-  }));
+const {
+  updateBook,
+  signOut,
+  useBook,
+  fetchPriceRecords,
+  fetchProducts,
+  fetchStores,
+  downloadPriceRecordsCsv,
+} = vi.hoisted(() => ({
+  updateBook: vi.fn().mockResolvedValue(undefined),
+  signOut: vi.fn().mockResolvedValue(undefined),
+  useBook: vi.fn(),
+  fetchPriceRecords: vi.fn().mockResolvedValue([] as unknown[]),
+  fetchProducts: vi.fn().mockResolvedValue([] as unknown[]),
+  fetchStores: vi.fn().mockResolvedValue([] as unknown[]),
+  downloadPriceRecordsCsv: vi.fn(),
+}));
 
 function setBook(isOwner: boolean) {
   useBook.mockReturnValue({
@@ -36,9 +43,9 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
   return { ...actual, updateBook };
 });
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
-vi.mock('../../src/features/prices/api', () => ({ usePriceRecords }));
-vi.mock('../../src/features/products/api', () => ({ useProducts }));
-vi.mock('../../src/features/stores/api', () => ({ useStores }));
+vi.mock('../../src/features/prices/api', () => ({ fetchPriceRecords }));
+vi.mock('../../src/features/products/api', () => ({ fetchProducts }));
+vi.mock('../../src/features/stores/api', () => ({ fetchStores }));
 vi.mock('../../src/features/prices/export', () => ({ downloadPriceRecordsCsv }));
 // 共有セクションは専用テストで検証済み。実 Firestore 購読を避けるためモックする
 vi.mock('../../src/features/sharing/ShareSettings', () => ({ ShareSettings: () => null }));
@@ -161,13 +168,13 @@ describe('SettingsPage', () => {
     expect(contact).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  it('データをエクスポートボタンでダウンロード関数が正しい引数で呼ばれる(Issue #20)', async () => {
+  it('データをエクスポートボタンでクリック時に全期間データを取得しダウンロード関数が正しい引数で呼ばれる(Issue #20)', async () => {
     const records = [{ id: 'r1', productId: 'p1', storeId: 's1' }];
     const products = [{ id: 'p1', name: 'シャンプー' }];
     const stores = [{ id: 's1', name: 'スーパーA' }];
-    usePriceRecords.mockReturnValue({ data: records, loading: false });
-    useProducts.mockReturnValue({ data: products, loading: false });
-    useStores.mockReturnValue({ data: stores, loading: false });
+    fetchPriceRecords.mockResolvedValue(records);
+    fetchProducts.mockResolvedValue(products);
+    fetchStores.mockResolvedValue(stores);
 
     const user = userEvent.setup();
     render(
@@ -176,12 +183,41 @@ describe('SettingsPage', () => {
       </MemoryRouter>,
     );
     await user.click(screen.getByRole('button', { name: 'データをエクスポート' }));
+    expect(fetchPriceRecords).toHaveBeenCalledWith('u1');
+    expect(fetchProducts).toHaveBeenCalledWith('u1');
+    expect(fetchStores).toHaveBeenCalledWith('u1');
     expect(downloadPriceRecordsCsv).toHaveBeenCalledWith(
       records,
       products,
       stores,
       'わたしの底値帳',
     );
+  });
+
+  it('取得中はエクスポートボタンが無効化され、完了すると再度有効になる(読み込み中の不完全CSVを防止)', async () => {
+    let resolveFetch: (value: unknown[]) => void = () => {};
+    fetchPriceRecords.mockReturnValue(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    const button = screen.getByRole('button', { name: 'データをエクスポート' });
+    expect(button).not.toBeDisabled();
+
+    await user.click(button);
+    expect(button).toBeDisabled();
+    expect(downloadPriceRecordsCsv).not.toHaveBeenCalled();
+
+    resolveFetch([]);
+    await waitFor(() => expect(button).not.toBeDisabled());
+    expect(downloadPriceRecordsCsv).toHaveBeenCalled();
   });
 
   it('参加中の book(非オーナー)でもデータをエクスポートボタンが表示される(Issue #20)', () => {

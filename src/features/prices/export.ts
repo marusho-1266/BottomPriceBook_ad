@@ -27,9 +27,12 @@ export function buildPriceRecordsCsv(
 ): string {
   const productNames = new Map(products.map((p) => [p.id, p.name]));
   const storeNames = new Map(stores.map((s) => [s.id, s.name]));
+  const sortedRecords = [...records].sort(
+    (a, b) => a.recordedAt.toMillis() - b.recordedAt.toMillis(),
+  );
   const rows = [
     HEADER,
-    ...records.map((r) => [
+    ...sortedRecords.map((r) => [
       formatRecordedAt(r.recordedAt.toDate()),
       productNames.get(r.productId) ?? '',
       storeNames.get(r.storeId) ?? '',
@@ -69,6 +72,8 @@ export function downloadPriceRecordsCsv(
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // click() 直後の revoke は一部ブラウザ(Safari 系)でダウンロードが始まる前に
+  // Blob URL が失効し得るため、少し遅らせて解放する
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   void trackEvent('export_data');
 }

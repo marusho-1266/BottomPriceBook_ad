@@ -1,6 +1,6 @@
 # 実装計画: データエクスポート(CSV)機能(Issue #20)
 
-> Status: **Draft(承認済み・実装前)** / 作成日: 2026-07-20
+> Status: **実装済み(PR #29)** / 作成日: 2026-07-20
 > 対象仕様: `docs/spec-issue20.md`
 > チェックリスト: `docs/tasks-issue20.md`
 

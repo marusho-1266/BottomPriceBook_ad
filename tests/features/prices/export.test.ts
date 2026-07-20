@@ -76,6 +76,15 @@ describe('buildPriceRecordsCsv', () => {
     );
   });
 
+  it('recordedAt の昇順にソートされる(入力順に依存しない)', () => {
+    const older = record({ id: 'r-older', recordedAt: Timestamp.fromDate(new Date(2026, 0, 1)) });
+    const newer = record({ id: 'r-newer', recordedAt: Timestamp.fromDate(new Date(2026, 6, 20)) });
+    const csv = buildPriceRecordsCsv([newer, older], products, stores);
+    const dataLines = csv.replace('﻿', '').split('\r\n').slice(1);
+    expect(dataLines[0].startsWith('2026-01-01')).toBe(true);
+    expect(dataLines[1].startsWith('2026-07-20')).toBe(true);
+  });
+
   it('出力の先頭がBOMである', () => {
     const csv = buildPriceRecordsCsv([], products, stores);
     expect(csv.startsWith('﻿')).toBe(true);
@@ -117,6 +126,7 @@ describe('downloadPriceRecordsCsv', () => {
   });
 
   it('Blob生成・ダウンロード・後始末・イベント送信を行う', () => {
+    vi.useFakeTimers();
     const appendChildSpy = vi.spyOn(document.body, 'appendChild');
 
     downloadPriceRecordsCsv([record()], products, stores, 'わたしの底値帳', new Date(2026, 6, 20));
@@ -131,9 +141,13 @@ describe('downloadPriceRecordsCsv', () => {
     expect(anchor.href).toBe('blob:mock-url');
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
+    // revoke はダウンロード開始猶予のため即時ではなく遅延実行される
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    vi.runAllTimers();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
     expect(trackEvent).toHaveBeenCalledWith('export_data');
 
     appendChildSpy.mockRestore();
+    vi.useRealTimers();
   });
 });

@@ -28,6 +28,7 @@ vi.mock('../../../src/features/prices/api', () => ({
 
 import { StoresPage } from '../../../src/features/stores/StoresPage';
 import { addStore, deleteStore, renameStore } from '../../../src/features/stores/api';
+import { usePriceRecords } from '../../../src/features/prices/api';
 
 function renderPage() {
   return render(
@@ -45,6 +46,11 @@ describe('StoresPage', () => {
   it('店舗の一覧を表示する', () => {
     renderPage();
     expect(screen.getByText('OKストア')).toBeInTheDocument();
+  });
+
+  it('usePriceRecords を引数なし(全件購読)で呼ぶ(Issue #17: 参照カウント判定は全期間が必要)', () => {
+    renderPage();
+    expect(usePriceRecords).toHaveBeenCalledWith();
   });
 
   it('店舗を追加できる', async () => {

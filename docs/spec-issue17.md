@@ -26,11 +26,10 @@
 1. `PriceRecord.recordedAt` は Firestore `Timestamp` 型で保存されており、範囲クエリ(`where('recordedAt', '>=', ...)`)が可能(既存スキーマ通り)
 2. `firestore.rules` の `priceRecords` の `list` 許可条件はクエリ形状に依存しない(book メンバーシップのみで判定)ため、
    クエリを絞ってもルール変更は不要
-3. `useCollection`(`src/lib/firestoreHooks.ts`)の `useEffect` 依存は `[query === null]` のみで、
-   クエリの中身(where 条件)が変わっても購読は自動的に再作成されない。
-   本 Issue の対象ページはいずれも `bookId` 変更時と同様に **ルート遷移でコンポーネントが再マウントされる**前提のため、
-   `bottomWindowMonths` を設定変更した場合も画面遷移(Settings → Home 等)を経れば新しいクエリで再購読される。
-   同一マウント中に `now` や `windowMonths` が変化するケースは実質発生しない(`now` は mount 時に一度だけ計算)
+3. `useCollection`(`src/lib/firestoreHooks.ts`)の `useEffect` 依存は `[query]` であり、
+   呼び出し側が `useMemo` で安定化した `query` の中身(`bookId` / `productId` / カットオフ等)が変わるたびに
+   購読が再作成される。そのため `ProductDetailPage` で `productId`(ルートパラメータ)が
+   同一マウント中に変化しても、新しい `productId` のクエリで正しく再購読される
 4. `@fontsource/m-plus-rounded-1c` は太さ+サブセット別 CSS(例: `japanese-400.css` / `latin-400.css`)を提供しており、
    これらは個別 import 可能(既存パッケージ構成で確認済み)
 5. アプリは日本語専用(`lang="ja"`)であり、UI 文言はすべて日本語 + 半角英数字(価格・記号)のみ。
@@ -92,10 +91,13 @@ export function usePriceRecords(options?: { windowMonths: number; now: Date }) {
   return useCollection<PriceRecord>(recordsQuery);
 }
 
-export function useProductPriceRecords(productId: string) {
+export function useProductPriceRecords(productId: string | undefined) {
   const { bookId } = useBook();
   const recordsQuery = useMemo(
-    () => query(collection(db, 'books', bookId, 'priceRecords'), where('productId', '==', productId)),
+    () =>
+      productId
+        ? query(collection(db, 'books', bookId, 'priceRecords'), where('productId', '==', productId))
+        : null,
     [bookId, productId],
   );
   return useCollection<PriceRecord>(recordsQuery);

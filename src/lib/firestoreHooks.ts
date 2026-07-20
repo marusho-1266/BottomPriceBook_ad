@@ -19,10 +19,8 @@ export function useCollection<T>(query: Query | null): CollectionState<T> {
         loading: false,
       });
     });
-    // クエリオブジェクトは呼び出しごとに再生成されるため、参照の同一性では比較しない。
-    // 呼び出し側は useMemo で安定化した query を渡す
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query === null]);
+    // 呼び出し側は useMemo で安定化した query を渡す前提
+  }, [query]);
 
   return state;
 }

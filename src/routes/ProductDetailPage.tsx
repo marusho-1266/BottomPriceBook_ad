@@ -31,7 +31,7 @@ export function ProductDetailPage() {
   const { data: categories } = useCategories();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
-  const { data: productRecords } = useProductPriceRecords(productId ?? '');
+  const { data: productRecords } = useProductPriceRecords(productId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState('');
 

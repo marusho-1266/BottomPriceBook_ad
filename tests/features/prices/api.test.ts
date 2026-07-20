@@ -158,4 +158,21 @@ describe('useProductPriceRecords(Issue #17)', () => {
     renderHook(() => useProductPriceRecords('p1'));
     expect(where).toHaveBeenCalledWith('productId', '==', 'p1');
   });
+
+  it('productId が undefined のときは購読しない(query=null)', () => {
+    renderHook(() => useProductPriceRecords(undefined));
+    expect(where).not.toHaveBeenCalled();
+    expect(useCollection).toHaveBeenLastCalledWith(null);
+  });
+
+  it('productId が変わるたびに新しい productId でクエリを発行する(Issue #17: 購読が張り直されない回帰の防止)', () => {
+    const { rerender } = renderHook(({ productId }) => useProductPriceRecords(productId), {
+      initialProps: { productId: 'p1' },
+    });
+    expect(where).toHaveBeenCalledWith('productId', '==', 'p1');
+
+    rerender({ productId: 'p2' });
+    expect(where).toHaveBeenCalledWith('productId', '==', 'p2');
+    expect(useCollection).toHaveBeenLastCalledWith(expect.anything());
+  });
 });

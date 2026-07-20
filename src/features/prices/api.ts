@@ -85,10 +85,13 @@ export function usePriceRecords(options?: { windowMonths: number; now: Date }) {
 }
 
 /** 特定商品の価格記録のみを購読する(商品詳細の全期間履歴表示に使用) */
-export function useProductPriceRecords(productId: string) {
+export function useProductPriceRecords(productId: string | undefined) {
   const { bookId } = useBook();
   const recordsQuery = useMemo(
-    () => query(collection(db, 'books', bookId, 'priceRecords'), where('productId', '==', productId)),
+    () =>
+      productId
+        ? query(collection(db, 'books', bookId, 'priceRecords'), where('productId', '==', productId))
+        : null,
     [bookId, productId],
   );
   return useCollection<PriceRecord>(recordsQuery);

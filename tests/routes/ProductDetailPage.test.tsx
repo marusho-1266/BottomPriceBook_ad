@@ -69,7 +69,11 @@ vi.mock('../../src/features/prices/api', () => ({
 }));
 
 import { ProductDetailPage } from '../../src/routes/ProductDetailPage';
-import { deletePriceRecord, updatePriceRecord } from '../../src/features/prices/api';
+import {
+  deletePriceRecord,
+  updatePriceRecord,
+  useProductPriceRecords,
+} from '../../src/features/prices/api';
 
 function renderPage() {
   return render(
@@ -84,6 +88,11 @@ function renderPage() {
 describe('ProductDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('useProductPriceRecords にルートの productId をそのまま渡す(空文字にフォールバックしない)', () => {
+    renderPage();
+    expect(useProductPriceRecords).toHaveBeenCalledWith('p1');
   });
 
   it('特売込みの底値をヒーロー表示する', () => {

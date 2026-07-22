@@ -45,7 +45,13 @@ function setup({
   books = [makeBook(ALICE, ALICE, [ALICE])],
   currentBookId = books[0].id,
   providerId = 'password',
-}: { books?: WithId<Book>[]; currentBookId?: string; providerId?: string } = {}) {
+  providerData,
+}: {
+  books?: WithId<Book>[];
+  currentBookId?: string;
+  providerId?: string;
+  providerData?: { providerId: string }[];
+} = {}) {
   const current = books.find((candidate) => candidate.id === currentBookId) ?? null;
   mocks.useBook.mockReturnValue({
     bookId: currentBookId,
@@ -55,7 +61,11 @@ function setup({
     setCurrentBookId: vi.fn(),
   });
   mocks.useAuth.mockReturnValue({
-    user: { uid: ALICE, email: 'alice@example.com', providerData: [{ providerId }] },
+    user: {
+      uid: ALICE,
+      email: 'alice@example.com',
+      providerData: providerData ?? [{ providerId }],
+    },
     loading: false,
   });
 }
@@ -134,6 +144,18 @@ describe('DeleteAccountDialog(メール/パスワードユーザー)', () => {
     expect(screen.getByRole('button', { name: 'キャンセル' })).toBeDisabled();
 
     resolveReauth();
+  });
+});
+
+describe('DeleteAccountDialog(password + google)', () => {
+  it('google が providerData 先頭でもパスワード入力欄を表示する', () => {
+    setup({
+      providerData: [{ providerId: 'google.com' }, { providerId: 'password' }],
+    });
+    render(<DeleteAccountDialog onCancel={vi.fn()} />);
+
+    expect(screen.getByLabelText(/パスワード/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '削除する' })).toBeDisabled();
   });
 });
 

@@ -82,6 +82,19 @@ describe('reauthenticate', () => {
     expect(reauthenticateWithPopup).toHaveBeenCalledTimes(1);
   });
 
+  it('password と google の両方がある場合はパスワード再認証を優先する(並び順に依存しない)', async () => {
+    (auth as MutableAuth).currentUser = {
+      email: 'a@example.com',
+      providerData: [{ providerId: 'google.com' }, { providerId: 'password' }],
+    };
+    reauthenticateWithCredential.mockResolvedValue(undefined);
+
+    await reauthenticate('secret123');
+
+    expect(reauthenticateWithCredential).toHaveBeenCalledTimes(1);
+    expect(reauthenticateWithPopup).not.toHaveBeenCalled();
+  });
+
   it('パスワード誤りは「パスワードが正しくありません」に変換する', async () => {
     (auth as MutableAuth).currentUser = {
       email: 'a@example.com',

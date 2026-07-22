@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   useAuth: vi.fn(),
   linkGoogleAccount: vi.fn(),
   reauthenticate: vi.fn(),
+  refreshUser: vi.fn(),
 }));
 
 vi.mock('../../../src/features/auth/AuthProvider', () => ({
@@ -29,11 +30,13 @@ function setupUser(providerData: { providerId: string; email?: string }[]) {
   mocks.useAuth.mockReturnValue({
     user: { uid: 'u1', email: 'mail@example.com', providerData },
     loading: false,
+    refreshUser: mocks.refreshUser,
   });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.refreshUser.mockResolvedValue(undefined);
   setupUser([{ providerId: 'password', email: 'mail@example.com' }]);
 });
 
@@ -71,20 +74,27 @@ describe('LinkGoogleSection', () => {
     expect(mocks.linkGoogleAccount).not.toHaveBeenCalled();
   });
 
-  it('確認後に連携成功すると連携済み表示になる', async () => {
+  it('確認後に連携成功すると refreshUser 後に連携済み表示になる', async () => {
     const user = userEvent.setup();
     mocks.linkGoogleAccount.mockResolvedValue('linked@gmail.com');
+    mocks.refreshUser.mockImplementation(async () => {
+      setupUser([
+        { providerId: 'password', email: 'mail@example.com' },
+        { providerId: 'google.com', email: 'linked@gmail.com' },
+      ]);
+    });
     render(<LinkGoogleSection />);
 
     await user.click(screen.getByRole('button', { name: 'Google アカウントを連携' }));
     await user.click(screen.getByRole('button', { name: '連携する' }));
 
     expect(mocks.linkGoogleAccount).toHaveBeenCalledTimes(1);
+    expect(mocks.refreshUser).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/Google 連携済み/)).toBeInTheDocument();
     expect(screen.getByText('linked@gmail.com')).toBeInTheDocument();
   });
 
-  it('衝突エラーを表示する', async () => {
+  it('衝突エラーでは確認ダイアログを閉じ、アラートを表示する', async () => {
     const user = userEvent.setup();
     mocks.linkGoogleAccount.mockRejectedValue(
       new LinkGoogleError(
@@ -97,12 +107,13 @@ describe('LinkGoogleSection', () => {
     await user.click(screen.getByRole('button', { name: 'Google アカウントを連携' }));
     await user.click(screen.getByRole('button', { name: '連携する' }));
 
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(
       'この Google アカウントは既に別のユーザーで使われています',
     );
   });
 
-  it('requires-recent-login 時は再認証後に再試行する', async () => {
+  it('requires-recent-login 時は再認証ダイアログを出し、メインボタンを無効化する', async () => {
     const user = userEvent.setup();
     mocks.linkGoogleAccount
       .mockRejectedValueOnce(
@@ -113,18 +124,27 @@ describe('LinkGoogleSection', () => {
       )
       .mockResolvedValueOnce('linked@gmail.com');
     mocks.reauthenticate.mockResolvedValue(undefined);
+    mocks.refreshUser.mockImplementation(async () => {
+      setupUser([
+        { providerId: 'password', email: 'mail@example.com' },
+        { providerId: 'google.com', email: 'linked@gmail.com' },
+      ]);
+    });
 
     render(<LinkGoogleSection />);
 
     await user.click(screen.getByRole('button', { name: 'Google アカウントを連携' }));
     await user.click(screen.getByRole('button', { name: '連携する' }));
 
-    expect(screen.getByLabelText(/パスワード/)).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog', { name: '再認証が必要です' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Google アカウントを連携' })).toBeDisabled();
+
     await user.type(screen.getByLabelText(/パスワード/), 'secret123');
     await user.click(screen.getByRole('button', { name: '再認証して連携' }));
 
     expect(mocks.reauthenticate).toHaveBeenCalledWith('secret123');
     expect(mocks.linkGoogleAccount).toHaveBeenCalledTimes(2);
+    expect(mocks.refreshUser).toHaveBeenCalledTimes(1);
     expect(screen.getByText('linked@gmail.com')).toBeInTheDocument();
   });
 });

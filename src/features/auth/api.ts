@@ -10,6 +10,10 @@ import {
 } from 'firebase/auth';
 import { trackEvent } from '../../lib/analytics';
 import { auth } from '../../lib/firebase';
+import {
+  AUTH_NETWORK_ERROR_MESSAGE,
+  firebaseAuthErrorCode,
+} from '../../lib/firebaseAuthError';
 
 type ProviderUser = { providerData: { providerId: string }[] };
 
@@ -19,12 +23,6 @@ export function hasGoogleProvider(user: ProviderUser): boolean {
 
 export function hasPasswordProvider(user: ProviderUser): boolean {
   return user.providerData.some((p) => p.providerId === 'password');
-}
-
-function errorCode(error: unknown): string | undefined {
-  return typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code: unknown }).code)
-    : undefined;
 }
 
 export class LinkGoogleError extends Error {
@@ -40,7 +38,7 @@ export class LinkGoogleError extends Error {
 
 /** Google アカウント連携失敗時のユーザー向けメッセージ */
 export function mapLinkGoogleError(error: unknown): LinkGoogleError {
-  const code = errorCode(error);
+  const code = firebaseAuthErrorCode(error);
   switch (code) {
     case 'auth/credential-already-in-use':
       return new LinkGoogleError(
@@ -62,11 +60,7 @@ export function mapLinkGoogleError(error: unknown): LinkGoogleError {
         { cause: error },
       );
     case 'auth/network-request-failed':
-      return new LinkGoogleError(
-        'ネットワークエラーが発生しました。もう一度お試しください',
-        code,
-        { cause: error },
-      );
+      return new LinkGoogleError(AUTH_NETWORK_ERROR_MESSAGE, code, { cause: error });
     default:
       return new LinkGoogleError('連携に失敗しました。時間をおいて再度お試しください', code, {
         cause: error,

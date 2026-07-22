@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -146,5 +146,27 @@ describe('LinkGoogleSection', () => {
     expect(mocks.linkGoogleAccount).toHaveBeenCalledTimes(2);
     expect(mocks.refreshUser).toHaveBeenCalledTimes(1);
     expect(screen.getByText('linked@gmail.com')).toBeInTheDocument();
+  });
+
+  it('再認証失敗時はダイアログ内にエラーを表示する', async () => {
+    const user = userEvent.setup();
+    mocks.linkGoogleAccount.mockRejectedValueOnce(
+      new LinkGoogleError(
+        'セキュリティのため再認証が必要です。パスワードを入力してから再度お試しください',
+        'auth/requires-recent-login',
+      ),
+    );
+    mocks.reauthenticate.mockRejectedValue(new Error('パスワードが正しくありません'));
+
+    render(<LinkGoogleSection />);
+
+    await user.click(screen.getByRole('button', { name: 'Google アカウントを連携' }));
+    await user.click(screen.getByRole('button', { name: '連携する' }));
+    await user.type(screen.getByLabelText(/パスワード/), 'wrong');
+    await user.click(screen.getByRole('button', { name: '再認証して連携' }));
+
+    const dialog = screen.getByRole('alertdialog', { name: '再認証が必要です' });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('パスワードが正しくありません');
   });
 });

@@ -83,7 +83,7 @@ export function LinkGoogleSection() {
         Google アカウントを連携
       </button>
 
-      {error && (
+      {error && !needsReauth && (
         <p role="alert" className="mt-2 text-xs font-bold text-sale">
           {error}
         </p>
@@ -107,11 +107,13 @@ export function LinkGoogleSection() {
         <ReauthPasswordDialog
           password={password}
           submitting={submitting}
+          error={error}
           onPasswordChange={setPassword}
           onCancel={() => {
             if (submitting) return;
             setNeedsReauth(false);
             setPassword('');
+            setError(null);
           }}
           onConfirm={() => void performLink({ withReauth: true })}
         />
@@ -123,12 +125,14 @@ export function LinkGoogleSection() {
 function ReauthPasswordDialog({
   password,
   submitting,
+  error,
   onPasswordChange,
   onCancel,
   onConfirm,
 }: {
   password: string;
   submitting: boolean;
+  error: string | null;
   onPasswordChange: (value: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
@@ -215,6 +219,11 @@ function ReauthPasswordDialog({
           onChange={(event) => onPasswordChange(event.target.value)}
           className="mt-1 h-11 w-full rounded-xl border border-line bg-cream px-3 text-sm font-bold"
         />
+        {error && (
+          <p role="alert" className="mt-2 text-xs font-bold text-sale">
+            {error}
+          </p>
+        )}
         <div className="mt-4 flex gap-2">
           <button
             type="button"

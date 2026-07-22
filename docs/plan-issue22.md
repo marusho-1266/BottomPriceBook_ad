@@ -1,6 +1,6 @@
 # 実装計画: アカウント連携(メール → Google)(Issue #22)
 
-> Status: **Draft(レビュー待ち)** / 作成日: 2026-07-22
+> Status: **実装済み(手動スモーク待ち)** / 作成日: 2026-07-22
 > 対象仕様: `docs/spec-issue22.md`
 > チェックリスト: `docs/tasks-issue22.md`
 

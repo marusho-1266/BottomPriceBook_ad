@@ -331,6 +331,7 @@ export function calcUnitPrice(price: number, quantity: number): number | null {
 - 買い物リスト、バーコードスキャン、商品写真
 - クラウドソーシング型の価格共有(サービス化)
 - 匿名認証 → アカウント連携
+- ~~メール登録 → Google アカウント連携~~ → Issue #22 で実装済み(`docs/spec-issue22.md`)
 - book の譲渡(オーナー交代)、退会前のデータエクスポート、猶予期間付きソフトデリート(Issue #13 将来スコープ)
 
 ## Open Questions

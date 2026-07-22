@@ -1,6 +1,6 @@
 # Spec: Issue #22 アカウント連携(メール → Google)
 
-> Status: **Approved(承認済み・実装前)** / 作成: 2026-07-22
+> Status: **実装完了(手動スモーク待ち)** / 作成: 2026-07-22
 > 計画: `docs/plan-issue22.md` / タスク: `docs/tasks-issue22.md`
 > 対象 Issue: [#22 アカウント連携](https://github.com/marusho-1266/BottomPriceBook_ad/issues/22)
 > 親仕様: `docs/spec.md`
@@ -120,14 +120,14 @@ export function hasPasswordProvider(user: { providerData: { providerId: string }
 
 ## Success Criteria
 
-- [ ] メール/パスワードのみのユーザーの設定画面に「Google アカウントを連携」が表示される
-- [ ] 確認 → Google ポップアップ → 成功後、`providerData` に `google.com` が含まれる
-- [ ] 登録メールと異なる Google メールでも連携できる
-- [ ] 連携後、ログアウトして Google ログインすると同じ `uid`・同じ底値帳に入れる
-- [ ] 連携後もメール/パスワードでログインできる
-- [ ] 既に別ユーザーで使われている Google ではマージされず、上記の衝突メッセージが出る
-- [ ] Google のみ、または既連携ユーザーには連携ボタンが出ない(または連携済み表示のみ)
-- [ ] 既存テスト(`npm run lint` / `npm run test` / `npm run build`)が通る
+- [x] メール/パスワードのみのユーザーの設定画面に「Google アカウントを連携」が表示される
+- [ ] 確認 → Google ポップアップ → 成功後、`providerData` に `google.com` が含まれる(手動)
+- [ ] 登録メールと異なる Google メールでも連携できる(手動)
+- [ ] 連携後、ログアウトして Google ログインすると同じ `uid`・同じ底値帳に入れる(手動)
+- [ ] 連携後もメール/パスワードでログインできる(手動)
+- [x] 既に別ユーザーで使われている Google ではマージされず、上記の衝突メッセージが出る(単体/コンポーネント)
+- [x] Google のみ、または既連携ユーザーには連携ボタンが出ない(または連携済み表示のみ)
+- [x] 既存テスト(`npm run lint` / `npm run test` / `npm run build`)が通る
 
 ## 将来スコープ(本 Issue に含めない)
 

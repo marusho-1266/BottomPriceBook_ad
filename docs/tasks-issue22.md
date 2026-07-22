@@ -1,6 +1,6 @@
 # タスク分解: アカウント連携(メール → Google)(Issue #22)
 
-> Status: **Draft(レビュー待ち)** / 作成日: 2026-07-22
+> Status: **実装完了(手動スモーク待ち)** / 作成日: 2026-07-22
 > 対象: `docs/spec-issue22.md` / 計画: `docs/plan-issue22.md`
 > 実装は 1 タスク = 1 コミット。各タスクの Verify を通してから次へ進む。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
@@ -28,11 +28,11 @@
   - Files: `src/features/auth/api.ts`, `tests/features/auth/api.test.ts`
   - 依存: I22-T1 / 規模: S
 
-- [ ] ✅ チェックポイント A: `npm run test && npm run lint` green・Firestore/DOM 依存なし
+- [x] ✅ チェックポイント A: `npm run test && npm run lint` green・Firestore/DOM 依存なし
 
 ## Phase 2: UI
 
-- [ ] **I22-T3: `LinkGoogleSection`**
+- [x] **I22-T3: `LinkGoogleSection`**
   - 内容: 未連携(password のみ)で連携ボタン、確認ダイアログ、エラー表示、
     `requires-recent-login` 時は `reauthenticate` 後に再試行、成功/既連携で「Google 連携済み」表示。
     Google のみユーザーにはセクション非表示
@@ -43,7 +43,7 @@
     `tests/features/auth/LinkGoogleSection.test.tsx`
   - 依存: I22-T2 / 規模: M
 
-- [ ] **I22-T4: SettingsPage に連携セクション配線**
+- [x] **I22-T4: SettingsPage に連携セクション配線**
   - 内容: ログアウトボタン直前に `<LinkGoogleSection />` を配置
   - Acceptance: 設定画面にセクションが載る(テストでは子コンポーネントをモックしてよい)
   - Verify: `npm run test -- tests/routes/SettingsPage.test.tsx` →
@@ -54,3 +54,4 @@
 - [ ] ✅ 最終チェックポイント: `npm run test && npm run lint && npm run build` 全 green +
   手動スモーク(メール→連携→Google 再ログインで同一帳面 / 別メール可 / 衝突はエラーのみ) +
   `docs/spec-issue22.md` の Success Criteria 全達成
+  （自動検証は完了。手動スモークは人間確認待ち）

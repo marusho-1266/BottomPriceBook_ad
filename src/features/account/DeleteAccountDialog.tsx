@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useBook } from '../books/BookProvider';
+import { hasPasswordProvider } from '../auth/api';
 import { AccountDeletionError, deleteAccount, reauthenticate } from './api';
 
 /** 退会(アカウント削除)の確認・再認証ダイアログ */
@@ -65,7 +66,7 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
 
   if (!user) return null;
 
-  const isEmailProvider = user.providerData[0]?.providerId === 'password';
+  const isEmailProvider = hasPasswordProvider(user);
   // 削除対象は表示中の book ではなく常に自分の book(bookId = uid)なので、
   // 現在表示中かどうかに関わらず自分の book のメンバー数で判定する
   const ownBook = books.find((candidate) => candidate.ownerUid === user.uid);

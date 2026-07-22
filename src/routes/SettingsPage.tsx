@@ -12,6 +12,7 @@ import {
 import { Link } from 'react-router';
 import { DeleteAccountDialog } from '../features/account/DeleteAccountDialog';
 import { CONTACT_FORM_URL } from '../features/legal/contact';
+import { LinkGoogleSection } from '../features/auth/LinkGoogleSection';
 import { signOut } from '../features/auth/api';
 import {
   BOTTOM_WINDOW_OPTIONS,
@@ -221,6 +222,8 @@ export function SettingsPage() {
           </p>
         )}
       </div>
+
+      <LinkGoogleSection />
 
       <div className="mx-4 mt-4">
         <button

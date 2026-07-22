@@ -43,6 +43,9 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
   return { ...actual, updateBook };
 });
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
+vi.mock('../../src/features/auth/LinkGoogleSection', () => ({
+  LinkGoogleSection: () => <div data-testid="link-google-section">Google連携(モック)</div>,
+}));
 vi.mock('../../src/features/prices/api', () => ({ fetchPriceRecords }));
 vi.mock('../../src/features/products/api', () => ({ fetchProducts }));
 vi.mock('../../src/features/stores/api', () => ({ fetchStores }));
@@ -71,6 +74,15 @@ describe('SettingsPage', () => {
     vi.clearAllMocks();
     localStorage.clear();
     setBook(true);
+  });
+
+  it('Google アカウント連携セクションが表示される(Issue #22)', () => {
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId('link-google-section')).toBeInTheDocument();
   });
 
   it('底値の対象期間を変更できる', async () => {

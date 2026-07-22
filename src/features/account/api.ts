@@ -8,7 +8,12 @@ import { clearIndexedDbPersistence, terminate } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth, db, functions } from '../../lib/firebase';
 import { trackEvent } from '../../lib/analytics';
+import {
+  AUTH_NETWORK_ERROR_MESSAGE,
+  firebaseAuthErrorCode,
+} from '../../lib/firebaseAuthError';
 import { storageKey } from '../books/BookProvider';
+import { hasGoogleProvider, hasPasswordProvider } from '../auth/api';
 
 export class AccountDeletionError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -17,14 +22,8 @@ export class AccountDeletionError extends Error {
   }
 }
 
-function errorCode(error: unknown): string | undefined {
-  return typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code: unknown }).code)
-    : undefined;
-}
-
 function mapReauthenticateError(error: unknown): AccountDeletionError {
-  switch (errorCode(error)) {
+  switch (firebaseAuthErrorCode(error)) {
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
       return new AccountDeletionError('パスワードが正しくありません', { cause: error });
@@ -32,10 +31,7 @@ function mapReauthenticateError(error: unknown): AccountDeletionError {
     case 'auth/cancelled-popup-request':
       return new AccountDeletionError('認証がキャンセルされました', { cause: error });
     case 'auth/network-request-failed':
-      return new AccountDeletionError(
-        'ネットワークエラーが発生しました。もう一度お試しください',
-        { cause: error },
-      );
+      return new AccountDeletionError(AUTH_NETWORK_ERROR_MESSAGE, { cause: error });
     default:
       return new AccountDeletionError('再認証に失敗しました。もう一度お試しください', {
         cause: error,
@@ -44,7 +40,7 @@ function mapReauthenticateError(error: unknown): AccountDeletionError {
 }
 
 function mapDeleteAccountError(error: unknown): AccountDeletionError {
-  switch (errorCode(error)) {
+  switch (firebaseAuthErrorCode(error)) {
     case 'functions/unauthenticated':
       return new AccountDeletionError('再度ログインしてからお試しください', { cause: error });
     default:
@@ -56,8 +52,9 @@ function mapDeleteAccountError(error: unknown): AccountDeletionError {
 }
 
 /**
- * 削除前の再認証。メール/パスワードユーザーは password 必須、
- * Google ユーザーは再ポップアップで認証する。
+ * 削除前の再認証。password プロバイダがあればパスワード必須、
+ * なければ Google 再ポップアップ。両方ある場合はパスワードを優先する
+ * (`providerData[0]` の並び順に依存しない)
  */
 export async function reauthenticate(password?: string): Promise<void> {
   const user = auth.currentUser;
@@ -65,19 +62,22 @@ export async function reauthenticate(password?: string): Promise<void> {
     throw new AccountDeletionError('ログインしていません');
   }
 
-  const providerId = user.providerData[0]?.providerId;
-
   try {
-    if (providerId === 'google.com') {
+    if (hasPasswordProvider(user)) {
+      if (!password) {
+        throw new AccountDeletionError('パスワードを入力してください');
+      }
+      const credential = EmailAuthProvider.credential(user.email ?? '', password);
+      await reauthenticateWithCredential(user, credential);
+      return;
+    }
+
+    if (hasGoogleProvider(user)) {
       await reauthenticateWithPopup(user, new GoogleAuthProvider());
       return;
     }
 
-    if (!password) {
-      throw new AccountDeletionError('パスワードを入力してください');
-    }
-    const credential = EmailAuthProvider.credential(user.email ?? '', password);
-    await reauthenticateWithCredential(user, credential);
+    throw new AccountDeletionError('再認証に失敗しました。もう一度お試しください');
   } catch (error) {
     if (error instanceof AccountDeletionError) throw error;
     throw mapReauthenticateError(error);

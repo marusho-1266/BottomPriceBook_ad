@@ -1,12 +1,14 @@
 import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
+  linkWithPopup,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
+import { trackEvent } from '../../lib/analytics';
 import { auth } from '../../lib/firebase';
 
 type ProviderUser = { providerData: { providerId: string }[] };
@@ -45,6 +47,20 @@ export function mapLinkGoogleError(error: unknown): Error {
       return new Error('ネットワークエラーが発生しました。もう一度お試しください');
     default:
       return new Error('連携に失敗しました。時間をおいて再度お試しください');
+  }
+}
+
+/** 現在のユーザーに Google プロバイダを連携する */
+export async function linkGoogleAccount(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('未ログインです');
+  }
+  try {
+    await linkWithPopup(user, new GoogleAuthProvider());
+    void trackEvent('account_link_google');
+  } catch (error) {
+    throw mapLinkGoogleError(error);
   }
 }
 

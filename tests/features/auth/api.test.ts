@@ -4,19 +4,25 @@ const {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   signInWithEmailAndPassword,
+  linkWithPopup,
+  trackEvent,
 } = vi.hoisted(() => ({
   createUserWithEmailAndPassword: vi.fn(),
   sendEmailVerification: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
+  linkWithPopup: vi.fn(),
+  trackEvent: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/firebase', () => ({ auth: {} }));
+vi.mock('../../../src/lib/analytics', () => ({ trackEvent }));
 vi.mock('firebase/auth', () => ({
   GoogleAuthProvider: vi.fn(function GoogleAuthProviderStub(this: unknown) {}),
   createUserWithEmailAndPassword,
   sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup: vi.fn(),
+  linkWithPopup,
   sendPasswordResetEmail: vi.fn(),
   signOut: vi.fn(),
 }));
@@ -25,6 +31,7 @@ import { auth } from '../../../src/lib/firebase';
 import {
   hasGoogleProvider,
   hasPasswordProvider,
+  linkGoogleAccount,
   mapLinkGoogleError,
   refreshEmailVerification,
   resendVerificationEmail,
@@ -73,6 +80,41 @@ describe('mapLinkGoogleError', () => {
     ['auth/unknown', '連携に失敗しました。時間をおいて再度お試しください'],
   ] as const)('%s を日本語メッセージに変換する', (code, message) => {
     expect(mapLinkGoogleError({ code }).message).toBe(message);
+  });
+});
+
+describe('linkGoogleAccount', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (auth as MutableAuth).currentUser = null;
+  });
+
+  it('未ログインなら linkWithPopup を呼ばず reject する', async () => {
+    await expect(linkGoogleAccount()).rejects.toThrow('未ログインです');
+    expect(linkWithPopup).not.toHaveBeenCalled();
+    expect(trackEvent).not.toHaveBeenCalled();
+  });
+
+  it('成功時は linkWithPopup を呼び account_link_google を記録する', async () => {
+    const user = { uid: 'u1', providerData: [{ providerId: 'password' }] };
+    (auth as MutableAuth).currentUser = user;
+    linkWithPopup.mockResolvedValue({ user });
+
+    await linkGoogleAccount();
+
+    expect(linkWithPopup).toHaveBeenCalledWith(user, expect.any(Object));
+    expect(trackEvent).toHaveBeenCalledWith('account_link_google');
+  });
+
+  it('衝突エラーはユーザー向けメッセージに変換して throw する', async () => {
+    const user = { uid: 'u1', providerData: [{ providerId: 'password' }] };
+    (auth as MutableAuth).currentUser = user;
+    linkWithPopup.mockRejectedValue({ code: 'auth/credential-already-in-use' });
+
+    await expect(linkGoogleAccount()).rejects.toThrow(
+      'この Google アカウントは既に別のユーザーで使われています。そのアカウントでログインするか、別の Google を選んでください',
+    );
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 });
 

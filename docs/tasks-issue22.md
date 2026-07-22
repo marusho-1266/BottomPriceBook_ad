@@ -19,7 +19,7 @@
   - Files: `src/features/auth/api.ts`, `tests/features/auth/api.test.ts`
   - 依存: なし / 規模: XS
 
-- [ ] **I22-T2: `linkGoogleAccount`**
+- [x] **I22-T2: `linkGoogleAccount`**
   - 内容: `linkWithPopup(currentUser, GoogleAuthProvider)`。未ログインは reject。
     成功時 `trackEvent('account_link_google')`(引数なし)。失敗は `mapLinkGoogleError` 経由
   - Acceptance: 成功パスで `linkWithPopup` + Analytics。衝突 code がユーザー向け Error になる。

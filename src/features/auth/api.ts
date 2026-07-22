@@ -27,38 +27,65 @@ function errorCode(error: unknown): string | undefined {
     : undefined;
 }
 
-/** Google アカウント連携失敗時のユーザー向けメッセージ */
-export function mapLinkGoogleError(error: unknown): Error {
-  switch (errorCode(error)) {
-    case 'auth/credential-already-in-use':
-      return new Error(
-        'この Google アカウントは既に別のユーザーで使われています。そのアカウントでログインするか、別の Google を選んでください',
-      );
-    case 'auth/provider-already-linked':
-      return new Error('すでに Google アカウントが連携されています');
-    case 'auth/popup-closed-by-user':
-    case 'auth/cancelled-popup-request':
-      return new Error('連携がキャンセルされました');
-    case 'auth/requires-recent-login':
-      return new Error(
-        'セキュリティのため再認証が必要です。パスワードを入力してから再度お試しください',
-      );
-    case 'auth/network-request-failed':
-      return new Error('ネットワークエラーが発生しました。もう一度お試しください');
-    default:
-      return new Error('連携に失敗しました。時間をおいて再度お試しください');
+export class LinkGoogleError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = 'LinkGoogleError';
   }
 }
 
-/** 現在のユーザーに Google プロバイダを連携する */
-export async function linkGoogleAccount(): Promise<void> {
+/** Google アカウント連携失敗時のユーザー向けメッセージ */
+export function mapLinkGoogleError(error: unknown): LinkGoogleError {
+  const code = errorCode(error);
+  switch (code) {
+    case 'auth/credential-already-in-use':
+      return new LinkGoogleError(
+        'この Google アカウントは既に別のユーザーで使われています。そのアカウントでログインするか、別の Google を選んでください',
+        code,
+        { cause: error },
+      );
+    case 'auth/provider-already-linked':
+      return new LinkGoogleError('すでに Google アカウントが連携されています', code, {
+        cause: error,
+      });
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return new LinkGoogleError('連携がキャンセルされました', code, { cause: error });
+    case 'auth/requires-recent-login':
+      return new LinkGoogleError(
+        'セキュリティのため再認証が必要です。パスワードを入力してから再度お試しください',
+        code,
+        { cause: error },
+      );
+    case 'auth/network-request-failed':
+      return new LinkGoogleError(
+        'ネットワークエラーが発生しました。もう一度お試しください',
+        code,
+        { cause: error },
+      );
+    default:
+      return new LinkGoogleError('連携に失敗しました。時間をおいて再度お試しください', code, {
+        cause: error,
+      });
+  }
+}
+
+/** 現在のユーザーに Google プロバイダを連携する。成功時は連携した Google メール(あれば)を返す */
+export async function linkGoogleAccount(): Promise<string | undefined> {
   const user = auth.currentUser;
   if (!user) {
     throw new Error('未ログインです');
   }
   try {
-    await linkWithPopup(user, new GoogleAuthProvider());
+    const result = await linkWithPopup(user, new GoogleAuthProvider());
     void trackEvent('account_link_google');
+    return (
+      result.user.providerData.find((p) => p.providerId === 'google.com')?.email ?? undefined
+    );
   } catch (error) {
     throw mapLinkGoogleError(error);
   }

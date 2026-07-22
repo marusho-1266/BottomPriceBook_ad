@@ -23,12 +23,58 @@ vi.mock('firebase/auth', () => ({
 
 import { auth } from '../../../src/lib/firebase';
 import {
+  hasGoogleProvider,
+  hasPasswordProvider,
+  mapLinkGoogleError,
   refreshEmailVerification,
   resendVerificationEmail,
   signUpWithEmail,
 } from '../../../src/features/auth/api';
 
 type MutableAuth = { currentUser: unknown };
+
+describe('hasGoogleProvider / hasPasswordProvider', () => {
+  it('providerData に google.com があれば true', () => {
+    expect(hasGoogleProvider({ providerData: [{ providerId: 'google.com' }] })).toBe(true);
+    expect(hasGoogleProvider({ providerData: [{ providerId: 'password' }] })).toBe(false);
+  });
+
+  it('providerData に password があれば true', () => {
+    expect(hasPasswordProvider({ providerData: [{ providerId: 'password' }] })).toBe(true);
+    expect(hasPasswordProvider({ providerData: [{ providerId: 'google.com' }] })).toBe(false);
+  });
+
+  it('両方ある場合はどちらも true', () => {
+    const user = {
+      providerData: [{ providerId: 'password' }, { providerId: 'google.com' }],
+    };
+    expect(hasPasswordProvider(user)).toBe(true);
+    expect(hasGoogleProvider(user)).toBe(true);
+  });
+});
+
+describe('mapLinkGoogleError', () => {
+  it.each([
+    [
+      'auth/credential-already-in-use',
+      'この Google アカウントは既に別のユーザーで使われています。そのアカウントでログインするか、別の Google を選んでください',
+    ],
+    ['auth/provider-already-linked', 'すでに Google アカウントが連携されています'],
+    ['auth/popup-closed-by-user', '連携がキャンセルされました'],
+    ['auth/cancelled-popup-request', '連携がキャンセルされました'],
+    [
+      'auth/requires-recent-login',
+      'セキュリティのため再認証が必要です。パスワードを入力してから再度お試しください',
+    ],
+    [
+      'auth/network-request-failed',
+      'ネットワークエラーが発生しました。もう一度お試しください',
+    ],
+    ['auth/unknown', '連携に失敗しました。時間をおいて再度お試しください'],
+  ] as const)('%s を日本語メッセージに変換する', (code, message) => {
+    expect(mapLinkGoogleError({ code }).message).toBe(message);
+  });
+});
 
 describe('signUpWithEmail', () => {
   beforeEach(() => {

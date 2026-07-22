@@ -9,7 +9,7 @@
 
 ## Phase 1: Auth API 基盤
 
-- [ ] **I22-T1: プロバイダ判定 + `mapLinkGoogleError`**
+- [x] **I22-T1: プロバイダ判定 + `mapLinkGoogleError`**
   - 内容: `hasGoogleProvider` / `hasPasswordProvider` と、仕様表どおりの
     `auth/*` → 日本語メッセージ変換を `src/features/auth/api.ts` に追加
   - Acceptance: password / google の有無判定が正しい。

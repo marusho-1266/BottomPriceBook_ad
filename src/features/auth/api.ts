@@ -9,6 +9,45 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 
+type ProviderUser = { providerData: { providerId: string }[] };
+
+export function hasGoogleProvider(user: ProviderUser): boolean {
+  return user.providerData.some((p) => p.providerId === 'google.com');
+}
+
+export function hasPasswordProvider(user: ProviderUser): boolean {
+  return user.providerData.some((p) => p.providerId === 'password');
+}
+
+function errorCode(error: unknown): string | undefined {
+  return typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code: unknown }).code)
+    : undefined;
+}
+
+/** Google アカウント連携失敗時のユーザー向けメッセージ */
+export function mapLinkGoogleError(error: unknown): Error {
+  switch (errorCode(error)) {
+    case 'auth/credential-already-in-use':
+      return new Error(
+        'この Google アカウントは既に別のユーザーで使われています。そのアカウントでログインするか、別の Google を選んでください',
+      );
+    case 'auth/provider-already-linked':
+      return new Error('すでに Google アカウントが連携されています');
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return new Error('連携がキャンセルされました');
+    case 'auth/requires-recent-login':
+      return new Error(
+        'セキュリティのため再認証が必要です。パスワードを入力してから再度お試しください',
+      );
+    case 'auth/network-request-failed':
+      return new Error('ネットワークエラーが発生しました。もう一度お試しください');
+    default:
+      return new Error('連携に失敗しました。時間をおいて再度お試しください');
+  }
+}
+
 export function signInWithGoogle(): Promise<unknown> {
   return signInWithPopup(auth, new GoogleAuthProvider());
 }

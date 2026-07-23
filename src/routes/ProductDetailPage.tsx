@@ -18,12 +18,7 @@ import {
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
 import { formatPricePerBase } from '../lib/units';
-import type { PriceRecord, WithId } from '../types/models';
-
-function formatDate(record: WithId<PriceRecord>): string {
-  const d = record.recordedAt.toDate();
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
+import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';
 
 export function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
@@ -168,7 +163,7 @@ export function ProductDetailPage() {
                   </div>
                   <div className="mt-0.5 text-[11px] text-ink-sub">
                     {storeName(record.storeId)} · {record.quantity}
-                    {record.unit} · {formatDate(record)}
+                    {record.unit} · {formatPriceRecordDate(record)}
                   </div>
                 </div>
                 {editingId === record.id ? (

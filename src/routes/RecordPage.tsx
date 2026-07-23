@@ -195,7 +195,7 @@ export function RecordPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col md:mx-auto md:w-full md:max-w-lg">
+    <div className="flex min-h-dvh flex-col md:max-w-lg">
       <div className="px-5 pt-14 md:pt-6">
         <h2 className="text-lg font-extrabold">価格を記録</h2>
 

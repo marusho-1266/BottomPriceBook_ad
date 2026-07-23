@@ -1,13 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { useIsDesktopLayout } from '../../src/components/useIsDesktopLayout';
 import { stubMatchMedia } from '../helpers/matchMedia';
 
 describe('useIsDesktopLayout', () => {
-  afterEach(() => {
-    // stubMatchMedia の restore は unstubAllGlobals する。localStorage stub は setup の beforeEach で戻る
-  });
-
   it('768px 相当(matches=true)で true を返す', () => {
     const media = stubMatchMedia(true);
     const { result } = renderHook(() => useIsDesktopLayout());

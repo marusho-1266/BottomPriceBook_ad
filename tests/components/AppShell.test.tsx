@@ -27,10 +27,6 @@ describe('AppShell', () => {
   });
 
   describe('モバイル幅(< 768px)', () => {
-    afterEach(() => {
-      // nested afterEach still needs media from parent — restore in parent
-    });
-
     it('4 つのタブ(ホーム・記録・比較・設定)を表示する', () => {
       media = stubMatchMedia(false);
       renderShell();

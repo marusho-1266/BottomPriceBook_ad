@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { Plus, Search } from 'lucide-react';
 import { PcProductDetailPane } from './PcProductDetailPane';
 import { SaleBadge } from './SaleBadge';
+import { useBook } from '../features/books/BookProvider';
 import { BookSwitcher } from '../features/sharing/BookSwitcher';
 import type { BottomResult } from '../features/prices/bottomPrice';
 import type { HomeSummary } from '../features/prices/homeSummary';
@@ -12,17 +13,29 @@ import type { Category, PriceRecord, Product, WithId } from '../types/models';
 type Props = {
   categories: WithId<Category>[];
   products: WithId<Product>[];
+  records: WithId<PriceRecord>[];
   storeName: (storeId: string) => string;
   bottoms: Map<string, BottomResult<WithId<PriceRecord>>>;
   summary: HomeSummary;
+  windowMonths: number;
+  now: Date;
 };
 
-export function PcHomeDashboard({
+export function PcHomeDashboard(props: Props) {
+  const { bookId } = useBook();
+  // book 切替で検索・選択を破棄(Effect 内 setState を避け key で再マウント)
+  return <PcHomeDashboardInner key={bookId} {...props} />;
+}
+
+function PcHomeDashboardInner({
   categories,
   products,
+  records,
   storeName,
   bottoms,
   summary,
+  windowMonths,
+  now,
 }: Props) {
   const [search, setSearch] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -158,7 +171,15 @@ export function PcHomeDashboard({
           </div>
 
           <aside className="min-w-0 xl:sticky xl:top-5 xl:self-start">
-            <PcProductDetailPane productId={selectedProductId} />
+            <PcProductDetailPane
+              productId={selectedProductId}
+              categories={categories}
+              products={products}
+              records={records}
+              windowMonths={windowMonths}
+              now={now}
+              storeName={storeName}
+            />
           </aside>
         </div>
       )}

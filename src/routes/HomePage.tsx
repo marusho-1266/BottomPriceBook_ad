@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { PcHomeDashboard } from '../components/PcHomeDashboard';
 import { SaleBadge } from '../components/SaleBadge';
-import { useIsDesktopLayout } from '../components/useIsDesktopLayout';
+import { useDesktopLayout } from '../components/useDesktopLayout';
 import { useBook } from '../features/books/BookProvider';
 import { BookSwitcher } from '../features/sharing/BookSwitcher';
 import { useCategories } from '../features/categories/api';
@@ -29,7 +29,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 }
 
 export function HomePage() {
-  const isDesktop = useIsDesktopLayout();
+  const isDesktop = useDesktopLayout();
   const { book } = useBook();
   const { data: categories } = useCategories();
   const { data: products } = useProducts();
@@ -66,9 +66,12 @@ export function HomePage() {
       <PcHomeDashboard
         categories={categories}
         products={products}
+        records={records}
         storeName={storeName}
         bottoms={bottoms}
         summary={summary}
+        windowMonths={windowMonths}
+        now={now}
       />
     );
   }

@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
-import { stubMatchMedia, type MatchMediaController } from '../helpers/matchMedia';
+import { DesktopLayoutProvider } from '../../src/components/DesktopLayoutContext';
 
 vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: () => ({
@@ -91,26 +91,18 @@ import { HomePage } from '../../src/routes/HomePage';
 
 function renderDesktopHome() {
   return render(
-    <MemoryRouter initialEntries={['/']}>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/products/:productId" element={<div>product-detail-page</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <DesktopLayoutProvider value={true}>
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products/:productId" element={<div>product-detail-page</div>} />
+        </Routes>
+      </MemoryRouter>
+    </DesktopLayoutProvider>,
   );
 }
 
 describe('HomePage PC ダッシュボード', () => {
-  let media: MatchMediaController;
-
-  beforeEach(() => {
-    media = stubMatchMedia(true);
-  });
-
-  afterEach(() => {
-    media.restore();
-  });
-
   it('サマリー 3 枚と底値一覧テーブルを表示する', () => {
     renderDesktopHome();
     expect(screen.getByTestId('pc-home-dashboard')).toBeInTheDocument();

@@ -1,45 +1,44 @@
 import { Link } from 'react-router';
-import { useMemo } from 'react';
 import { SaleBadge } from './SaleBadge';
-import { useBook } from '../features/books/BookProvider';
-import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
-import { useCategories } from '../features/categories/api';
-import { useProductPriceRecords } from '../features/prices/api';
-import { bottomPrice, bottomPricesByStore } from '../features/prices/bottomPrice';
-import { useProducts } from '../features/products/api';
-import { useStores } from '../features/stores/api';
+import {
+  bottomPrice,
+  bottomPricesByStore,
+} from '../features/prices/bottomPrice';
+import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';
 import { formatPricePerBase } from '../lib/units';
-import type { PriceRecord, WithId } from '../types/models';
+import type { Category, PriceRecord, Product, WithId } from '../types/models';
 
 const HISTORY_LIMIT = 8;
 
-function formatDate(record: WithId<PriceRecord>): string {
-  const d = record.recordedAt.toDate();
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
 type Props = {
   productId: string | null;
+  categories: WithId<Category>[];
+  products: WithId<Product>[];
+  /** ホームで購読済みの記録(商品切替時の再購読・古いデータ混在を避ける) */
+  records: WithId<PriceRecord>[];
+  windowMonths: number;
+  now: Date;
+  storeName: (storeId: string) => string;
 };
 
 /** PC ホーム右ペイン。閲覧と「詳細を開く」のみ(編集・削除なし) */
-export function PcProductDetailPane({ productId }: Props) {
-  const { book } = useBook();
-  const { data: categories } = useCategories();
-  const { data: products } = useProducts();
-  const { data: stores } = useStores();
-  const { data: productRecords } = useProductPriceRecords(productId ?? undefined);
-
-  const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
-  const now = useMemo(() => new Date(), []);
-
+export function PcProductDetailPane({
+  productId,
+  categories,
+  products,
+  records,
+  windowMonths,
+  now,
+  storeName,
+}: Props) {
   const product = products.find((p) => p.id === productId);
   const category = product
     ? categories.find((c) => c.id === product.categoryId)
     : undefined;
 
-  const storeName = (storeId: string) =>
-    stores.find((s) => s.id === storeId)?.name ?? '(不明な店舗)';
+  const productRecords = productId
+    ? records.filter((r) => r.productId === productId)
+    : [];
 
   const saleBottom =
     productId && category
@@ -145,7 +144,7 @@ export function PcProductDetailPane({ productId }: Props) {
                 className="flex items-center justify-between border-b border-line px-4 py-3 last:border-b-0"
               >
                 <span className="text-[12px] text-ink-sub">
-                  {formatDate(rec)} · {storeName(rec.storeId)}
+                  {formatPriceRecordDate(rec)} · {storeName(rec.storeId)}
                 </span>
                 <span className="text-sm font-bold">
                   ¥{rec.price.toLocaleString()}

@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
+import { stubMatchMedia, type MatchMediaController } from '../helpers/matchMedia';
 
 vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: () => ({
@@ -79,6 +80,7 @@ vi.mock('../../src/features/prices/api', () => ({
     ],
     loading: false,
   })),
+  useProductPriceRecords: vi.fn(() => ({ data: [], loading: false })),
 }));
 
 import { HomePage } from '../../src/routes/HomePage';
@@ -93,6 +95,16 @@ function renderPage() {
 }
 
 describe('HomePage(底値一覧)', () => {
+  let media: MatchMediaController;
+
+  beforeEach(() => {
+    media = stubMatchMedia(false);
+  });
+
+  afterEach(() => {
+    media.restore();
+  });
+
   it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {
     renderPage();
     expect(usePriceRecords).toHaveBeenCalledWith({
@@ -151,5 +163,10 @@ describe('HomePage(底値一覧)', () => {
     expect(screen.getByText('底値更新')).toBeInTheDocument();
     // 登録商品 3 品
     expect(screen.getAllByText('3').length).toBeGreaterThan(0);
+  });
+
+  it('モバイルでは PC ダッシュボードを出さない', () => {
+    renderPage();
+    expect(screen.queryByTestId('pc-home-dashboard')).not.toBeInTheDocument();
   });
 });

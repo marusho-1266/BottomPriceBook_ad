@@ -3,13 +3,25 @@ import { Check, ChevronDown } from 'lucide-react';
 import { PickerSheet } from '../../components/PickerSheet';
 import { useBook } from '../books/BookProvider';
 
+type Tone = 'onPrimary' | 'onSurface';
+
 /** ホームヘッダーの book 切替。参加 book が 1 冊のときは従来のタイトル表示 */
-export function BookSwitcher() {
+export function BookSwitcher({ tone = 'onPrimary' }: { tone?: Tone }) {
   const { bookId, book, books, setCurrentBookId } = useBook();
   const [open, setOpen] = useState(false);
+  const titleClass =
+    tone === 'onPrimary'
+      ? 'text-xl font-extrabold tracking-wider text-white'
+      : 'text-lg font-extrabold tracking-wider text-ink';
+  const buttonClass =
+    tone === 'onPrimary'
+      ? 'flex min-w-0 items-center gap-1 text-white'
+      : 'flex min-w-0 items-center gap-1 text-ink';
+  const chevronClass =
+    tone === 'onPrimary' ? 'size-5 shrink-0 text-white/90' : 'size-5 shrink-0 text-ink-sub';
 
   if (books.length <= 1) {
-    return <h1 className="text-xl font-extrabold tracking-wider text-white">そこねこ</h1>;
+    return <h1 className={titleClass}>そこねこ</h1>;
   }
 
   return (
@@ -18,12 +30,10 @@ export function BookSwitcher() {
         type="button"
         aria-label="底値帳を切り替え"
         onClick={() => setOpen(true)}
-        className="flex min-w-0 items-center gap-1 text-white"
+        className={buttonClass}
       >
-        <h1 className="truncate text-xl font-extrabold tracking-wider">
-          {book?.name ?? 'そこねこ'}
-        </h1>
-        <ChevronDown className="size-5 shrink-0 text-white/90" />
+        <h1 className={`truncate ${titleClass}`}>{book?.name ?? 'そこねこ'}</h1>
+        <ChevronDown className={chevronClass} />
       </button>
       {open && (
         <PickerSheet title="底値帳を切り替え" onClose={() => setOpen(false)}>

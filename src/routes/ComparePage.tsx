@@ -59,14 +59,14 @@ export function ComparePage() {
 
   return (
     <div>
-      <header className="px-4 pt-14 pb-3">
+      <header className="px-4 pt-14 pb-3 md:px-6 md:pt-6">
         <h2 className="text-lg font-extrabold">カテゴリ内比較</h2>
         <p className="mt-1 text-xs text-ink-sub">
           1{category.baseUnit}あたりで比較
         </p>
       </header>
 
-      <div className="mx-4 flex flex-wrap gap-2">
+      <div className="mx-4 flex flex-wrap gap-2 md:mx-6">
         {categories.map((c) => (
           <button
             key={c.id}
@@ -83,7 +83,7 @@ export function ComparePage() {
         ))}
       </div>
 
-      <ul data-testid="ranking" className="mx-4 mt-4 space-y-3 pb-6">
+      <ul data-testid="ranking" className="mx-4 mt-4 space-y-3 pb-6 md:mx-6">
         {visible.length === 0 ? (
           <li className="rounded-2xl bg-surface px-4 py-6 text-center text-sm text-ink-sub">
             このカテゴリに記録がありません。

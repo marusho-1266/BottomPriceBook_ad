@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router';
 import { BarChart3, Home, Plus, SlidersHorizontal } from 'lucide-react';
+import { DesktopShell } from './DesktopShell';
 import { OfflineBanner } from './OfflineBanner';
+import { useIsDesktopLayout } from './useIsDesktopLayout';
 
 function Tab({
   to,
@@ -26,7 +28,7 @@ function Tab({
   );
 }
 
-export function AppShell() {
+function MobileShell() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-cream">
       <OfflineBanner />
@@ -58,4 +60,9 @@ export function AppShell() {
       </nav>
     </div>
   );
+}
+
+export function AppShell() {
+  const isDesktop = useIsDesktopLayout();
+  return isDesktop ? <DesktopShell /> : <MobileShell />;
 }

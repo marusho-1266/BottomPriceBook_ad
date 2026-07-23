@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ChevronRight, Search, X } from 'lucide-react';
+import { PcHomeDashboard } from '../components/PcHomeDashboard';
 import { SaleBadge } from '../components/SaleBadge';
+import { useIsDesktopLayout } from '../components/useIsDesktopLayout';
 import { useBook } from '../features/books/BookProvider';
 import { BookSwitcher } from '../features/sharing/BookSwitcher';
 import { useCategories } from '../features/categories/api';
 import { bottomPrice, type BottomResult } from '../features/prices/bottomPrice';
+import { computeHomeSummary } from '../features/prices/homeSummary';
 import { usePriceRecords } from '../features/prices/api';
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
 import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
 import { formatPricePerBase } from '../lib/units';
 import type { PriceRecord, Product, WithId } from '../types/models';
-
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return (
@@ -28,6 +29,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 }
 
 export function HomePage() {
+  const isDesktop = useIsDesktopLayout();
   const { book } = useBook();
   const { data: categories } = useCategories();
   const { data: products } = useProducts();
@@ -57,10 +59,19 @@ export function HomePage() {
     return map;
   }, [products, categories, records, windowMonths, now]);
 
-  const weekRecords = records.filter((r) => now.getTime() - r.recordedAt.toDate().getTime() < WEEK_MS);
-  const bottomUpdatedCount = weekRecords.filter((r) =>
-    [...bottoms.values()].some((b) => b.record.id === r.id),
-  ).length;
+  const summary = computeHomeSummary(products.length, records, bottoms, now);
+
+  if (isDesktop) {
+    return (
+      <PcHomeDashboard
+        categories={categories}
+        products={products}
+        storeName={storeName}
+        bottoms={bottoms}
+        summary={summary}
+      />
+    );
+  }
 
   const visibleProducts = (categoryId: string): WithId<Product>[] =>
     products.filter(
@@ -99,9 +110,9 @@ export function HomePage() {
           />
         ) : (
           <div className="mt-3.5 flex gap-2.5">
-            <StatCard label="登録商品" value={products.length} />
-            <StatCard label="今週の記録" value={weekRecords.length} />
-            <StatCard label="底値更新" value={bottomUpdatedCount} accent />
+            <StatCard label="登録商品" value={summary.productCount} />
+            <StatCard label="今週の記録" value={summary.weekRecordCount} />
+            <StatCard label="底値更新" value={summary.bottomUpdatedCount} accent />
           </div>
         )}
       </header>

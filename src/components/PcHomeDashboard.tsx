@@ -3,7 +3,6 @@ import { Link } from 'react-router';
 import { Plus, Search } from 'lucide-react';
 import { PcProductDetailPane } from './PcProductDetailPane';
 import { SaleBadge } from './SaleBadge';
-import { useBook } from '../features/books/BookProvider';
 import { BookSwitcher } from '../features/sharing/BookSwitcher';
 import type { BottomResult } from '../features/prices/bottomPrice';
 import type { HomeSummary } from '../features/prices/homeSummary';
@@ -21,13 +20,8 @@ type Props = {
   now: Date;
 };
 
-export function PcHomeDashboard(props: Props) {
-  const { bookId } = useBook();
-  // book 切替で検索・選択を破棄(Effect 内 setState を避け key で再マウント)
-  return <PcHomeDashboardInner key={bookId} {...props} />;
-}
-
-function PcHomeDashboardInner({
+/** BookProvider が bookId で子を再マウントするため、ここでの key は不要 */
+export function PcHomeDashboard({
   categories,
   products,
   records,

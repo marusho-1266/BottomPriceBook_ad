@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
-import { stubMatchMedia, type MatchMediaController } from '../helpers/matchMedia';
+import { DesktopLayoutProvider } from '../../src/components/DesktopLayoutContext';
 
 vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: () => ({
@@ -88,23 +88,15 @@ import { usePriceRecords } from '../../src/features/prices/api';
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <HomePage />
-    </MemoryRouter>,
+    <DesktopLayoutProvider value={false}>
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    </DesktopLayoutProvider>,
   );
 }
 
 describe('HomePage(底値一覧)', () => {
-  let media: MatchMediaController;
-
-  beforeEach(() => {
-    media = stubMatchMedia(false);
-  });
-
-  afterEach(() => {
-    media.restore();
-  });
-
   it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {
     renderPage();
     expect(usePriceRecords).toHaveBeenCalledWith({

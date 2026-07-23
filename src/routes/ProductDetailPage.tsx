@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Pencil, Trash2 } from 'lucide-react';
+import { ProductByStoreSection } from '../components/ProductByStoreSection';
+import { ProductSaleBottomHero } from '../components/ProductSaleBottomHero';
 import { SaleBadge } from '../components/SaleBadge';
 import { SubPageHeader } from '../components/SubPageHeader';
 import { useBook } from '../features/books/BookProvider';
@@ -17,7 +19,6 @@ import {
 } from '../features/prices/bottomPrice';
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
-import { formatPricePerBase } from '../lib/units';
 import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';
 
 export function ProductDetailPage() {
@@ -85,20 +86,14 @@ export function ProductDetailPage() {
       <SubPageHeader title={product.name} backTo="/" />
 
       {saleBottom && (
-        <section data-testid="bottom-hero" className="mx-4 rounded-2xl bg-surface p-5 shadow-sm">
-          <div className="text-[10.5px] font-bold text-ink-faint">底値(特売込み)</div>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-primary">
-              ¥{saleBottom.record.price.toLocaleString()}
-            </span>
-            {saleBottom.record.isSale && <SaleBadge />}
-          </div>
-          <div className="mt-1 text-sm text-ink-sub">
-            {storeName(saleBottom.record.storeId)}
-            {saleBottom.unitPrice !== null &&
-              ` · ${formatPricePerBase(saleBottom.unitPrice, category.baseUnit)}`}
-          </div>
-        </section>
+        <ProductSaleBottomHero
+          testId="bottom-hero"
+          saleBottom={saleBottom}
+          storeName={storeName}
+          baseUnit={category.baseUnit}
+          eyebrow="底値(特売込み)"
+          className="mx-4 rounded-2xl bg-surface p-5 shadow-sm"
+        />
       )}
 
       <section data-testid="regular-bottom" className="mx-4 mt-3 rounded-2xl bg-surface px-5 py-3">
@@ -115,31 +110,12 @@ export function ProductDetailPage() {
         )}
       </section>
 
-      {byStore.size > 0 && (
-        <section data-testid="by-store" className="mx-4 mt-4">
-          <h3 className="mb-2 text-[13px] font-extrabold">店舗別底値</h3>
-          <div className="overflow-hidden rounded-2xl bg-surface">
-            {[...byStore.entries()].map(([storeId, best]) => (
-              <div
-                key={storeId}
-                className="flex items-center justify-between border-b border-line px-4 py-3 last:border-b-0"
-              >
-                <span className="text-sm font-bold">{storeName(storeId)}</span>
-                <div className="text-right">
-                  <span className="font-extrabold text-primary">
-                    ¥{best.record.price.toLocaleString()}
-                  </span>
-                  {best.record.isSale && (
-                    <span className="ml-1.5">
-                      <SaleBadge />
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductByStoreSection
+        testId="by-store"
+        byStore={byStore}
+        storeName={storeName}
+        className="mx-4 mt-4"
+      />
 
       <section data-testid="history" className="mx-4 mt-4 mb-6">
         <h3 className="mb-2 text-[13px] font-extrabold">記録履歴</h3>

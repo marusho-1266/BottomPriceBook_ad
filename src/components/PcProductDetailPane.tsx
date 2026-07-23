@@ -1,11 +1,12 @@
 import { Link } from 'react-router';
+import { ProductByStoreSection } from './ProductByStoreSection';
+import { ProductSaleBottomHero } from './ProductSaleBottomHero';
 import { SaleBadge } from './SaleBadge';
 import {
   bottomPrice,
   bottomPricesByStore,
 } from '../features/prices/bottomPrice';
 import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';
-import { formatPricePerBase } from '../lib/units';
 import type { Category, PriceRecord, Product, WithId } from '../types/models';
 
 const HISTORY_LIMIT = 8;
@@ -74,63 +75,38 @@ export function PcProductDetailPane({
 
   return (
     <div data-testid="pc-detail-pane" className="flex flex-col gap-4">
-      <section className="rounded-2xl bg-surface p-5 shadow-sm shadow-ink/5">
-        <div className="text-[10.5px] font-bold text-ink-faint">
-          選択中 · {category.name}
-        </div>
-        {saleBottom ? (
-          <>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-primary">
-                ¥{saleBottom.record.price.toLocaleString()}
-              </span>
-              {saleBottom.record.isSale && <SaleBadge />}
-            </div>
-            <div className="mt-1 text-sm text-ink-sub">
-              {storeName(saleBottom.record.storeId)}
-            </div>
-            <div className="mt-1.5 text-[12px] font-medium text-ink">
-              {product.name}
-              {saleBottom.unitPrice !== null &&
-                ` · ${formatPricePerBase(saleBottom.unitPrice, category.baseUnit)}`}
-            </div>
-          </>
-        ) : (
-          <div className="mt-2 text-lg font-extrabold text-ink-faint">—</div>
-        )}
-        <Link
-          to={`/products/${product.id}`}
-          className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-light"
+      {saleBottom ? (
+        <ProductSaleBottomHero
+          saleBottom={saleBottom}
+          storeName={storeName}
+          baseUnit={category.baseUnit}
+          eyebrow={`選択中 · ${category.name}`}
+          productLine={product.name}
+          className="rounded-2xl bg-surface p-5 shadow-sm shadow-ink/5"
         >
-          詳細を開く
-        </Link>
-      </section>
-
-      {byStore.size > 0 && (
-        <section>
-          <h3 className="mb-2 text-[13px] font-extrabold">店舗別底値</h3>
-          <div className="overflow-hidden rounded-2xl bg-surface shadow-sm shadow-ink/5">
-            {[...byStore.entries()].map(([storeId, best]) => (
-              <div
-                key={storeId}
-                className="flex items-center justify-between border-b border-line px-4 py-3 last:border-b-0"
-              >
-                <span className="text-sm font-bold">{storeName(storeId)}</span>
-                <div className="text-right">
-                  <span className="font-extrabold text-primary">
-                    ¥{best.record.price.toLocaleString()}
-                  </span>
-                  {best.record.isSale && (
-                    <span className="ml-1.5">
-                      <SaleBadge />
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+          <Link
+            to={`/products/${product.id}`}
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-light"
+          >
+            詳細を開く
+          </Link>
+        </ProductSaleBottomHero>
+      ) : (
+        <section className="rounded-2xl bg-surface p-5 shadow-sm shadow-ink/5">
+          <div className="text-[10.5px] font-bold text-ink-faint">
+            選択中 · {category.name}
           </div>
+          <div className="mt-2 text-lg font-extrabold text-ink-faint">—</div>
+          <Link
+            to={`/products/${product.id}`}
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-light"
+          >
+            詳細を開く
+          </Link>
         </section>
       )}
+
+      <ProductByStoreSection byStore={byStore} storeName={storeName} />
 
       <section>
         <h3 className="mb-2 text-[13px] font-extrabold">最近の履歴</h3>

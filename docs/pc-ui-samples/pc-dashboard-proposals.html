@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>そこねこ PC UI 提案サンプル — Issue #32</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FBF6ED;
+      --surface: #FFFFFF;
+      --surface-alt: #FFFDF8;
+      --border: #F5EDDF;
+      --border-strong: #D9CBB6;
+      --text: #453A2F;
+      --text-sub: #8A7B69;
+      --text-faint: #B7A891;
+      --primary: #E8823C;
+      --primary-deep: #C96F2E;
+      --primary-light: #F2C79A;
+      --sale: #D95643;
+      --sale-bg: #FDE7E1;
+      --sidebar: #2F2620;
+      --sidebar-muted: #8A7B69;
+      --shadow: 0 1px 2px rgba(69, 58, 47, 0.06), 0 8px 24px rgba(69, 58, 47, 0.06);
+      --radius: 14px;
+      --font: 'M PLUS Rounded 1c', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: #EDE4D6;
+      min-height: 100vh;
+    }
+
+    /* ---- Proposal switcher (meta UI) ---- */
+    .chooser {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: #2F2620;
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chooser h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .chooser p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #C4B5A5;
+      font-weight: 500;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      appearance: none;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.08);
+      color: #F5EDDF;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .tab:hover { background: rgba(255,255,255,0.14); }
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary-deep);
+    }
+    .hint {
+      width: 100%;
+      font-size: 12px;
+      color: #C4B5A5;
+      line-height: 1.5;
+    }
+
+    .stage {
+      padding: 28px 24px 48px;
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+    .proposal { display: none; }
+    .proposal.active { display: block; }
+
+    .proposal-label {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .badge {
+      flex-shrink: 0;
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+    .proposal-label h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .proposal-label p {
+      margin: 0;
+      color: var(--text-sub);
+      font-size: 13px;
+      line-height: 1.55;
+      max-width: 64ch;
+    }
+
+    /* ---- Shared app chrome ---- */
+    .frame {
+      background: var(--bg);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-strong);
+      min-height: 720px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+    }
+    .side {
+      background: var(--sidebar);
+      color: #FBF6ED;
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px 18px;
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #C4B5A5;
+      cursor: default;
+    }
+    .nav-item.active {
+      background: rgba(232, 130, 60, 0.22);
+      color: #fff;
+    }
+    .nav-icon {
+      width: 18px;
+      text-align: center;
+      opacity: 0.85;
+    }
+    .side-foot {
+      margin-top: auto;
+      padding: 12px 10px;
+      font-size: 12px;
+      color: var(--sidebar-muted);
+      line-height: 1.4;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--bg);
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px 12px;
+    }
+    .topbar h3 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .topbar .sub {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: default;
+    }
+    .btn.primary {
+      background: var(--primary);
+      border-color: var(--primary-deep);
+      color: #fff;
+    }
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 8px 12px;
+      min-width: 220px;
+      color: var(--text-faint);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .content { padding: 8px 24px 24px; flex: 1; min-height: 0; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: linear-gradient(135deg, var(--primary) 0%, #F09A52 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .stat .label { font-size: 12px; font-weight: 700; opacity: 0.9; }
+    .stat .value { font-size: 28px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; }
+    .stat .note { font-size: 11px; margin-top: 4px; opacity: 0.85; font-weight: 500; }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-head h4 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .panel-head .link {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary-deep);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      padding: 10px 14px;
+      background: var(--surface-alt);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr.selected td { background: #FFF4E8; }
+    tr:hover td { background: #FFFBF5; }
+    .price {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+    .price.muted { color: var(--text); }
+    .name { font-weight: 700; }
+    .meta { color: var(--text-sub); font-size: 12px; font-weight: 500; margin-top: 2px; }
+    .sale {
+      display: inline-block;
+      background: var(--sale-bg);
+      color: var(--sale);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .cat {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: #F5EDDF;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* ---- Layout A: 3-pane ---- */
+    .a-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.85fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .detail-hero {
+      padding: 18px 18px 14px;
+      background: linear-gradient(160deg, #FFF8F0, #fff);
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-hero .tiny { font-size: 12px; color: var(--text-sub); font-weight: 700; }
+    .detail-hero .big {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 6px 0 4px;
+    }
+    .detail-hero .store { font-size: 14px; font-weight: 700; }
+    .detail-section { padding: 14px 18px; }
+    .detail-section h5 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-sub);
+      letter-spacing: 0.04em;
+    }
+    .store-row, .hist-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .store-row:last-child, .hist-row:last-child { border-bottom: none; }
+    .hist-row .left { font-weight: 500; color: var(--text-sub); }
+    .hist-row .right { font-weight: 800; }
+
+    /* ---- Layout C: master-detail ---- */
+    .c-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+      min-height: 560px;
+    }
+    .c-list { border-right: 1px solid var(--border); background: var(--surface-alt); }
+    .c-filters {
+      padding: 12px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #F5EDDF;
+      color: var(--text-sub);
+    }
+    .chip.on {
+      background: var(--primary);
+      color: #fff;
+    }
+    .c-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+    }
+    .c-item.active {
+      background: #FFF4E8;
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+    .c-item .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .c-detail { display: flex; flex-direction: column; }
+    .c-detail-body { padding: 20px 24px; flex: 1; }
+    .split-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    /* ---- Layout D: store briefing ---- */
+    .store-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .store-picker label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+    .store-select {
+      appearance: none;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 8px 36px 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238A7B69' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+      color: var(--text);
+      min-width: 200px;
+    }
+    .d-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .alert-card {
+      border: 1px solid #F0C8BE;
+      background: #FFF8F6;
+    }
+    .alert-card .panel-head { border-bottom-color: #F0C8BE; }
+    .diff {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--sale);
+    }
+    .good {
+      font-size: 12px;
+      font-weight: 800;
+      color: #2F8A5A;
+    }
+    .footer-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 980px) {
+      .frame { grid-template-columns: 1fr; }
+      .side { display: none; }
+      .a-grid, .d-grid, .c-grid, .split-2, .stats { grid-template-columns: 1fr; }
+      .c-grid { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="chooser">
+    <div>
+      <h1>そこねこ PC UI 提案サンプル</h1>
+      <p>Issue #32 — おすすめ3案を切り替えて比較できます（静的モック）</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-target="a" role="tab" aria-selected="true">案A 底値司令塔</button>
+      <button class="tab" data-target="c" role="tab" aria-selected="false">案C 二画面マスター</button>
+      <button class="tab" data-target="d" role="tab" aria-selected="false">案D 買い物ブリーフィング</button>
+    </div>
+    <p class="hint">ブラウザ幅は広め（1200px以上）で見てください。実データではなく、UIの雰囲気を掴むためのダミーです。</p>
+  </header>
+
+  <div class="stage">
+
+    <!-- ========== 案A ========== -->
+    <section class="proposal active" id="proposal-a">
+      <div class="proposal-label">
+        <span class="badge">案A</span>
+        <div>
+          <h2>底値司令塔ダッシュボード</h2>
+          <p>開いた瞬間に「買う判断」ができる画面。上にサマリー、左に底値一覧、右に選択商品の詳細。家で俯瞰するのに向いています。</p>
+        </div>
+      </div>
+
+      <div class="frame">
+        <aside class="side">
+          <div class="brand"><span class="brand-mark">ね</span>そこねこ</div>
+          <div class="nav-item active"><span class="nav-icon">⌂</span>ホーム</div>
+          <div class="nav-item"><span class="nav-icon">＋</span>記録</div>
+          <div class="nav-item"><span class="nav-icon">⇄</span>比較</div>
+          <div class="nav-item"><span class="nav-icon">⚙</span>設定</div>
+          <div class="side-foot">PCシェル案<br />サイドナビ固定</div>
+        </aside>
+        <div class="main">
+          <div class="topbar">
+            <div>
+              <h3>ホーム</h3>
+              <p class="sub">底値の全体像をひと目で</p>
+            </div>
+            <div class="actions">
+              <div class="search">🔍 商品・店舗を検索</div>
+              <button class="btn primary">＋ 価格を記録</button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="stats">
+              <div class="stat">
+                <div class="label">登録商品</div>
+                <div class="value">48</div>
+                <div class="note">カテゴリ 6</div>
+              </div>
+              <div class="stat">
+                <div class="label">今週の記録</div>
+                <div class="value">12</div>
+                <div class="note">先月比 +3</div>
+              </div>
+              <div class="stat">
+                <div class="label">底値更新</div>
+                <div class="value">5</div>
+                <div class="note">直近7日</div>
+              </div>
+            </div>
+
+            <div class="a-grid">
+              <div class="panel">
+                <div class="panel-head">
+                  <h4>カテゴリ別・底値一覧</h4>
+                  <span class="link">1mlあたりで比較 →</span>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>商品</th>
+                      <th>底値</th>
+                      <th>店舗</th>
+                      <th>単価</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="selected">
+                      <td>
+                        <div class="name">キュキュット オレンジ</div>
+                        <div class="meta">洗剤 · 240ml</div>
+                      </td>
+                      <td><span class="price">¥98</span><span class="sale">特売</span></td>
+                      <td>イオンスタイル</td>
+                      <td>¥0.41/ml</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">ジョイ レモン</div>
+                        <div class="meta">洗剤 · 190ml</div>
+                      </td>
+                      <td><span class="price muted">¥128</span></td>
+                      <td>マツキヨ</td>
+                      <td>¥0.67/ml</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">ファーファ タオル</div>
+                        <div class="meta">柔軟剤 · 500ml</div>
+                      </td>
+                      <td><span class="price">¥198</span><span class="sale">特売</span></td>
+                      <td>業務スーパー</td>
+                      <td>¥0.40/ml</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">エリエール 8ロール</div>
+                        <div class="meta">ティッシュ</div>
+                      </td>
+                      <td><span class="price muted">¥348</span></td>
+                      <td>カインズ</td>
+                      <td>¥43.5/ロール</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">ダウニー サンライズ</div>
+                        <div class="meta">柔軟剤 · 370ml</div>
+                      </td>
+                      <td><span class="price">¥256</span></td>
+                      <td>ドン・キホーテ</td>
+                      <td>¥0.69/ml</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="panel">
+                <div class="detail-hero">
+                  <div class="tiny">選択中 · 洗剤</div>
+                  <div class="big">¥98</div>
+                  <div class="store">イオンスタイル <span class="sale">特売</span></div>
+                  <div class="meta" style="margin-top:6px">キュキュット オレンジ · 240ml · ¥0.41/ml</div>
+                </div>
+                <div class="detail-section">
+                  <h5>店舗別底値</h5>
+                  <div class="store-row"><span>イオンスタイル</span><strong class="price" style="font-size:14px">¥98</strong></div>
+                  <div class="store-row"><span>マツキヨ</span><strong>¥128</strong></div>
+                  <div class="store-row"><span>業務スーパー</span><strong>¥135</strong></div>
+                </div>
+                <div class="detail-section" style="padding-top:0">
+                  <h5>最近の履歴</h5>
+                  <div class="hist-row"><span class="left">7/18 · イオン</span><span class="right">¥98 特売</span></div>
+                  <div class="hist-row"><span class="left">7/10 · マツキヨ</span><span class="right">¥128</span></div>
+                  <div class="hist-row"><span class="left">7/02 · 業務ス</span><span class="right">¥135</span></div>
+                </div>
+              </div>
+            </div>
+            <p class="footer-note">ポイント: 一覧を見ながら右で詳細確認。スマホのホーム＋商品詳細を横に並べた形です。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 案C ========== -->
+    <section class="proposal" id="proposal-c">
+      <div class="proposal-label">
+        <span class="badge">案C</span>
+        <div>
+          <h2>二画面マスター（リスト＋詳細）</h2>
+          <p>メールクライアントのような安定した業務UI。左で商品を選び、右で底値・店舗・履歴を見る。既存画面の再利用がしやすく、実装コストも低めです。</p>
+        </div>
+      </div>
+
+      <div class="frame">
+        <aside class="side">
+          <div class="brand"><span class="brand-mark">ね</span>そこねこ</div>
+          <div class="nav-item active"><span class="nav-icon">⌂</span>商品</div>
+          <div class="nav-item"><span class="nav-icon">＋</span>記録</div>
+          <div class="nav-item"><span class="nav-icon">⇄</span>比較</div>
+          <div class="nav-item"><span class="nav-icon">⚙</span>設定</div>
+          <div class="side-foot">PCシェル案<br />マスター／ディテール</div>
+        </aside>
+        <div class="main">
+          <div class="topbar">
+            <div>
+              <h3>商品</h3>
+              <p class="sub">左で選ぶ → 右で詳細</p>
+            </div>
+            <div class="actions">
+              <div class="search">🔍 商品名で絞り込み</div>
+              <button class="btn">CSV出力</button>
+              <button class="btn primary">＋ 価格を記録</button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="c-grid">
+              <div class="c-list">
+                <div class="c-filters">
+                  <span class="chip on">すべて</span>
+                  <span class="chip">洗剤</span>
+                  <span class="chip">柔軟剤</span>
+                  <span class="chip">ティッシュ</span>
+                </div>
+                <div class="c-item active">
+                  <div class="row">
+                    <div class="name">キュキュット オレンジ</div>
+                    <span class="price" style="font-size:15px">¥98</span>
+                  </div>
+                  <div class="meta">洗剤 · イオンスタイル · ¥0.41/ml</div>
+                </div>
+                <div class="c-item">
+                  <div class="row">
+                    <div class="name">ジョイ レモン</div>
+                    <span class="price muted" style="font-size:15px">¥128</span>
+                  </div>
+                  <div class="meta">洗剤 · マツキヨ · ¥0.67/ml</div>
+                </div>
+                <div class="c-item">
+                  <div class="row">
+                    <div class="name">ファーファ タオル</div>
+                    <span class="price" style="font-size:15px">¥198</span>
+                  </div>
+                  <div class="meta">柔軟剤 · 業務スーパー</div>
+                </div>
+                <div class="c-item">
+                  <div class="row">
+                    <div class="name">エリエール 8ロール</div>
+                    <span class="price muted" style="font-size:15px">¥348</span>
+                  </div>
+                  <div class="meta">ティッシュ · カインズ</div>
+                </div>
+                <div class="c-item">
+                  <div class="row">
+                    <div class="name">ダウニー サンライズ</div>
+                    <span class="price" style="font-size:15px">¥256</span>
+                  </div>
+                  <div class="meta">柔軟剤 · ドン・キホーテ</div>
+                </div>
+                <div class="c-item">
+                  <div class="row">
+                    <div class="name">アタックZERO</div>
+                    <span class="price muted" style="font-size:15px">¥398</span>
+                  </div>
+                  <div class="meta">洗剤 · イオンスタイル</div>
+                </div>
+              </div>
+
+              <div class="c-detail">
+                <div class="detail-hero">
+                  <div class="tiny"><span class="cat">洗剤</span></div>
+                  <div style="font-size:22px;font-weight:800;margin-top:8px">キュキュット オレンジ</div>
+                  <div class="meta">内容量 240ml · 基準単位 ml</div>
+                  <div class="big">¥98</div>
+                  <div class="store">底値 · イオンスタイル <span class="sale">特売</span></div>
+                </div>
+                <div class="c-detail-body">
+                  <div class="split-2">
+                    <div class="panel" style="border:1px solid var(--border)">
+                      <div class="panel-head"><h4>店舗別底値</h4></div>
+                      <div class="detail-section">
+                        <div class="store-row"><span>イオンスタイル</span><strong class="price" style="font-size:14px">¥98</strong></div>
+                        <div class="store-row"><span>マツキヨ</span><strong>¥128</strong></div>
+                        <div class="store-row"><span>業務スーパー</span><strong>¥135</strong></div>
+                        <div class="store-row"><span>ドン・キホーテ</span><strong>¥148</strong></div>
+                      </div>
+                    </div>
+                    <div class="panel" style="border:1px solid var(--border)">
+                      <div class="panel-head"><h4>価格履歴</h4><span class="link">すべて</span></div>
+                      <div class="detail-section">
+                        <div class="hist-row"><span class="left">7/18 · イオン · 特売</span><span class="right">¥98</span></div>
+                        <div class="hist-row"><span class="left">7/10 · マツキヨ</span><span class="right">¥128</span></div>
+                        <div class="hist-row"><span class="left">7/02 · 業務ス</span><span class="right">¥135</span></div>
+                        <div class="hist-row"><span class="left">6/28 · ドンキ</span><span class="right">¥148</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:16px;display:flex;gap:8px">
+                    <button class="btn primary">この商品に記録を追加</button>
+                    <button class="btn">編集</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="footer-note">ポイント: 「ダッシュボード感」は弱めですが、操作が単純で迷いにくいです。ホームを案Aにして、商品詳細だけこの形にする組み合わせも可能です。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 案D ========== -->
+    <section class="proposal" id="proposal-d">
+      <div class="proposal-label">
+        <span class="badge">案D</span>
+        <div>
+          <h2>買い物前ブリーフィング</h2>
+          <p>「今日行く店」を起点に、その店で買うべきもの／他店の方が安いものを並べます。買い物準備に特化したダッシュボードです。</p>
+        </div>
+      </div>
+
+      <div class="frame">
+        <aside class="side">
+          <div class="brand"><span class="brand-mark">ね</span>そこねこ</div>
+          <div class="nav-item active"><span class="nav-icon">⌂</span>今日の店</div>
+          <div class="nav-item"><span class="nav-icon">＋</span>記録</div>
+          <div class="nav-item"><span class="nav-icon">⇄</span>比較</div>
+          <div class="nav-item"><span class="nav-icon">⚙</span>設定</div>
+          <div class="side-foot">PCシェル案<br />店舗起点ビュー</div>
+        </aside>
+        <div class="main">
+          <div class="topbar">
+            <div>
+              <h3>買い物ブリーフィング</h3>
+              <p class="sub">行く店を選ぶと、買う判断が並びます</p>
+            </div>
+            <div class="actions">
+              <button class="btn primary">＋ 価格を記録</button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="store-picker">
+              <label>今日行く店</label>
+              <select class="store-select" aria-label="店舗を選択">
+                <option>イオンスタイル 〇〇店</option>
+                <option>マツキヨ</option>
+                <option>業務スーパー</option>
+                <option>ドン・キホーテ</option>
+              </select>
+              <span class="meta">記録のある商品 48件を照合中…</span>
+            </div>
+
+            <div class="d-grid">
+              <div class="panel">
+                <div class="panel-head">
+                  <h4>この店が底値（または同等）</h4>
+                  <span class="good">買う候補 4</span>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>商品</th>
+                      <th>この店</th>
+                      <th>判定</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <div class="name">キュキュット オレンジ</div>
+                        <div class="meta">洗剤</div>
+                      </td>
+                      <td><span class="price">¥98</span></td>
+                      <td><span class="good">底値 ✓</span></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">アタックZERO</div>
+                        <div class="meta">洗剤</div>
+                      </td>
+                      <td><span class="price muted">¥398</span></td>
+                      <td><span class="good">底値 ✓</span></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">エリエール 8ロール</div>
+                        <div class="meta">ティッシュ</div>
+                      </td>
+                      <td><span class="price muted">¥358</span></td>
+                      <td><span class="good">+¥10 のみ</span></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">キッチンペーパー</div>
+                        <div class="meta">消耗品</div>
+                      </td>
+                      <td><span class="price">¥218</span></td>
+                      <td><span class="good">底値 ✓</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="panel alert-card">
+                <div class="panel-head">
+                  <h4>他店の方が安い</h4>
+                  <span class="diff">見送り候補 3</span>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>商品</th>
+                      <th>この店</th>
+                      <th>他店の底値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <div class="name">ジョイ レモン</div>
+                        <div class="meta">洗剤</div>
+                      </td>
+                      <td>¥148</td>
+                      <td>
+                        <div class="price" style="font-size:14px">¥128</div>
+                        <div class="meta">マツキヨ · <span class="diff">−¥20</span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">ファーファ タオル</div>
+                        <div class="meta">柔軟剤</div>
+                      </td>
+                      <td>¥248</td>
+                      <td>
+                        <div class="price" style="font-size:14px">¥198</div>
+                        <div class="meta">業務スーパー · <span class="diff">−¥50</span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="name">ダウニー サンライズ</div>
+                        <div class="meta">柔軟剤</div>
+                      </td>
+                      <td>¥298</td>
+                      <td>
+                        <div class="price" style="font-size:14px">¥256</div>
+                        <div class="meta">ドンキ · <span class="diff">−¥42</span></div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top:14px">
+              <div class="panel-head">
+                <h4>最近の記録・要チェック</h4>
+                <span class="link">履歴へ</span>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>日時</th>
+                    <th>商品</th>
+                    <th>店舗</th>
+                    <th>価格</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>7/20 18:42</td>
+                    <td class="name">キュキュット オレンジ</td>
+                    <td>イオンスタイル</td>
+                    <td><span class="price" style="font-size:14px">¥98</span><span class="sale">特売</span></td>
+                  </tr>
+                  <tr>
+                    <td>7/19 11:05</td>
+                    <td class="name">ジョイ レモン</td>
+                    <td>マツキヨ</td>
+                    <td><span class="price muted" style="font-size:14px">¥128</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="footer-note">ポイント: 「そこねこらしい」体験が出やすい一方、店舗軸の集計ロジックが必要なので実装は他案より重めです。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const proposals = {
+      a: document.getElementById('proposal-a'),
+      c: document.getElementById('proposal-c'),
+      d: document.getElementById('proposal-d'),
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const key = tab.dataset.target;
+        tabs.forEach((t) => {
+          t.classList.toggle('active', t === tab);
+          t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        });
+        Object.entries(proposals).forEach(([k, el]) => {
+          el.classList.toggle('active', k === key);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

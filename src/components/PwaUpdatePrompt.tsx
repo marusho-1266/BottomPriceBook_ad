@@ -13,7 +13,7 @@ export function PwaUpdatePrompt() {
     <div
       role="alert"
       data-testid="pwa-update-prompt"
-      className="fixed inset-x-0 bottom-24 z-20 mx-auto max-w-md px-4"
+      className="fixed inset-x-0 bottom-24 z-20 mx-auto max-w-md px-4 md:bottom-6 md:max-w-lg"
     >
       <div className="flex items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-white shadow-lg">
         <p className="text-xs font-bold">新しいバージョンがあります</p>

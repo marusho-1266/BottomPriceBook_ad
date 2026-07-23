@@ -101,12 +101,12 @@ export function SettingsPage() {
 
   return (
     <div>
-      <header className="px-4 pt-14 pb-3">
+      <header className="px-4 pt-14 pb-3 md:px-6 md:pt-6">
         <h2 className="text-lg font-extrabold">設定</h2>
       </header>
 
       {/* 名前・対象期間の編集はオーナーのみ。参加中の book では閲覧表示(Issue #7) */}
-      <section className="mx-4 rounded-2xl bg-surface px-4 py-4">
+      <section className="mx-4 rounded-2xl bg-surface px-4 py-4 md:mx-6">
         <label htmlFor="book-name" className="text-xs font-bold text-ink-faint">
           底値帳の名前
         </label>

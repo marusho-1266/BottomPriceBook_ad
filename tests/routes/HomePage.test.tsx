@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
+import { DesktopLayoutProvider } from '../../src/components/DesktopLayoutContext';
 
 vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: () => ({
@@ -79,6 +80,7 @@ vi.mock('../../src/features/prices/api', () => ({
     ],
     loading: false,
   })),
+  useProductPriceRecords: vi.fn(() => ({ data: [], loading: false })),
 }));
 
 import { HomePage } from '../../src/routes/HomePage';
@@ -86,9 +88,11 @@ import { usePriceRecords } from '../../src/features/prices/api';
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <HomePage />
-    </MemoryRouter>,
+    <DesktopLayoutProvider value={false}>
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    </DesktopLayoutProvider>,
   );
 }
 
@@ -151,5 +155,10 @@ describe('HomePage(底値一覧)', () => {
     expect(screen.getByText('底値更新')).toBeInTheDocument();
     // 登録商品 3 品
     expect(screen.getAllByText('3').length).toBeGreaterThan(0);
+  });
+
+  it('モバイルでは PC ダッシュボードを出さない', () => {
+    renderPage();
+    expect(screen.queryByTestId('pc-home-dashboard')).not.toBeInTheDocument();
   });
 });

@@ -35,9 +35,11 @@ export function DesktopSideNav() {
   return (
     <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col border-r border-line-strong bg-surface-alt px-3 py-5">
       <div className="mb-5 flex items-center gap-2.5 px-3">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-extrabold text-white">
-          そ
-        </span>
+        <img
+          src="/pwa-192x192.png"
+          alt=""
+          className="size-8 rounded-lg object-cover"
+        />
         <span className="text-lg font-extrabold text-ink">そこねこ</span>
       </div>
       <nav className="flex flex-col gap-1" aria-label="メインナビゲーション">

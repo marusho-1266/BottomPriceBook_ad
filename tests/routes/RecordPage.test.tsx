@@ -4,7 +4,11 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { useBookMock } = vi.hoisted(() => ({
-  useBookMock: vi.fn(() => ({ bookId: 'b1', book: null as unknown })),
+  useBookMock: vi.fn((): {
+    bookId: string;
+    book: unknown;
+    isOwner?: boolean;
+  } => ({ bookId: 'b1', book: null })),
 }));
 vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: useBookMock,

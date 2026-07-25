@@ -4,9 +4,13 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { useBook, useStores } = vi.hoisted(() => ({
-  useBook: vi.fn(() => ({
+  useBook: vi.fn((): {
+    bookId: string;
+    book: { ownerLicenseStatus: 'free' | 'lifetime' };
+    isOwner: boolean;
+  } => ({
     bookId: 'b1',
-    book: { ownerLicenseStatus: 'lifetime' as const },
+    book: { ownerLicenseStatus: 'lifetime' },
     isOwner: true,
   })),
   useStores: vi.fn(() => ({

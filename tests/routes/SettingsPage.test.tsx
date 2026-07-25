@@ -20,7 +20,10 @@ const {
   signOut: vi.fn().mockResolvedValue(undefined),
   useBook: vi.fn(),
   useAuth: vi.fn(() => ({ user: { uid: 'u1' }, loading: false })),
-  useUserLicense: vi.fn(() => ({ status: 'free' as const, loading: false })),
+  useUserLicense: vi.fn((): { status: 'free' | 'lifetime'; loading: boolean } => ({
+    status: 'free',
+    loading: false,
+  })),
   fetchPriceRecords: vi.fn().mockResolvedValue([] as unknown[]),
   fetchProducts: vi.fn().mockResolvedValue([] as unknown[]),
   fetchStores: vi.fn().mockResolvedValue([] as unknown[]),

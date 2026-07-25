@@ -109,7 +109,7 @@ describe('ShareSettings(オーナー)', () => {
 
     expect(screen.getByRole('button', { name: '招待リンクを発行' })).toBeDisabled();
     expect(screen.getByText('買い切り後に招待できます')).toBeInTheDocument();
-    expect(screen.getByText(/買い切りで無制限/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /税込 ¥480（買い切り）/ })).toBeInTheDocument();
   });
 
   it('メンバー一覧が表示名付きで表示され、オーナーにはバッジが付く', () => {

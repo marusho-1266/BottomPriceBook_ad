@@ -62,16 +62,17 @@
   - 依存: I37-T1, I37-T2 / 規模: M
   - 完了: 2026-07-25
 
-- [ ] **I37-T5: クライアント — Checkout 起動・購入済み・success 案内**
+- [x] **I37-T5: クライアント — Checkout 起動・購入済み・success 案内**
   - 内容: 設定等の CTA を Callable 接続。「税込 ¥480（買い切り）」表示。lifetime は「買い切り済み」で CTA なし。`?purchase=success` で短い反映待ち案内。キャンセル戻りは静か
   - Acceptance: 仕様 UX 表どおり。ゲスト向け誤購入誘導なし（#36 ctaCopy 維持）
   - Verify: `npm run test` && `npm run lint`
   - Files: `src/features/license/*`, `src/routes/SettingsPage.tsx`, 関連テスト, 必要なら薄い `api.ts`
   - 依存: I37-T3 / 規模: M
+  - 完了: 2026-07-25
 
 ### Checkpoint B
 - [ ] Test Mode で Checkout → Webhook → 制限解除（手動）
-- [ ] 購入済み UI の自動テスト green
+- [x] 購入済み UI の自動テスト green
 
 ---
 

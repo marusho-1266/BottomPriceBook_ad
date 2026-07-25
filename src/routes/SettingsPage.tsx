@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   StoreIcon,
 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { DeleteAccountDialog } from '../features/account/DeleteAccountDialog';
 import { CONTACT_FORM_URL } from '../features/legal/contact';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -68,6 +68,8 @@ export function SettingsPage() {
   const csvCta = ownerLimitCta('csv', isOwner);
   const { data: products } = useProducts();
   const { data: stores } = useStores();
+  const [searchParams] = useSearchParams();
+  const purchaseReturn = searchParams.get('purchase');
   const bookName = book?.name ?? '';
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const name = nameDraft ?? bookName;
@@ -178,8 +180,13 @@ export function SettingsPage() {
       <section className="mx-4 mt-4 rounded-2xl bg-surface px-4 py-4">
         <div className="text-xs font-bold text-ink-faint">プラン</div>
         <p className="mt-2 text-sm font-bold">
-          {accountLicense === 'lifetime' ? '買い切り（lifetime）' : '無料プラン'}
+          {accountLicense === 'lifetime' ? '買い切り済み' : '無料プラン'}
         </p>
+        {purchaseReturn === 'success' && accountLicense === 'free' && (
+          <p className="mt-2 text-xs font-bold text-ink-sub" role="status">
+            購入の反映まで数秒かかることがあります。このままお待ちください。
+          </p>
+        )}
         {isOwner && accountLicense === 'free' && (
           <>
             <p className="mt-2 text-xs font-bold text-ink-sub">

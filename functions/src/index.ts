@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
-import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
+import { type CallableRequest, HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import Stripe from 'stripe';
 import {
   handleCreateCheckoutSession,
@@ -11,6 +11,7 @@ import {
 import { runDeleteAccount } from './deleteAccount.js';
 import { initSentry, withSentry } from './sentry.js';
 import { getStripeConfig } from './stripeConfig.js';
+import { handleStripeWebhook } from './stripeWebhook.js';
 
 initializeApp();
 initSentry();
@@ -76,3 +77,28 @@ export async function handleCreateCheckoutSessionRequest(
 }
 
 export const createCheckoutSession = onCall(withSentry(handleCreateCheckoutSessionRequest));
+
+export const stripeWebhook = onRequest({ cors: false }, async (req, res) => {
+  const config = getStripeConfig();
+  const stripe = new Stripe(config.secretKey);
+  await handleStripeWebhook(req, res, {
+    firestore: getFirestore(),
+    webhookSecret: config.webhookSecret,
+    priceId: config.priceId,
+    retrieveCheckoutSession: async (sessionId) => {
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['line_items.data.price'],
+      });
+      return session as unknown as {
+        id: string;
+        mode: string | null;
+        payment_status: string | null;
+        currency: string | null;
+        amount_total: number | null;
+        metadata: Record<string, string> | null;
+        client_reference_id: string | null;
+        line_items?: { data: Array<{ price?: { id?: string } | string | null }> };
+      };
+    },
+  });
+});

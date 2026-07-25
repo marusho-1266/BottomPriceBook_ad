@@ -54,12 +54,13 @@
   - 依存: I37-T1, I37-T2 / 規模: M
   - 完了: 2026-07-25
 
-- [ ] **I37-T4: `stripeWebhook` onRequest**
+- [x] **I37-T4: `stripeWebhook` onRequest**
   - 内容: raw body で署名検証。`checkout.session.completed`（および遅延決済有効時は `async_payment_succeeded`）で Session 検証（mode / payment_status=paid / Price ID / JPY 480 / metadata uid）→ 合格時のみ `grantLifetimeLicense`。不正署名は 400。未検証・未払いは付与せずログ。未知イベントは 200 で無視可
   - Acceptance: 正当かつ検証合格で lifetime+ミラー。二重配信で壊れない。署名不正・金額／Price 不一致・未払いは付与しない
   - Verify: `cd functions && npm test`（署名は Stripe のテストヘルパ／固定ペイロード）。手動は `stripe listen` 任意
   - Files: `functions/src/stripeWebhook.ts`, テスト, `functions/src/index.ts`
   - 依存: I37-T1, I37-T2 / 規模: M
+  - 完了: 2026-07-25
 
 - [ ] **I37-T5: クライアント — Checkout 起動・購入済み・success 案内**
   - 内容: 設定等の CTA を Callable 接続。「税込 ¥480（買い切り）」表示。lifetime は「買い切り済み」で CTA なし。`?purchase=success` で短い反映待ち案内。キャンセル戻りは静か

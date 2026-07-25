@@ -11,7 +11,7 @@ export const FREE_STORE_LIMIT = 3;
  * book.ownerLicenseStatus や users.license のどちらからでも使える。
  */
 export function resolveLicenseStatus(
-  license: { status?: string | LicenseStatus } | null | undefined,
+  license: { status?: string } | null | undefined,
 ): LicenseStatus {
   return license?.status === 'lifetime' ? 'lifetime' : 'free';
 }

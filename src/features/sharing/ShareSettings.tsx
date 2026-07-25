@@ -5,6 +5,7 @@ import { db } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthProvider';
 import { useBook } from '../books/BookProvider';
 import { UpgradeCta } from '../license/UpgradeCta';
+import { ownerLimitCta } from '../license/ctaCopy';
 import { canInvite } from '../license/policy';
 import { useBookOwnerLicense } from '../license/useBookOwnerLicense';
 import {
@@ -24,6 +25,7 @@ export function ShareSettings() {
   const { user } = useAuth();
   const ownerLicense = useBookOwnerLicense();
   const inviteAllowed = canInvite(ownerLicense);
+  const inviteCta = ownerLimitCta('invite', isOwner);
   const { data: members } = useMembers(bookId);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
@@ -137,7 +139,9 @@ export function ShareSettings() {
           >
             招待リンクを発行
           </button>
-          {!inviteAllowed && <UpgradeCta message="買い切り後に招待できます" />}
+          {!inviteAllowed && (
+            <UpgradeCta message={inviteCta.message} showPurchaseHint={inviteCta.showPurchaseHint} />
+          )}
           {inviteUrl && (
             <div className="rounded-xl bg-cream p-3">
               <p className="text-xs break-all">{inviteUrl}</p>

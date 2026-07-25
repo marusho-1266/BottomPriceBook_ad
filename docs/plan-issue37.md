@@ -1,8 +1,9 @@
 # 実装計画: 買い切り決済（Issue #37）
 
-> Status: **Approved / In Progress** / 作成日: 2026-07-25 / 実装開始: 2026-07-25
+> Status: **Implemented** / 作成日: 2026-07-25 / 実装完了: 2026-07-25
 > 対象仕様: `docs/spec-issue37.md`（Approved）
 > タスク分解: `docs/tasks-issue37.md`
+> デプロイ手順: `docs/deploy-issue37.md`
 > 前提: #36（ライセンスガード・ミラー）がマージ済みであること。無料枠の再実装はしない
 
 ## 方針

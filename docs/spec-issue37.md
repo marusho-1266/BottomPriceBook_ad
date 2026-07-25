@@ -5,7 +5,7 @@
 > 親仕様: `docs/spec.md` / ライセンスモデル: `docs/spec-issue36.md`（Approved）/ 実装計画メモ: `docs/plan-issue36.md`
 > 関連: 法務基盤 `docs/spec-issue14.md` / プロモ #38
 > 前提: **#36（PR #39）のマージ**。無料枠・招待／CSV ガード・ミラーは再実装しない
-> 実装計画: `docs/plan-issue37.md`（Approved / In Progress）/ タスク: `docs/tasks-issue37.md`（In Progress）
+> 実装計画: `docs/plan-issue37.md`（Implemented）/ タスク: `docs/tasks-issue37.md`（Implemented）/ デプロイ: `docs/deploy-issue37.md`
 
 ## ヒアリング結果（2026-07-25 確定）
 

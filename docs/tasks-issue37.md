@@ -1,6 +1,6 @@
 # タスク分解: 買い切り決済（Issue #37）
 
-> Status: **In Progress** / 作成日: 2026-07-25
+> Status: **Implemented（人間作業・本番公開前チェック残り）** / 作成日: 2026-07-25 / 実装完了: 2026-07-25
 > 対象: `docs/spec-issue37.md`（Approved）/ 計画: `docs/plan-issue37.md`
 > 前提: #36 マージ済み。1 タスク = 1 コミット相当。Verify を通してから次へ
 > 凡例は `docs/tasks.md` と同じ（受け入れ / Verify / 依存 / 規模）
@@ -101,15 +101,16 @@
 
 ## Phase 4: 仕上げ
 
-- [ ] **I37-T8: 回帰・docs・デプロイ手順**
+- [x] **I37-T8: 回帰・docs・デプロイ手順**
   - 内容: 全テスト。`plan`/`tasks`/`spec` Status 更新。README または docs に Test/Live 鍵・Webhook エンドポイント・特商法差し替え・**#36 と同時デプロイ**を短く記載
   - Acceptance: Checkpoint D のコマンド成功。公開前チェックリストが docs にある
   - Verify: `npm run test && npm run test:rules && npm run lint && npm run build` && `cd functions && npm test && npm run build`
   - Files: `docs/plan-issue37.md`, `docs/tasks-issue37.md`, `docs/spec-issue37.md`, 必要なら `README.md`
   - 依存: T3〜T7 / 規模: S
+  - 完了: 2026-07-25 — 手順は `docs/deploy-issue37.md`
 
 ### Checkpoint D
-- [ ] 上記コマンドすべて green
+- [x] 上記コマンドすべて green（2026-07-25）
 - [ ] 本番課金 ON の前に: 特商法実情報差し替え済み / Live 鍵 / Webhook 本番 URL
 
 ---

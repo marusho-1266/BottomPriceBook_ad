@@ -186,7 +186,7 @@ describe('SettingsPage', () => {
     expect(screen.getByText('6ヶ月')).toBeInTheDocument();
   });
 
-  it('利用規約・プライバシーポリシー・お問い合わせへのリンクを表示する(Issue #14)', () => {
+  it('利用規約・プライバシーポリシー・特商法・お問い合わせへのリンクを表示する(Issue #14/#37)', () => {
     render(
       <MemoryRouter>
         <SettingsPage />
@@ -196,6 +196,10 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('link', { name: /プライバシーポリシー/ })).toHaveAttribute(
       'href',
       '/privacy',
+    );
+    expect(screen.getByRole('link', { name: /特定商取引法に基づく表記/ })).toHaveAttribute(
+      'href',
+      '/tokushoho',
     );
     const contact = screen.getByRole('link', { name: /お問い合わせ/ });
     expect(contact).toHaveAttribute('target', '_blank');

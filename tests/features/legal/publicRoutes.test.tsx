@@ -54,6 +54,15 @@ describe('公開ルート(認証不要。Issue #14)', () => {
     expect(screen.queryByRole('button', { name: /Google でログイン/ })).not.toBeInTheDocument();
   });
 
+  it('未ログインで /tokushoho を開くと特商法表記が表示される(Issue #37)', async () => {
+    await renderAt('/tokushoho');
+    expect(
+      screen.getByRole('heading', { name: '特定商取引法に基づく表記' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/税込 ¥480/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Google でログイン/ })).not.toBeInTheDocument();
+  });
+
   it('未ログインでその他のパスを開くとログイン画面が表示される', async () => {
     await renderAt('/');
     expect(screen.getByRole('button', { name: /Google でログイン/ })).toBeInTheDocument();

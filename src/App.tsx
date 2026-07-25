@@ -16,6 +16,7 @@ import { StoresPage } from './features/stores/StoresPage';
 import { JoinPage } from './features/sharing/JoinPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
 import { TermsPage } from './features/legal/TermsPage';
+import { TokushohoPage } from './features/legal/TokushohoPage';
 import { OnboardingModal } from './features/onboarding/OnboardingModal';
 import { hasSeenOnboarding, markOnboardingSeen } from './features/onboarding/storage';
 import { db } from './lib/firebase';
@@ -125,6 +126,7 @@ export function App() {
         <Routes>
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="tokushoho" element={<TokushohoPage />} />
           <Route path="*" element={<Gate />} />
         </Routes>
       </BrowserRouter>

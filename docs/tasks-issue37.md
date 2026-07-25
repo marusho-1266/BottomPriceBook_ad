@@ -78,12 +78,13 @@
 
 ## Phase 3: 法務
 
-- [ ] **I37-T6: 特商法ページ＋導線**
+- [x] **I37-T6: 特商法ページ＋導線**
   - 内容: `/tokushoho`（名称可）と LegalLayout。設定・ログインフッターからリンク。価格・支払・返品方針は仕様どおり。事業者実値はプレースホルダ＋「公開前差し替え」コメント
   - Acceptance: 公開ルートで閲覧可。導線 2 箇所以上
   - Verify: `npm run test`（ルート／リンク）
   - Files: `src/features/legal/TokushohoPage.tsx`, `src/App.tsx`, `LoginScreen` / `SettingsPage`, テスト
   - 依存: なし（Phase 2 と並行可）/ 規模: M
+  - 完了: 2026-07-25
 
 - [ ] **I37-T7: 利用規約・プライバシー更新**
   - 内容: 無料のみ前提の削除。無料枠・買い切り・Stripe・返金方針。プライバシーに決済代行の記載。改定日更新

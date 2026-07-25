@@ -101,12 +101,16 @@ describe('LoginScreen', () => {
     expect(signUpWithEmail).not.toHaveBeenCalled();
   });
 
-  it('利用規約・プライバシーポリシー・お問い合わせへのリンクを表示する(Issue #14)', () => {
+  it('利用規約・プライバシーポリシー・特商法・お問い合わせへのリンクを表示する(Issue #14/#37)', () => {
     render(<LoginScreen />);
     expect(screen.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', '/terms');
     expect(screen.getByRole('link', { name: 'プライバシーポリシー' })).toHaveAttribute(
       'href',
       '/privacy',
+    );
+    expect(screen.getByRole('link', { name: '特定商取引法に基づく表記' })).toHaveAttribute(
+      'href',
+      '/tokushoho',
     );
     const contact = screen.getByRole('link', { name: 'お問い合わせ' });
     expect(contact).toHaveAttribute('target', '_blank');

@@ -198,12 +198,15 @@ export function LoginScreen() {
         </div>
 
         {/* 登録前に規約・ポリシーを確認できるようにする(Issue #14) */}
-        <div className="mt-auto flex items-center justify-center gap-4 pt-6 pb-2 text-[11px] font-bold text-ink-faint">
+        <div className="mt-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-6 pb-2 text-[11px] font-bold text-ink-faint">
           <Link to="/terms" className="underline">
             利用規約
           </Link>
           <Link to="/privacy" className="underline">
             プライバシーポリシー
+          </Link>
+          <Link to="/tokushoho" className="underline">
+            特定商取引法に基づく表記
           </Link>
           <a
             href={CONTACT_FORM_URL}

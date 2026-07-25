@@ -227,6 +227,11 @@ export function SettingsPage() {
           label="プライバシーポリシー"
           icon={<ShieldCheck className="size-5" />}
         />
+        <SettingsLink
+          to="/tokushoho"
+          label="特定商取引法に基づく表記"
+          icon={<FileText className="size-5" />}
+        />
         <a
           href={CONTACT_FORM_URL}
           target="_blank"

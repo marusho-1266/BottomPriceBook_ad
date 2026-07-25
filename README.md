@@ -56,8 +56,9 @@ Firebase コンソールの設定値(`.env.example` 参照)を設定する。
 
 Stripe Checkout・Webhook・特商法のデプロイ前チェックは
 [`docs/deploy-issue37.md`](docs/deploy-issue37.md) を参照。
-**#36（ライセンスガード）と同時デプロイ**すること。Functions には
-`STRIPE_*` / `APP_BASE_URL`（`functions/.env.example`）が必要。
+**#36（ライセンスガード）と同時デプロイ**すること。
+`STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` は Secret Manager（`defineSecret`）、
+`STRIPE_PRICE_ID` / `APP_BASE_URL` は通常 env（`functions/.env.example`）。
 
 ### デプロイ(Cloud Functions を含む場合。Issue #13〜)
 

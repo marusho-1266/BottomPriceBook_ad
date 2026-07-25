@@ -129,7 +129,7 @@ test('並行呼び出しでも Stripe Session 作成は 1 回', async () => {
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 40);
     });
-    assert.equal(opts.idempotencyKey, 'checkout_alice_price_test_480');
+    assert.match(opts.idempotencyKey, /^checkout_alice_price_test_480_attempt-1$/);
     return {
       id: 'cs_parallel_1',
       url: 'https://checkout.stripe.com/c/pay/cs_parallel_1',
@@ -138,6 +138,7 @@ test('並行呼び出しでも Stripe Session 作成は 1 回', async () => {
 
   const deps = makeDeps({
     createStripeCheckoutSession,
+    createAttemptId: () => 'attempt-1',
     sleep: async () => {
       await new Promise<void>((resolve) => {
         setTimeout(resolve, 10);
@@ -152,4 +153,41 @@ test('並行呼び出しでも Stripe Session 作成は 1 回', async () => {
   assert.equal(created, 1);
   assert.equal(a.url, b.url);
   assert.equal(a.url, 'https://checkout.stripe.com/c/pay/cs_parallel_1');
+});
+
+test('期限切れ pending は新規試行 ID で Session を作り直す', async () => {
+  await firestore.collection('pendingCheckouts').doc('alice').set({
+    sessionId: 'cs_dead',
+    url: 'https://checkout.stripe.com/c/pay/cs_dead',
+    status: 'ready',
+    attemptId: 'old-attempt',
+    createdAt: FieldValue.serverTimestamp(),
+    expiresAtMs: Date.parse('2026-07-24T00:00:00.000Z'),
+  });
+
+  let seenKey = '';
+  let seenExpiresAt = 0;
+  const result = await handleCreateCheckoutSession(
+    authRequest('alice'),
+    makeDeps({
+      createAttemptId: () => 'new-attempt',
+      createStripeCheckoutSession: async (params, opts) => {
+        seenKey = opts.idempotencyKey;
+        seenExpiresAt = params.expiresAtUnix;
+        return { id: 'cs_fresh', url: 'https://checkout.stripe.com/c/pay/cs_fresh' };
+      },
+    }),
+  );
+
+  assert.equal(result.url, 'https://checkout.stripe.com/c/pay/cs_fresh');
+  assert.equal(seenKey, 'checkout_alice_price_test_480_new-attempt');
+  assert.equal(seenExpiresAt, Math.floor(Date.parse('2026-07-25T00:00:00.000Z') / 1000) + 24 * 60 * 60);
+
+  const pending = await firestore.collection('pendingCheckouts').doc('alice').get();
+  assert.equal(pending.data()?.attemptId, 'new-attempt');
+  // pending 再利用は Stripe 期限(24h)より短い 23h
+  assert.equal(
+    pending.data()?.expiresAtMs,
+    Date.parse('2026-07-25T00:00:00.000Z') + 23 * 60 * 60 * 1000,
+  );
 });

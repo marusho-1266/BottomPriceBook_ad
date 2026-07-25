@@ -234,6 +234,85 @@ test('金額不一致は付与しない', async () => {
   assert.equal((await firestore.collection('users').doc('alice').get()).exists, false);
 });
 
+test('metadata / client_reference_id 欠落は付与しない', async () => {
+  const session = paidSession({
+    metadata: {},
+    client_reference_id: null,
+  });
+  const { payload, signature } = makeEvent('checkout.session.completed', session);
+  const res = mockRes();
+  await handleStripeWebhook(
+    {
+      method: 'POST',
+      headers: { 'stripe-signature': signature },
+      rawBody: Buffer.from(payload),
+    },
+    res,
+    makeDeps({
+      retrieveCheckoutSession: async () => ({
+        ...session,
+        line_items: { data: [{ price: { id: PRICE_ID } }] },
+      }),
+    }),
+  );
+  assert.equal(res.result.statusCode, 200);
+  assert.equal((await firestore.collection('users').doc('alice').get()).exists, false);
+});
+
+test('mode が payment 以外なら付与しない', async () => {
+  const session = paidSession({ mode: 'subscription' });
+  const { payload, signature } = makeEvent('checkout.session.completed', session);
+  const res = mockRes();
+  await handleStripeWebhook(
+    {
+      method: 'POST',
+      headers: { 'stripe-signature': signature },
+      rawBody: Buffer.from(payload),
+    },
+    res,
+    makeDeps({
+      retrieveCheckoutSession: async () => ({
+        ...session,
+        line_items: { data: [{ price: { id: PRICE_ID } }] },
+      }),
+    }),
+  );
+  assert.equal(res.result.statusCode, 200);
+  assert.equal((await firestore.collection('users').doc('alice').get()).exists, false);
+});
+
+test('async_payment_succeeded でも検証合格なら lifetime を付与する', async () => {
+  await firestore.collection('books').doc('alice').set({
+    name: '帳',
+    ownerUid: 'alice',
+    memberUids: ['alice'],
+    bottomWindowMonths: 6,
+    createdAt: FieldValue.serverTimestamp(),
+    ownerLicenseStatus: 'free',
+  });
+  const { payload, signature } = makeEvent(
+    'checkout.session.async_payment_succeeded',
+    paidSession({ id: 'cs_async_1' }),
+  );
+  const res = mockRes();
+  await handleStripeWebhook(
+    {
+      method: 'POST',
+      headers: { 'stripe-signature': signature },
+      rawBody: Buffer.from(payload),
+    },
+    res,
+    makeDeps({
+      retrieveCheckoutSession: async (sessionId) => ({
+        ...paidSession({ id: sessionId }),
+        line_items: { data: [{ price: { id: PRICE_ID } }] },
+      }),
+    }),
+  );
+  assert.equal(res.result.statusCode, 200);
+  assert.equal((await firestore.collection('users').doc('alice').get()).data()?.license?.status, 'lifetime');
+});
+
 test('未知イベントは 200 で無視する', async () => {
   const { payload, signature } = makeEvent('customer.created', paidSession());
   const res = mockRes();

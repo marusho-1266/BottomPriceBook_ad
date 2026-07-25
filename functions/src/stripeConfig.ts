@@ -18,8 +18,10 @@ function requiredEnv(env: NodeJS.ProcessEnv, key: string): string {
 }
 
 /**
- * Stripe 用の秘密設定を process.env（または差し替え env）から読む。
- * 秘密鍵は Functions 側のみ。クライアントバンドルには載せない。
+ * Stripe 用の設定を process.env（または差し替え env）から読む。
+ * `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` は本番では defineSecret 経由で
+ * Secret Manager からランタイム env にマウントされる（クライアントには出さない）。
+ * `STRIPE_PRICE_ID` / `APP_BASE_URL` は秘密ではないので通常の Functions env でよい。
  */
 export function getStripeConfig(env: NodeJS.ProcessEnv = process.env): StripeConfig {
   return {

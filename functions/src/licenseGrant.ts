@@ -48,6 +48,9 @@ async function withRetries<T>(
 /**
  * オーナーの全 book ミラーを lifetime に揃える。
  * 既に lifetime の book はスキップ。欠落 / free のみ更新。
+ *
+ * 現状 Rules 上オーナー帳は最大 1 件だが、plan-issue36/37 の不変条件として
+ * 複数帳・将来拡張でも壊れないよう 400 件チャンク分割と再試行を実装している。
  */
 export async function syncOwnerBookMirrors(uid: string, deps: LicenseGrantDeps): Promise<void> {
   const { firestore } = deps;
@@ -126,4 +129,11 @@ export async function grantLifetimeLicense(
   });
 
   await syncOwnerBookMirrors(uid, deps);
+
+  // 付与済みの未使用 Checkout URL が revoke 後に reuse されないよう pending を消す
+  await firestore
+    .collection('pendingCheckouts')
+    .doc(uid)
+    .delete()
+    .catch(() => undefined);
 }

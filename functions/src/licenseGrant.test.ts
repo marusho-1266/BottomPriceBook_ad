@@ -48,6 +48,10 @@ function bookData(ownerUid: string, ownerLicenseStatus?: 'free' | 'lifetime') {
 test('未購入ユーザーに stripe Session で lifetime を付与しミラーも更新する', async () => {
   const uid = 'alice-uid';
   await firestore.collection('books').doc(uid).set(bookData(uid, 'free'));
+  await firestore.collection('pendingCheckouts').doc(uid).set({
+    status: 'ready',
+    url: 'https://checkout.stripe.com/c/pay/cs_test_1',
+  });
 
   await grantLifetimeLicense(
     {
@@ -72,6 +76,8 @@ test('未購入ユーザーに stripe Session で lifetime を付与しミラー
 
   const book = await firestore.collection('books').doc(uid).get();
   assert.equal(book.data()?.ownerLicenseStatus, 'lifetime');
+
+  assert.equal((await firestore.collection('pendingCheckouts').doc(uid).get()).exists, false);
 });
 
 test('同一 Session の再実行は購入メタを上書きせず、不足ミラーだけ修復する', async () => {

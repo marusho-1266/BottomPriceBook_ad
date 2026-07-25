@@ -6,10 +6,15 @@ dist/
 dev-dist/
 functions/lib/
 
-# local env files
+# local env files / secrets（公開リポジトリで鍵が乗らないようツールで除外）
 .env
 .env.local
 .env.*.local
+functions/.env.*
+!functions/.env.example
+.secret.local
+functions/.secret.local
+**/.secret.local
 
 # firebase
 .firebase/

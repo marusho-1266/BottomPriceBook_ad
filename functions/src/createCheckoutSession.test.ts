@@ -181,11 +181,15 @@ test('期限切れ pending は新規試行 ID で Session を作り直す', asyn
 
   assert.equal(result.url, 'https://checkout.stripe.com/c/pay/cs_fresh');
   assert.equal(seenKey, 'checkout_alice_price_test_480_new-attempt');
-  assert.equal(seenExpiresAt, Math.floor(Date.parse('2026-07-25T00:00:00.000Z') / 1000) + 24 * 60 * 60);
+  // Stripe expires_at は上限 24h 未満（23h55m）
+  assert.equal(
+    seenExpiresAt,
+    Math.floor(Date.parse('2026-07-25T00:00:00.000Z') / 1000) + 23 * 60 * 60 + 55 * 60,
+  );
 
   const pending = await firestore.collection('pendingCheckouts').doc('alice').get();
   assert.equal(pending.data()?.attemptId, 'new-attempt');
-  // pending 再利用は Stripe 期限(24h)より短い 23h
+  // pending 再利用は Stripe 期限より短い 23h
   assert.equal(
     pending.data()?.expiresAtMs,
     Date.parse('2026-07-25T00:00:00.000Z') + 23 * 60 * 60 * 1000,

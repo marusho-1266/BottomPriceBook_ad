@@ -11,7 +11,7 @@ import {
 } from './createCheckoutSession.js';
 import { runDeleteAccount } from './deleteAccount.js';
 import { initSentry, withSentry } from './sentry.js';
-import { getStripeConfig } from './stripeConfig.js';
+import { getCheckoutConfig, getWebhookConfig } from './stripeConfig.js';
 import { handleStripeWebhook } from './stripeWebhook.js';
 
 initializeApp();
@@ -64,7 +64,7 @@ export const deleteAccount = onCall(withSentry(handleDeleteAccount));
 export async function handleCreateCheckoutSessionRequest(
   request: CallableRequest,
 ): Promise<CreateCheckoutSessionResult> {
-  const config = getStripeConfig();
+  const config = getCheckoutConfig();
   const stripe = getStripe(config.secretKey);
 
   return handleCreateCheckoutSession(request, {
@@ -97,7 +97,7 @@ export const createCheckoutSession = onCall(
 export const stripeWebhook = onRequest(
   { cors: false, secrets: [stripeSecretKey, stripeWebhookSecret] },
   async (req, res) => {
-    const config = getStripeConfig();
+    const config = getWebhookConfig();
     const stripe = getStripe(config.secretKey);
     await handleStripeWebhook(req, res, {
       firestore: getFirestore(),

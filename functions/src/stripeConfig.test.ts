@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { getStripeConfig } from './stripeConfig.js';
+import { getCheckoutConfig, getWebhookConfig } from './stripeConfig.js';
 
 const ENV_KEYS = [
   'STRIPE_SECRET_KEY',
@@ -9,11 +9,16 @@ const ENV_KEYS = [
   'APP_BASE_URL',
 ] as const;
 
-function setValidEnv(): void {
+function setCheckoutEnv(): void {
+  process.env.STRIPE_SECRET_KEY = ' sk_test_xxx ';
+  process.env.STRIPE_PRICE_ID = ' price_zzz ';
+  process.env.APP_BASE_URL = ' https://app.example.com/ ';
+}
+
+function setWebhookEnv(): void {
   process.env.STRIPE_SECRET_KEY = ' sk_test_xxx ';
   process.env.STRIPE_WEBHOOK_SECRET = ' whsec_yyy ';
   process.env.STRIPE_PRICE_ID = ' price_zzz ';
-  process.env.APP_BASE_URL = ' https://app.example.com/ ';
 }
 
 afterEach(() => {
@@ -22,50 +27,68 @@ afterEach(() => {
   }
 });
 
-test('設定済みなら secretKey / webhookSecret / priceId / appBaseUrl を返す', () => {
-  setValidEnv();
+test('Checkout に必要な env だけ揃っていれば成功する（WEBHOOK_SECRET 不要）', () => {
+  setCheckoutEnv();
 
-  const config = getStripeConfig();
+  const config = getCheckoutConfig();
 
   assert.deepEqual(config, {
     secretKey: 'sk_test_xxx',
-    webhookSecret: 'whsec_yyy',
     priceId: 'price_zzz',
     appBaseUrl: 'https://app.example.com',
   });
 });
 
-test('STRIPE_SECRET_KEY 未設定ならエラー', () => {
-  setValidEnv();
+test('Checkout: STRIPE_SECRET_KEY 未設定ならエラー', () => {
+  setCheckoutEnv();
   delete process.env.STRIPE_SECRET_KEY;
 
-  assert.throws(() => getStripeConfig(), /STRIPE_SECRET_KEY/);
+  assert.throws(() => getCheckoutConfig(), /STRIPE_SECRET_KEY/);
 });
 
-test('STRIPE_WEBHOOK_SECRET 未設定ならエラー', () => {
-  setValidEnv();
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-
-  assert.throws(() => getStripeConfig(), /STRIPE_WEBHOOK_SECRET/);
-});
-
-test('STRIPE_PRICE_ID 未設定ならエラー', () => {
-  setValidEnv();
+test('Checkout: STRIPE_PRICE_ID 未設定ならエラー', () => {
+  setCheckoutEnv();
   delete process.env.STRIPE_PRICE_ID;
 
-  assert.throws(() => getStripeConfig(), /STRIPE_PRICE_ID/);
+  assert.throws(() => getCheckoutConfig(), /STRIPE_PRICE_ID/);
 });
 
-test('APP_BASE_URL 未設定ならエラー', () => {
-  setValidEnv();
+test('Checkout: APP_BASE_URL 未設定ならエラー', () => {
+  setCheckoutEnv();
   delete process.env.APP_BASE_URL;
 
-  assert.throws(() => getStripeConfig(), /APP_BASE_URL/);
+  assert.throws(() => getCheckoutConfig(), /APP_BASE_URL/);
+});
+
+test('Checkout: WEBHOOK_SECRET が無くても成功する（本番 Callable bind 相当）', () => {
+  setCheckoutEnv();
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+
+  assert.doesNotThrow(() => getCheckoutConfig());
+});
+
+test('Webhook に必要な env だけ揃っていれば成功する（APP_BASE_URL 不要）', () => {
+  setWebhookEnv();
+
+  const config = getWebhookConfig();
+
+  assert.deepEqual(config, {
+    secretKey: 'sk_test_xxx',
+    webhookSecret: 'whsec_yyy',
+    priceId: 'price_zzz',
+  });
+});
+
+test('Webhook: STRIPE_WEBHOOK_SECRET 未設定ならエラー', () => {
+  setWebhookEnv();
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+
+  assert.throws(() => getWebhookConfig(), /STRIPE_WEBHOOK_SECRET/);
 });
 
 test('空文字や空白のみは未設定扱い', () => {
-  setValidEnv();
+  setCheckoutEnv();
   process.env.STRIPE_SECRET_KEY = '   ';
 
-  assert.throws(() => getStripeConfig(), /STRIPE_SECRET_KEY/);
+  assert.throws(() => getCheckoutConfig(), /STRIPE_SECRET_KEY/);
 });

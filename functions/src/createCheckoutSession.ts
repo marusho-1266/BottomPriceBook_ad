@@ -5,8 +5,11 @@ import { type CallableRequest, HttpsError } from 'firebase-functions/v2/https';
 
 const PENDING_COLLECTION = 'pendingCheckouts';
 const LOCK_TTL_MS = 60_000;
-/** Stripe Checkout Session の有効期限（秒）。API 上限は作成から 24h */
-export const STRIPE_SESSION_TTL_SEC = 24 * 60 * 60;
+/**
+ * Stripe Checkout Session の有効期限（秒）。
+ * API 上限は作成から 24h のため、時計ずれ余裕を残して 23h55m にする。
+ */
+export const STRIPE_SESSION_TTL_SEC = 23 * 60 * 60 + 55 * 60;
 /**
  * pending 再利用ウィンドウ。Stripe Session 期限より短くし、
  * 期限切れ URL を reuse し続けないようにする。
@@ -153,15 +156,34 @@ export async function handleCreateCheckoutSession(
         throw new HttpsError('internal', 'Checkout URL を取得できませんでした');
       }
 
-      await pendingRef.set({
-        status: 'ready',
-        attemptId,
-        sessionId: session.id,
-        url: session.url,
-        expiresAtMs: nowMs + PENDING_REUSE_TTL_MS,
-        createdAt: FieldValue.serverTimestamp(),
+      // lock 失効後に別試行が割り込んでいたら上書きしない
+      const promoted = await firestore.runTransaction(async (tx) => {
+        const snap = await tx.get(pendingRef);
+        const data = snap.data();
+        if (data?.attemptId !== attemptId) {
+          if (data?.status === 'ready' && typeof data.url === 'string') {
+            return { ok: true as const, url: data.url };
+          }
+          return { ok: false as const };
+        }
+        tx.set(pendingRef, {
+          status: 'ready',
+          attemptId,
+          sessionId: session.id,
+          url: session.url,
+          expiresAtMs: nowMs + PENDING_REUSE_TTL_MS,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        return { ok: true as const, url: session.url as string };
       });
-      return { url: session.url };
+
+      if (!promoted.ok) {
+        throw new HttpsError(
+          'aborted',
+          'Checkout Session の作成が競合しました。しばらくしてから再度お試しください',
+        );
+      }
+      return { url: promoted.url };
     } catch (error) {
       await pendingRef.delete().catch(() => undefined);
       if (error instanceof HttpsError) throw error;

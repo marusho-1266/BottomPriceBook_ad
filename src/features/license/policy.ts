@@ -1,4 +1,4 @@
-import type { LicenseStatus, UserLicense } from '../../types/models';
+import type { LicenseStatus } from '../../types/models';
 
 /** 無料プランの商品上限（オーナー帳ごと） */
 export const FREE_PRODUCT_LIMIT = 20;
@@ -11,7 +11,7 @@ export const FREE_STORE_LIMIT = 3;
  * book.ownerLicenseStatus や users.license のどちらからでも使える。
  */
 export function resolveLicenseStatus(
-  license: Pick<UserLicense, 'status'> | { status?: string } | null | undefined,
+  license: { status?: string | LicenseStatus } | null | undefined,
 ): LicenseStatus {
   return license?.status === 'lifetime' ? 'lifetime' : 'free';
 }

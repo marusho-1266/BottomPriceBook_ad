@@ -129,27 +129,15 @@ export function ShareSettings() {
 
       {isOwner && (
         <div className="mt-3 flex flex-col gap-2">
-          {inviteAllowed ? (
-            <button
-              type="button"
-              onClick={handleIssue}
-              disabled={issuing}
-              className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
-            >
-              招待リンクを発行
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                disabled
-                className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
-              >
-                招待リンクを発行
-              </button>
-              <UpgradeCta message="買い切り後に招待できます" />
-            </>
-          )}
+          <button
+            type="button"
+            onClick={handleIssue}
+            disabled={issuing || !inviteAllowed}
+            className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
+          >
+            招待リンクを発行
+          </button>
+          {!inviteAllowed && <UpgradeCta message="買い切り後に招待できます" />}
           {inviteUrl && (
             <div className="rounded-xl bg-cream p-3">
               <p className="text-xs break-all">{inviteUrl}</p>

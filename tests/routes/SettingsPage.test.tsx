@@ -285,6 +285,20 @@ describe('SettingsPage', () => {
     expect(screen.getByText('買い切り後に CSV エクスポートできます')).toBeInTheDocument();
   });
 
+  it('lifetime ユーザーが free オーナーの共有帳を開いても購入済み向け誤 CTA を出さない(Issue #36)', () => {
+    useUserLicense.mockReturnValue({ status: 'lifetime', loading: false });
+    setBook(false, 'free');
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('買い切り（lifetime）')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeDisabled();
+    expect(screen.getByText('この帳のオーナーが無料プランのため CSV は使えません')).toBeInTheDocument();
+    expect(screen.queryByText('買い切り後に CSV エクスポートできます')).not.toBeInTheDocument();
+  });
+
   it('「使い方を見る」からオンボーディングを再表示でき、閉じると設定画面に戻る(Issue #21)', async () => {
     const user = userEvent.setup();
     render(

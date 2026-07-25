@@ -7,7 +7,7 @@
 > Stripe・lifetime の本番付与は含めない（#37）。手動/Emulator でミラーを `lifetime` にして検証する。
 > 件数サーバー強制は本トラック外 → 末尾 **`I36-BACKLOG-1`**。
 >
-> **検証メモ（2026-07-25）**: `npm run test` / `lint` / `build` 成功。Microsoft OpenJDK 21 導入後、`npm run test:rules` **172 passed**。
+> **検証メモ（2026-07-25）**: `npm run test` / `lint` / `build` 成功。Microsoft OpenJDK 21 導入後、`npm run test:rules` **176 passed**（PR レビュー対応後）。
 
 ---
 

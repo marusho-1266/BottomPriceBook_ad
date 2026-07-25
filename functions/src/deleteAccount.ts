@@ -71,15 +71,21 @@ async function deleteAuthUser(auth: Auth, uid: string): Promise<void> {
   }
 }
 
+/** ライセンス文書 users/{uid} を削除する(Issue #36)。無ければ何もしない */
+async function deleteUserLicenseDoc(firestore: Firestore, uid: string): Promise<void> {
+  await firestore.collection('users').doc(uid).delete();
+}
+
 /**
  * アカウント削除(退会)。呼び出し元の uid のデータのみを対象とする。
  * 途中失敗時に再実行しても完走できるよう、各ステップは「存在すれば消す」で冪等に実装する。
- * 順序: invites → 参加 book からの退出 → 自分の book の再帰削除 → Auth ユーザー削除
+ * 順序: invites → 参加 book からの退出 → 自分の book の再帰削除 → users/{uid} → Auth ユーザー削除
  * (Auth 削除を最後にすることで、失敗時もログインしたまま再実行できる)
  */
 export async function runDeleteAccount(uid: string, { firestore, auth }: DeleteAccountDeps): Promise<void> {
   await deleteOwnInvites(firestore, uid);
   await leaveOtherBooks(firestore, uid);
   await deleteOwnBook(firestore, uid);
+  await deleteUserLicenseDoc(firestore, uid);
   await deleteAuthUser(auth, uid);
 }

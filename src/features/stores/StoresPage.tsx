@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { SubPageHeader } from '../../components/SubPageHeader';
 import { useBook } from '../books/BookProvider';
 import { UpgradeCta } from '../license/UpgradeCta';
+import { ownerLimitCta } from '../license/ctaCopy';
 import { canAddStore, remainingStoreSlots } from '../license/policy';
 import { useBookOwnerLicense } from '../license/useBookOwnerLicense';
 import { usePriceRecords } from '../prices/api';
@@ -84,7 +85,7 @@ function StoreRow({
 }
 
 export function StoresPage() {
-  const { bookId } = useBook();
+  const { bookId, isOwner } = useBook();
   const ownerLicense = useBookOwnerLicense();
   const { data: stores, loading } = useStores();
   const { data: priceRecords } = usePriceRecords();
@@ -92,6 +93,7 @@ export function StoresPage() {
   const [error, setError] = useState<string | null>(null);
   const allowAdd = canAddStore(ownerLicense, stores.length);
   const remaining = remainingStoreSlots(ownerLicense, stores.length);
+  const storeCta = ownerLimitCta('store', isOwner);
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
@@ -128,7 +130,9 @@ export function StoresPage() {
             あと {remaining} 件まで追加できます
           </p>
         )}
-        {!allowAdd && <UpgradeCta message="店舗の上限に達しました。買い切りで無制限になります" />}
+        {!allowAdd && (
+          <UpgradeCta message={storeCta.message} showPurchaseHint={storeCta.showPurchaseHint} />
+        )}
         {error && (
           <p role="alert" className="text-xs font-bold text-sale">
             {error}

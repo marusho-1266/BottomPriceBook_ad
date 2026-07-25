@@ -49,6 +49,8 @@
 2. 帳メンバー向けの非秘密ミラー: `books/{bookId}.ownerLicenseStatus`
 3. #37 の付与処理が両者を同期更新する（現状 `bookId === ownerUid` なら 1 book で足りる）
 
+**#37 不変条件（必須）:** lifetime 付与・降格・プロモ適用時は、`users/{uid}.license` と、そのユーザーがオーナーの **全** `books/{bookId}.ownerLicenseStatus` を **同一バッチ（または同等のアトミック更新）で書く**。片方だけの成功を許さない。UI は accountLicense（自分のプラン表示）と ownerLicense（帳ゲート）を分けているため、ここがずれると矛盾表示になる。
+
 ### 商品・店舗件数のサーバー強制（後回し・拾い上げ用）
 
 本トラックでは UI でブロックする。悪意あるクライアントは上限超過の create が可能な残差がある。

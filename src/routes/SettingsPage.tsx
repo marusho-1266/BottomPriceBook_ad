@@ -22,6 +22,7 @@ import {
 import { useBook } from '../features/books/BookProvider';
 import { useUserLicense } from '../features/license/api';
 import { UpgradeCta } from '../features/license/UpgradeCta';
+import { ownerLimitCta } from '../features/license/ctaCopy';
 import {
   FREE_PRODUCT_LIMIT,
   FREE_STORE_LIMIT,
@@ -64,6 +65,7 @@ export function SettingsPage() {
   const { status: accountLicense } = useUserLicense(user?.uid);
   const ownerLicense = useBookOwnerLicense();
   const exportAllowed = canExportCsv(ownerLicense);
+  const csvCta = ownerLimitCta('csv', isOwner);
   const { data: products } = useProducts();
   const { data: stores } = useStores();
   const bookName = book?.name ?? '';
@@ -255,7 +257,7 @@ export function SettingsPage() {
         </button>
         {!exportAllowed && (
           <div className="mt-2">
-            <UpgradeCta message="買い切り後に CSV エクスポートできます" />
+            <UpgradeCta message={csvCta.message} showPurchaseHint={csvCta.showPurchaseHint} />
           </div>
         )}
         {exportError && (

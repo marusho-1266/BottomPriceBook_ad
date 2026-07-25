@@ -3,10 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../src/features/books/BookProvider', () => ({
-  useBook: () => ({ bookId: 'b1', book: { ownerLicenseStatus: 'lifetime' } }),
-}));
-vi.mock('../../../src/features/stores/api', () => ({
+const { useBook, useStores } = vi.hoisted(() => ({
+  useBook: vi.fn(() => ({
+    bookId: 'b1',
+    book: { ownerLicenseStatus: 'lifetime' as const },
+    isOwner: true,
+  })),
   useStores: vi.fn(() => ({
     data: [
       { id: 's1', name: 'OKストア' },
@@ -14,6 +16,11 @@ vi.mock('../../../src/features/stores/api', () => ({
     ],
     loading: false,
   })),
+}));
+
+vi.mock('../../../src/features/books/BookProvider', () => ({ useBook }));
+vi.mock('../../../src/features/stores/api', () => ({
+  useStores,
   addStore: vi.fn().mockResolvedValue(undefined),
   renameStore: vi.fn().mockResolvedValue(undefined),
   deleteStore: vi.fn().mockResolvedValue(undefined),
@@ -41,6 +48,18 @@ function renderPage() {
 describe('StoresPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useBook.mockReturnValue({
+      bookId: 'b1',
+      book: { ownerLicenseStatus: 'lifetime' },
+      isOwner: true,
+    });
+    useStores.mockReturnValue({
+      data: [
+        { id: 's1', name: 'OKストア' },
+        { id: 's2', name: '西友' },
+      ],
+      loading: false,
+    });
   });
 
   it('店舗の一覧を表示する', () => {
@@ -67,6 +86,25 @@ describe('StoresPage', () => {
     await user.click(screen.getByRole('button', { name: '追加' }));
     expect(addStore).not.toHaveBeenCalled();
     expect(screen.getByText('店舗名を入力してください')).toBeInTheDocument();
+  });
+
+  it('無料枠上限到達時は追加不可で CTA を出す(Issue #36)', () => {
+    useBook.mockReturnValue({
+      bookId: 'b1',
+      book: { ownerLicenseStatus: 'free' },
+      isOwner: true,
+    });
+    useStores.mockReturnValue({
+      data: [
+        { id: 's1', name: 'A' },
+        { id: 's2', name: 'B' },
+        { id: 's3', name: 'C' },
+      ],
+      loading: false,
+    });
+    renderPage();
+    expect(screen.getByRole('button', { name: '追加' })).toBeDisabled();
+    expect(screen.getByText('店舗の上限に達しました。買い切りで無制限になります')).toBeInTheDocument();
   });
 
   it('店舗名を変更できる', async () => {

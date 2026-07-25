@@ -5,6 +5,7 @@ import { useBook } from '../features/books/BookProvider';
 import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
 import { useCategories } from '../features/categories/api';
 import { UpgradeCta } from '../features/license/UpgradeCta';
+import { ownerLimitCta } from '../features/license/ctaCopy';
 import {
   canAddProduct,
   canAddStore,
@@ -77,7 +78,7 @@ function Keypad({
 }
 
 export function RecordPage() {
-  const { bookId, book } = useBook();
+  const { bookId, book, isOwner } = useBook();
   const ownerLicense = useBookOwnerLicense();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
@@ -89,6 +90,8 @@ export function RecordPage() {
   const allowAddStore = canAddStore(ownerLicense, stores.length);
   const productSlots = remainingProductSlots(ownerLicense, products.length);
   const storeSlots = remainingStoreSlots(ownerLicense, stores.length);
+  const productCta = ownerLimitCta('product', isOwner);
+  const storeCta = ownerLimitCta('store', isOwner);
 
   const [productId, setProductId] = useState<string | null>(null);
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -345,20 +348,22 @@ export function RecordPage() {
       </div>
 
       {picker === 'product' && (
-        <PickerSheet title="商品を選択" onClose={() => setPicker(null)}>
-          {addingProduct ? (
-            allowAddProduct ? (
-              <ProductForm
-                categories={categories}
-                submitLabel="登録して選択"
-                onSubmit={async (values) => {
-                  const id = await addProduct(bookId, values);
-                  selectProduct(id);
-                }}
-              />
-            ) : (
-              <UpgradeCta message="商品の上限に達しました。買い切りで無制限になります" />
-            )
+        <PickerSheet
+          title="商品を選択"
+          onClose={() => {
+            setAddingProduct(false);
+            setPicker(null);
+          }}
+        >
+          {addingProduct && allowAddProduct ? (
+            <ProductForm
+              categories={categories}
+              submitLabel="登録して選択"
+              onSubmit={async (values) => {
+                const id = await addProduct(bookId, values);
+                selectProduct(id);
+              }}
+            />
           ) : (
             <>
               {allowAddProduct ? (
@@ -378,7 +383,10 @@ export function RecordPage() {
                 </>
               ) : (
                 <div className="mb-3">
-                  <UpgradeCta message="商品の上限に達しました。買い切りで無制限になります" />
+                  <UpgradeCta
+                    message={productCta.message}
+                    showPurchaseHint={productCta.showPurchaseHint}
+                  />
                 </div>
               )}
               <ul className="rounded-2xl bg-surface">
@@ -406,6 +414,7 @@ export function RecordPage() {
               className="mb-3 flex flex-col gap-2"
               onSubmit={async (e) => {
                 e.preventDefault();
+                if (!allowAddStore) return;
                 const name = newStoreName.trim();
                 if (!name) return;
                 await addStore(bookId, name);
@@ -435,7 +444,7 @@ export function RecordPage() {
             </form>
           ) : (
             <div className="mb-3">
-              <UpgradeCta message="店舗の上限に達しました。買い切りで無制限になります" />
+              <UpgradeCta message={storeCta.message} showPurchaseHint={storeCta.showPurchaseHint} />
             </div>
           )}
           <ul className="rounded-2xl bg-surface">

@@ -70,6 +70,10 @@ test('自分の book をサブコレクション込みで削除し、Auth ユー
     .set({ price: 100, quantity: 1, categoryId: 'cat-1' });
   // 書込レート制限(Issue #16)用のドキュメントも recursiveDelete で消えることを確認する
   await bookRef.collection('rateLimits').doc(uid).set({ lastWriteAt: FieldValue.serverTimestamp() });
+  // ライセンス文書(Issue #36)も退会時に削除する
+  await firestore.collection('users').doc(uid).set({
+    license: { status: 'lifetime', source: 'stripe' },
+  });
 
   await runDeleteAccount(uid, { firestore, auth });
 
@@ -77,6 +81,7 @@ test('自分の book をサブコレクション込みで削除し、Auth ユー
   assert.equal((await bookRef.collection('categories').doc('cat-1').get()).exists, false);
   assert.equal((await bookRef.collection('priceRecords').doc('record-1').get()).exists, false);
   assert.equal((await bookRef.collection('rateLimits').doc(uid).get()).exists, false);
+  assert.equal((await firestore.collection('users').doc(uid).get()).exists, false);
   await assert.rejects(() => auth.getUser(uid));
 });
 

@@ -70,7 +70,10 @@ describe('RecordPage(電卓ファースト)', () => {
     vi.clearAllMocks();
     // clearAllMocks は mockReturnValue を解除しないため、既定値を毎回設定し直す
     vi.mocked(usePriceRecords).mockReturnValue({ data: [], loading: false } as unknown as ReturnType<typeof usePriceRecords>);
-    useBookMock.mockReturnValue({ bookId: 'b1', book: null });
+    useBookMock.mockReturnValue({
+      bookId: 'b1',
+      book: { ownerLicenseStatus: 'lifetime' },
+    });
   });
 
   it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {

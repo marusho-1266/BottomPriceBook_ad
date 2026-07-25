@@ -7,21 +7,29 @@ const {
   updateBook,
   signOut,
   useBook,
+  useAuth,
+  useUserLicense,
   fetchPriceRecords,
   fetchProducts,
   fetchStores,
+  useProducts,
+  useStores,
   downloadPriceRecordsCsv,
 } = vi.hoisted(() => ({
   updateBook: vi.fn().mockResolvedValue(undefined),
   signOut: vi.fn().mockResolvedValue(undefined),
   useBook: vi.fn(),
+  useAuth: vi.fn(() => ({ user: { uid: 'u1' }, loading: false })),
+  useUserLicense: vi.fn(() => ({ status: 'free' as const, loading: false })),
   fetchPriceRecords: vi.fn().mockResolvedValue([] as unknown[]),
   fetchProducts: vi.fn().mockResolvedValue([] as unknown[]),
   fetchStores: vi.fn().mockResolvedValue([] as unknown[]),
+  useProducts: vi.fn(() => ({ data: [] as unknown[], loading: false })),
+  useStores: vi.fn(() => ({ data: [] as unknown[], loading: false })),
   downloadPriceRecordsCsv: vi.fn(),
 }));
 
-function setBook(isOwner: boolean) {
+function setBook(isOwner: boolean, ownerLicenseStatus: 'free' | 'lifetime' = 'lifetime') {
   useBook.mockReturnValue({
     bookId: 'u1',
     book: {
@@ -30,6 +38,7 @@ function setBook(isOwner: boolean) {
       ownerUid: isOwner ? 'u1' : 'someone-else',
       memberUids: ['u1'],
       bottomWindowMonths: 6,
+      ownerLicenseStatus,
     },
     books: [],
     isOwner,
@@ -42,13 +51,15 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/features/books/api')>();
   return { ...actual, updateBook };
 });
+vi.mock('../../src/features/auth/AuthProvider', () => ({ useAuth }));
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
 vi.mock('../../src/features/auth/LinkGoogleSection', () => ({
   LinkGoogleSection: () => <div data-testid="link-google-section">Google連携(モック)</div>,
 }));
+vi.mock('../../src/features/license/api', () => ({ useUserLicense }));
 vi.mock('../../src/features/prices/api', () => ({ fetchPriceRecords }));
-vi.mock('../../src/features/products/api', () => ({ fetchProducts }));
-vi.mock('../../src/features/stores/api', () => ({ fetchStores }));
+vi.mock('../../src/features/products/api', () => ({ fetchProducts, useProducts }));
+vi.mock('../../src/features/stores/api', () => ({ fetchStores, useStores }));
 vi.mock('../../src/features/prices/export', () => ({ downloadPriceRecordsCsv }));
 // 共有セクションは専用テストで検証済み。実 Firestore 購読を避けるためモックする
 vi.mock('../../src/features/sharing/ShareSettings', () => ({ ShareSettings: () => null }));
@@ -261,6 +272,17 @@ describe('SettingsPage', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeInTheDocument();
+  });
+
+  it('オーナー free の帳ではエクスポート不可で CTA を出す(Issue #36)', () => {
+    setBook(true, 'free');
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeDisabled();
+    expect(screen.getByText('買い切り後に CSV エクスポートできます')).toBeInTheDocument();
   });
 
   it('「使い方を見る」からオンボーディングを再表示でき、閉じると設定画面に戻る(Issue #21)', async () => {

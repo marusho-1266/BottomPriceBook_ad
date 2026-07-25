@@ -46,7 +46,10 @@ function renderShareSettings() {
   );
 }
 
-function makeBook(memberUids: string[]): WithId<Book> {
+function makeBook(
+  memberUids: string[],
+  ownerLicenseStatus: 'free' | 'lifetime' = 'lifetime',
+): WithId<Book> {
   return {
     id: ALICE,
     name: 'アリスの底値帳',
@@ -54,6 +57,7 @@ function makeBook(memberUids: string[]): WithId<Book> {
     memberUids,
     bottomWindowMonths: 6,
     createdAt: Timestamp.now(),
+    ownerLicenseStatus,
   };
 }
 
@@ -66,8 +70,9 @@ function setBook(
   members: WithId<Member>[],
   isOwner = true,
   currentUid = isOwner ? ALICE : CHARLIE,
+  ownerLicenseStatus: 'free' | 'lifetime' = 'lifetime',
 ) {
-  const book = makeBook(memberUids);
+  const book = makeBook(memberUids, ownerLicenseStatus);
   mocks.useBook.mockReturnValue({
     bookId: book.id,
     book,
@@ -96,6 +101,15 @@ describe('ShareSettings(オーナー)', () => {
     expect(await screen.findByText(new RegExp(`/join/${CODE}`))).toBeInTheDocument();
     expect(screen.getByText(/7 ?日間有効/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'リンクをコピー' })).toBeInTheDocument();
+  });
+
+  it('無料プランでは招待発行が不可で購入 CTA を出す(Issue #36)', () => {
+    setBook([ALICE, BOB], [member(ALICE, 'アリス'), member(BOB, 'ボブ')], true, ALICE, 'free');
+    renderShareSettings();
+
+    expect(screen.getByRole('button', { name: '招待リンクを発行' })).toBeDisabled();
+    expect(screen.getByText('買い切り後に招待できます')).toBeInTheDocument();
+    expect(screen.getByText(/買い切りで無制限/)).toBeInTheDocument();
   });
 
   it('メンバー一覧が表示名付きで表示され、オーナーにはバッジが付く', () => {

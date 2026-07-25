@@ -23,6 +23,8 @@ function validBook(uid: string) {
     memberUids: [uid],
     bottomWindowMonths: 6,
     createdAt: serverTimestamp(),
+    // Issue #36: 招待発行成功系は lifetime ミラーが必要
+    ownerLicenseStatus: 'lifetime' as const,
   };
 }
 

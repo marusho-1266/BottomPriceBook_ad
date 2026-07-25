@@ -12,6 +12,7 @@ import {
 import { Link } from 'react-router';
 import { DeleteAccountDialog } from '../features/account/DeleteAccountDialog';
 import { CONTACT_FORM_URL } from '../features/legal/contact';
+import { useAuth } from '../features/auth/AuthProvider';
 import { LinkGoogleSection } from '../features/auth/LinkGoogleSection';
 import { signOut } from '../features/auth/api';
 import {
@@ -19,11 +20,19 @@ import {
   updateBook,
 } from '../features/books/api';
 import { useBook } from '../features/books/BookProvider';
+import { useUserLicense } from '../features/license/api';
+import { UpgradeCta } from '../features/license/UpgradeCta';
+import {
+  FREE_PRODUCT_LIMIT,
+  FREE_STORE_LIMIT,
+  canExportCsv,
+} from '../features/license/policy';
+import { useBookOwnerLicense } from '../features/license/useBookOwnerLicense';
 import { OnboardingModal } from '../features/onboarding/OnboardingModal';
 import { downloadPriceRecordsCsv } from '../features/prices/export';
 import { fetchPriceRecords } from '../features/prices/api';
-import { fetchProducts } from '../features/products/api';
-import { fetchStores } from '../features/stores/api';
+import { fetchProducts, useProducts } from '../features/products/api';
+import { fetchStores, useStores } from '../features/stores/api';
 import { ShareSettings } from '../features/sharing/ShareSettings';
 import { db } from '../lib/firebase';
 import { trackEvent } from '../lib/analytics';
@@ -50,7 +59,13 @@ function SettingsLink({
 }
 
 export function SettingsPage() {
+  const { user } = useAuth();
   const { bookId, book, isOwner } = useBook();
+  const { status: accountLicense } = useUserLicense(user?.uid);
+  const ownerLicense = useBookOwnerLicense();
+  const exportAllowed = canExportCsv(ownerLicense);
+  const { data: products } = useProducts();
+  const { data: stores } = useStores();
   const bookName = book?.name ?? '';
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const name = nameDraft ?? bookName;
@@ -82,16 +97,16 @@ export function SettingsPage() {
    * 不完全な CSV が出力されることもない
    */
   async function handleExport() {
-    if (isExporting) return;
+    if (isExporting || !exportAllowed) return;
     setIsExporting(true);
     setExportError(false);
     try {
-      const [records, products, stores] = await Promise.all([
+      const [records, productList, storeList] = await Promise.all([
         fetchPriceRecords(bookId),
         fetchProducts(bookId),
         fetchStores(bookId),
       ]);
-      downloadPriceRecordsCsv(records, products, stores, book?.name ?? '');
+      downloadPriceRecordsCsv(records, productList, storeList, book?.name ?? '');
     } catch {
       setExportError(true);
     } finally {
@@ -158,6 +173,28 @@ export function SettingsPage() {
         )}
       </section>
 
+      <section className="mx-4 mt-4 rounded-2xl bg-surface px-4 py-4">
+        <div className="text-xs font-bold text-ink-faint">プラン</div>
+        <p className="mt-2 text-sm font-bold">
+          {accountLicense === 'lifetime' ? '買い切り（lifetime）' : '無料プラン'}
+        </p>
+        {isOwner && accountLicense === 'free' && (
+          <>
+            <p className="mt-2 text-xs font-bold text-ink-sub">
+              商品 {products.length}/{FREE_PRODUCT_LIMIT}　店舗 {stores.length}/{FREE_STORE_LIMIT}
+            </p>
+            <div className="mt-3">
+              <UpgradeCta message="買い切りで商品・店舗が無制限になります" />
+            </div>
+          </>
+        )}
+        {!isOwner && (
+          <p className="mt-2 text-xs font-bold text-ink-faint">
+            共有帳の制限はオーナーのプランに従います
+          </p>
+        )}
+      </section>
+
       <ShareSettings />
 
       <div className="mx-4 mt-4 rounded-2xl bg-surface">
@@ -209,13 +246,18 @@ export function SettingsPage() {
       <div className="mx-4 mt-4">
         <button
           type="button"
-          disabled={isExporting}
+          disabled={isExporting || !exportAllowed}
           onClick={handleExport}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm font-bold disabled:opacity-50"
         >
           <Download className="size-4" />
           データをエクスポート
         </button>
+        {!exportAllowed && (
+          <div className="mt-2">
+            <UpgradeCta message="買い切り後に CSV エクスポートできます" />
+          </div>
+        )}
         {exportError && (
           <p role="alert" className="mt-2 text-xs font-bold text-sale">
             エクスポートに失敗しました。時間をおいて再度お試しください

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../src/features/books/BookProvider', () => ({
-  useBook: () => ({ bookId: 'b1', book: null }),
+  useBook: () => ({ bookId: 'b1', book: { ownerLicenseStatus: 'lifetime' } }),
 }));
 vi.mock('../../../src/features/stores/api', () => ({
   useStores: vi.fn(() => ({

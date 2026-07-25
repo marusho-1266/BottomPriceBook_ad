@@ -52,6 +52,8 @@ export async function ensureBook(db: Firestore, uid: string, displayName: string
       memberUids: [uid],
       bottomWindowMonths: DEFAULT_BOTTOM_WINDOW_MONTHS,
       createdAt: serverTimestamp(),
+      // オーナー license のミラー。lifetime 昇格は #37 が users と同期更新する
+      ownerLicenseStatus: 'free',
     });
     for (const category of SEED_CATEGORIES) {
       tx.set(doc(db, 'books', uid, 'categories', category.id), {

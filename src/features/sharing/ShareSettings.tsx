@@ -4,6 +4,9 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthProvider';
 import { useBook } from '../books/BookProvider';
+import { UpgradeCta } from '../license/UpgradeCta';
+import { canInvite } from '../license/policy';
+import { useBookOwnerLicense } from '../license/useBookOwnerLicense';
 import {
   INVITE_TTL_DAYS,
   buildInviteUrl,
@@ -19,6 +22,8 @@ const UNNAMED = '(名前未設定)';
 export function ShareSettings() {
   const { bookId, book, isOwner } = useBook();
   const { user } = useAuth();
+  const ownerLicense = useBookOwnerLicense();
+  const inviteAllowed = canInvite(ownerLicense);
   const { data: members } = useMembers(bookId);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
@@ -39,7 +44,7 @@ export function ShareSettings() {
   }));
 
   async function handleIssue() {
-    if (!book) return;
+    if (!book || !inviteAllowed) return;
     setIssuing(true);
     setError(null);
     try {
@@ -124,14 +129,27 @@ export function ShareSettings() {
 
       {isOwner && (
         <div className="mt-3 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleIssue}
-            disabled={issuing}
-            className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
-          >
-            招待リンクを発行
-          </button>
+          {inviteAllowed ? (
+            <button
+              type="button"
+              onClick={handleIssue}
+              disabled={issuing}
+              className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
+            >
+              招待リンクを発行
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled
+                className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
+              >
+                招待リンクを発行
+              </button>
+              <UpgradeCta message="買い切り後に招待できます" />
+            </>
+          )}
           {inviteUrl && (
             <div className="rounded-xl bg-cream p-3">
               <p className="text-xs break-all">{inviteUrl}</p>

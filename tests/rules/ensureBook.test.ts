@@ -51,6 +51,7 @@ describe('ensureBook', () => {
       ownerUid: ALICE,
       memberUids: [ALICE],
       bottomWindowMonths: 6,
+      ownerLicenseStatus: 'free',
     });
 
     const categories = await getDocs(collection(db, 'books', ALICE, 'categories'));

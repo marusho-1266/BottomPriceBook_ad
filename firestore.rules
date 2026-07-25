@@ -22,6 +22,19 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email_verified == true;
     }
 
+    // アカウントライセンス(Issue #36)。真理。lifetime 昇格は Admin/Functions(#37/#38)のみ
+    match /users/{userId} {
+      allow get: if isVerified() && request.auth.uid == userId;
+      allow list: if false;
+      // クライアントは free のみ作成可。欠落はクライアント側で free 扱いのため必須ではない
+      allow create: if isVerified()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['license'])
+        && request.resource.data.license.keys().hasOnly(['status'])
+        && request.resource.data.license.status == 'free';
+      allow update, delete: if false;
+    }
+
     // 招待コード。ドキュメント ID(自動 ID)自体が秘密トークンのため、
     // get は認証済なら許可するが list は禁止(コードの列挙防止)
     match /invites/{inviteCode} {
@@ -30,11 +43,14 @@ service cloud.firestore {
 
       // 対象 book のオーナーのみ発行可。createdAt は serverTimestamp 必須(クライアント時計に依存しない)。
       // 有効期限は join 側で createdAt + 7 日を request.time と比較する
+      // 買い切り(ownerLicenseStatus == lifetime)のオーナーのみ発行可(Issue #36)。欠落は free
       allow create: if isVerified()
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.bookId is string
         && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
             .data.ownerUid == request.auth.uid
+        && get(/databases/$(database)/documents/books/$(request.resource.data.bookId))
+            .data.get('ownerLicenseStatus', 'free') == 'lifetime'
         && request.resource.data.keys().hasOnly(['bookId', 'bookName', 'createdBy', 'createdAt'])
         && isValidString(request.resource.data.bookName, 1, 100)
         && request.resource.data.createdAt == request.time;
@@ -109,23 +125,29 @@ service cloud.firestore {
 
       // 巨大ドキュメント・任意フィールドの書込を防ぐ(Issue #16)。
       // deleting はサーバー(Admin SDK)専用の任意フィールドのため許可リストに含める
+      // ownerLicenseStatus はオーナー license のミラー(Issue #36)。値は free|lifetime のみ
       function isValidBook() {
         return request.resource.data.keys().hasOnly(
-            ['name', 'ownerUid', 'memberUids', 'bottomWindowMonths', 'createdAt', 'deleting'])
+            ['name', 'ownerUid', 'memberUids', 'bottomWindowMonths', 'createdAt', 'deleting',
+              'ownerLicenseStatus'])
           && isValidString(request.resource.data.name, 1, 100)
           && request.resource.data.memberUids.size() <= 20
-          && isValidOptionalInt(request.resource.data, 'bottomWindowMonths', 0, 120);
+          && isValidOptionalInt(request.resource.data, 'bottomWindowMonths', 0, 120)
+          && (!('ownerLicenseStatus' in request.resource.data)
+            || request.resource.data.ownerLicenseStatus in ['free', 'lifetime']);
       }
 
       // 自分の bookId は未作成でも読める(初期化時の存在確認に必要)。それ以外はメンバーのみ
       allow read: if isSignedIn() && (bookId == request.auth.uid || isMember());
 
       // MVP では bookId = uid の決定的 ID のみ許可(H-4)
+      // クライアントは ownerLicenseStatus を free のみ付与可(lifetime 自己付与防止)
       allow create: if isSignedIn()
         && bookId == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids
         && request.resource.data.get('deleting', false) == false
+        && request.resource.data.get('ownerLicenseStatus', 'free') == 'free'
         && isValidBook();
 
       // 退出: memberUids のみ・自分の uid の除去のみ。オーナー自身は退出不可(Issue #7)。
@@ -145,8 +167,10 @@ service cloud.firestore {
       // 例外として、有効な招待コードによる参加と本人の退出を許可(Issue #7)。
       // deleting はサーバー(Admin SDK、ルール非適用)専用フラグのため
       // クライアントからの変更を一切禁止する(永続 DoS 防止)
+      // ownerLicenseStatus の変更はクライアント不可(Admin/Functions のみ。Issue #36)
       allow update: if resource.data.get('deleting', false) != true
         && !('deleting' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('ownerLicenseStatus' in request.resource.data.diff(resource.data).affectedKeys())
         && isValidBook()
         && ((isMember()
           && request.resource.data.ownerUid == resource.data.ownerUid

@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { SubPageHeader } from '../../components/SubPageHeader';
 import { useBook } from '../books/BookProvider';
+import { UpgradeCta } from '../license/UpgradeCta';
+import { canAddStore, remainingStoreSlots } from '../license/policy';
+import { useBookOwnerLicense } from '../license/useBookOwnerLicense';
 import { usePriceRecords } from '../prices/api';
 import { addStore, deleteStore, renameStore, useStores } from './api';
 import type { Store, WithId } from '../../types/models';
@@ -82,13 +85,17 @@ function StoreRow({
 
 export function StoresPage() {
   const { bookId } = useBook();
+  const ownerLicense = useBookOwnerLicense();
   const { data: stores, loading } = useStores();
   const { data: priceRecords } = usePriceRecords();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const allowAdd = canAddStore(ownerLicense, stores.length);
+  const remaining = remainingStoreSlots(ownerLicense, stores.length);
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
+    if (!allowAdd) return;
     const trimmed = name.trim();
     if (!trimmed) {
       setError('店舗名を入力してください');
@@ -112,9 +119,16 @@ export function StoresPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="例: OKストア 〇〇店"
-            className="h-10 w-full rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary"
+            disabled={!allowAdd}
+            className="h-10 w-full rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary disabled:opacity-50"
           />
         </div>
+        {remaining !== null && allowAdd && (
+          <p className="text-[11px] font-bold text-ink-faint">
+            あと {remaining} 件まで追加できます
+          </p>
+        )}
+        {!allowAdd && <UpgradeCta message="店舗の上限に達しました。買い切りで無制限になります" />}
         {error && (
           <p role="alert" className="text-xs font-bold text-sale">
             {error}
@@ -122,7 +136,8 @@ export function StoresPage() {
         )}
         <button
           type="submit"
-          className="h-10 rounded-xl bg-primary text-sm font-extrabold text-white active:bg-primary-deep"
+          disabled={!allowAdd}
+          className="h-10 rounded-xl bg-primary text-sm font-extrabold text-white active:bg-primary-deep disabled:opacity-40"
         >
           追加
         </button>

@@ -24,13 +24,15 @@ const ALICE = 'alice-uid';
 const BOB = 'bob-uid';
 const CODE = 'invite-code-1234567890';
 
-function validBook(uid: string) {
+function validBook(uid: string, ownerLicenseStatus: 'free' | 'lifetime' = 'lifetime') {
   return {
     name: 'わたしの底値帳',
     ownerUid: uid,
     memberUids: [uid],
     bottomWindowMonths: 6,
     createdAt: serverTimestamp(),
+    // Issue #36: 招待発行は lifetime ミラー必須。既存テストの成功系は lifetime
+    ownerLicenseStatus,
   };
 }
 
@@ -71,6 +73,28 @@ describe('invites の作成', () => {
   it('book のオーナーは自分の book の招待を作成できる', async () => {
     const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertSucceeds(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE)));
+  });
+
+  it('ownerLicenseStatus が free のオーナーは招待を作成できない(Issue #36)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'books', ALICE), validBook(ALICE, 'free'));
+    });
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE)));
+  });
+
+  it('ownerLicenseStatus 欠落のオーナーは招待を作成できない(Issue #36)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'books', ALICE), {
+        name: 'わたしの底値帳',
+        ownerUid: ALICE,
+        memberUids: [ALICE],
+        bottomWindowMonths: 6,
+        createdAt: serverTimestamp(),
+      });
+    });
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertFails(setDoc(doc(db, 'invites', CODE), validInvite(ALICE, ALICE)));
   });
 
   it('他人の book への招待は作成できない', async () => {

@@ -1,7 +1,7 @@
 import { CONTACT_FORM_URL } from './contact';
 import { LegalLayout, LegalSection } from './LegalLayout';
 
-// ドラフト文面(Issue #14 T2)。事業者表記・制定日はユーザーレビューで確定(T7)
+// 決済代行（Stripe）追記に合わせて改定（Issue #37）
 export function PrivacyPage() {
   return (
     <LegalLayout title="プライバシーポリシー">
@@ -24,6 +24,12 @@ export function PrivacyPage() {
             (Cloud Firestore に保存されます)
           </li>
           <li>
+            <span className="font-bold">決済に関する情報</span>
+            :買い切りプラン購入時、決済代行事業者 Stripe がカード情報等を処理します。
+            運営者のサーバーにクレジットカード番号は保存しません。付与の記録として
+            購入日時・Checkout Session ID 等をアカウントに保存することがあります
+          </li>
+          <li>
             <span className="font-bold">利用状況</span>
             :アクセス解析(Firebase Analytics)による閲覧ページ・機能の利用状況。
             個人を特定する情報や入力内容そのものは含まれません
@@ -38,7 +44,8 @@ export function PrivacyPage() {
 
       <LegalSection title="2. 利用目的">
         <ul className="list-disc space-y-1 pl-5">
-          <li>本サービスの提供・維持(ログイン、データの保存・共有)</li>
+          <li>本サービスの提供・維持(ログイン、データの保存・共有、ライセンス管理)</li>
+          <li>買い切りプランの決済処理および利用権の付与</li>
           <li>品質改善(利用状況の把握、機能改善の検討)</li>
           <li>不具合の調査・対応</li>
           <li>お問い合わせへの対応</li>
@@ -52,6 +59,7 @@ export function PrivacyPage() {
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Google(Firebase:認証・データベース・アクセス解析)</li>
+          <li>Stripe(決済処理。カード情報は Stripe が取り扱います)</li>
           <li>Sentry(エラー情報の収集)</li>
         </ul>
       </LegalSection>
@@ -93,7 +101,9 @@ export function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <p className="pt-2 text-xs text-ink-faint">2026 年 7 月 18 日 制定</p>
+      <p className="pt-2 text-xs text-ink-faint">
+        2026 年 7 月 18 日 制定 / 2026 年 7 月 25 日 改定
+      </p>
     </LegalLayout>
   );
 }

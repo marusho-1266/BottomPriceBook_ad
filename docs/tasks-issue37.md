@@ -31,15 +31,16 @@
   - 依存: T0b（Price ID）/ 規模: S
   - 完了: 2026-07-25 — Price ID 実値は T0b（人間）。env 名・読み出しモジュールのみ先行
 
-- [ ] **I37-T2: `grantLifetimeLicense`＋ミラー同期（同一 txn コア・分割・作成時）**
+- [x] **I37-T2: `grantLifetimeLicense`＋ミラー同期（同一 txn コア・分割・作成時）**
   - 内容: コア txn で Session 処理済み＋`users.license`。続けて `syncOwnerBookMirrors`（lifetime は no-op、欠落/free は修復、400 件チャンク・失敗時最大 3 回再試行）。`ensureBook` は `users.license` に合わせてミラー初期化。Rules は create 時 lifetime を owner の license が lifetime のときだけ許可
   - Acceptance: コア冪等・別 Session 非上書き・book 0 件でも users 更新・不足ミラー修復・チャンク分割・lifetime ユーザーの新規帳が lifetime
   - Verify: `cd functions && npm test` および Rules / `ensureBook` 関連テスト
   - Files: `functions/src/licenseGrant.ts`, テスト, `src/features/books/api.ts`, `firestore.rules`, 関連テスト
   - 依存: I37-T1 / 規模: M
+  - 完了: 2026-07-25
 
 ### Checkpoint A
-- [ ] grant ヘルパのテストが green
+- [x] grant ヘルパのテストが green
 
 ---
 

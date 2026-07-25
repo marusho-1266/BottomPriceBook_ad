@@ -141,13 +141,23 @@ service cloud.firestore {
       allow read: if isSignedIn() && (bookId == request.auth.uid || isMember());
 
       // MVP では bookId = uid の決定的 ID のみ許可(H-4)
-      // クライアントは ownerLicenseStatus を free のみ付与可(lifetime 自己付与防止)
+      // ownerLicenseStatus: free は常に可。lifetime は users.license が lifetime のときだけ
+      // （自己付与防止。update でのミラー変更は引き続き Admin のみ。Issue #37）
+      function ownerUserLicenseIsLifetime() {
+        return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+            .data.get('license', {}).get('status', 'free') == 'lifetime';
+      }
+      function isAllowedOwnerLicenseOnCreate() {
+        return request.resource.data.get('ownerLicenseStatus', 'free') == 'free'
+          || (request.resource.data.ownerLicenseStatus == 'lifetime' && ownerUserLicenseIsLifetime());
+      }
       allow create: if isSignedIn()
         && bookId == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids
         && request.resource.data.get('deleting', false) == false
-        && request.resource.data.get('ownerLicenseStatus', 'free') == 'free'
+        && isAllowedOwnerLicenseOnCreate()
         && isValidBook();
 
       // 退出: memberUids のみ・自分の uid の除去のみ。オーナー自身は退出不可(Issue #7)。

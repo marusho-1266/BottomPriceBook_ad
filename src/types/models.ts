@@ -12,6 +12,8 @@ export interface UserLicense {
   purchasedAt?: Timestamp;
   /** 付与経路。#37 stripe / #38 promo 等 */
   source?: string;
+  /** Stripe Checkout Session ID（#37）。購入メタ。既 lifetime では上書きしない */
+  stripeCheckoutSessionId?: string;
 }
 
 export interface Book {

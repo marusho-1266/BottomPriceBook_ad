@@ -32,6 +32,7 @@ export const SEED_CATEGORIES: ReadonlyArray<{
 export async function ensureBook(db: Firestore, uid: string, displayName: string): Promise<void> {
   const bookRef = doc(db, 'books', uid);
   const memberRef = doc(db, 'books', uid, 'members', uid);
+  const userRef = doc(db, 'users', uid);
   await runTransaction(db, async (tx) => {
     const bookSnapshot = await tx.get(bookRef);
 
@@ -45,6 +46,11 @@ export async function ensureBook(db: Firestore, uid: string, displayName: string
       return;
     }
 
+    // 作成時ミラー: users.license に合わせて free / lifetime を初期化（Issue #37）
+    const userSnapshot = await tx.get(userRef);
+    const ownerLicenseStatus =
+      userSnapshot.data()?.license?.status === 'lifetime' ? 'lifetime' : 'free';
+
     tx.set(memberRef, { displayName, joinedAt: serverTimestamp() });
     tx.set(bookRef, {
       name: DEFAULT_BOOK_NAME,
@@ -52,8 +58,7 @@ export async function ensureBook(db: Firestore, uid: string, displayName: string
       memberUids: [uid],
       bottomWindowMonths: DEFAULT_BOTTOM_WINDOW_MONTHS,
       createdAt: serverTimestamp(),
-      // オーナー license のミラー。lifetime 昇格は #37 が users と同期更新する
-      ownerLicenseStatus: 'free',
+      ownerLicenseStatus,
     });
     for (const category of SEED_CATEGORIES) {
       tx.set(doc(db, 'books', uid, 'categories', category.id), {

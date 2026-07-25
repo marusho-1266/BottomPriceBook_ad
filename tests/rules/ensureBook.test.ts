@@ -122,4 +122,18 @@ describe('ensureBook', () => {
     const member = await getDoc(doc(db, 'books', ALICE, 'members', ALICE));
     expect(member.data()).toMatchObject({ displayName: '旧しい名前' });
   });
+
+  it('users.license が lifetime なら新規 book のミラーも lifetime(Issue #37)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users', ALICE), {
+        license: { status: 'lifetime', source: 'stripe' },
+      });
+    });
+
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore() as unknown as Firestore;
+    await ensureBook(db, ALICE, 'アリス');
+
+    const book = await getDoc(doc(db, 'books', ALICE));
+    expect(book.data()).toMatchObject({ ownerLicenseStatus: 'lifetime' });
+  });
 });

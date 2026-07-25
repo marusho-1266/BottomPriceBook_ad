@@ -181,7 +181,7 @@ export function SettingsPage() {
         {isOwner && accountLicense === 'free' && (
           <>
             <p className="mt-2 text-xs font-bold text-ink-sub">
-              商品 {products.length}/{FREE_PRODUCT_LIMIT}　店舗 {stores.length}/{FREE_STORE_LIMIT}
+              商品 {products.length}/{FREE_PRODUCT_LIMIT} / 店舗 {stores.length}/{FREE_STORE_LIMIT}
             </p>
             <div className="mt-3">
               <UpgradeCta message="買い切りで商品・店舗が無制限になります" />

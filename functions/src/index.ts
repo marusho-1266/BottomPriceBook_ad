@@ -3,8 +3,14 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
+import Stripe from 'stripe';
+import {
+  handleCreateCheckoutSession,
+  type CreateCheckoutSessionResult,
+} from './createCheckoutSession.js';
 import { runDeleteAccount } from './deleteAccount.js';
 import { initSentry, withSentry } from './sentry.js';
+import { getStripeConfig } from './stripeConfig.js';
 
 initializeApp();
 initSentry();
@@ -41,3 +47,32 @@ export async function handleDeleteAccount(request: CallableRequest): Promise<Del
 }
 
 export const deleteAccount = onCall(withSentry(handleDeleteAccount));
+
+export async function handleCreateCheckoutSessionRequest(
+  request: CallableRequest,
+): Promise<CreateCheckoutSessionResult> {
+  const config = getStripeConfig();
+  const stripe = new Stripe(config.secretKey);
+
+  return handleCreateCheckoutSession(request, {
+    firestore: getFirestore(),
+    appBaseUrl: config.appBaseUrl,
+    priceId: config.priceId,
+    createStripeCheckoutSession: async (params, opts) => {
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: 'payment',
+          line_items: [{ price: params.priceId, quantity: 1 }],
+          success_url: params.successUrl,
+          cancel_url: params.cancelUrl,
+          client_reference_id: params.uid,
+          metadata: { uid: params.uid },
+        },
+        { idempotencyKey: opts.idempotencyKey },
+      );
+      return { id: session.id, url: session.url ?? '' };
+    },
+  });
+}
+
+export const createCheckoutSession = onCall(withSentry(handleCreateCheckoutSessionRequest));

@@ -1,7 +1,12 @@
+/** 買い切り税込価格（JPY）。Stripe Price と一致させること */
+export const LIFETIME_PRICE_AMOUNT_JPY = 480;
+
 export interface StripeConfig {
   secretKey: string;
   webhookSecret: string;
   priceId: string;
+  /** success / cancel URL のオリジン（末尾スラッシュなし想定） */
+  appBaseUrl: string;
 }
 
 function requiredEnv(env: NodeJS.ProcessEnv, key: string): string {
@@ -21,5 +26,6 @@ export function getStripeConfig(env: NodeJS.ProcessEnv = process.env): StripeCon
     secretKey: requiredEnv(env, 'STRIPE_SECRET_KEY'),
     webhookSecret: requiredEnv(env, 'STRIPE_WEBHOOK_SECRET'),
     priceId: requiredEnv(env, 'STRIPE_PRICE_ID'),
+    appBaseUrl: requiredEnv(env, 'APP_BASE_URL').replace(/\/$/, ''),
   };
 }

@@ -46,12 +46,13 @@
 
 ## Phase 2: Stripe 接続 + UI
 
-- [ ] **I37-T3: `createCheckoutSession` Callable**
+- [x] **I37-T3: `createCheckoutSession` Callable**
   - 内容: 認証必須。既に lifetime なら失敗（専用エラー可）。mode=payment・Price ID・success/cancel URL（設定）・metadata に uid。URL を返す。**同時／再試行の認証済み呼び出しで Session が二重に作られない**よう、購入単位の idempotency key、または Firestore に原子的に作る pending-purchase 記録のいずれか（または併用）で直列化し、適用可能な場合は Stripe `Idempotency-Key`（または同等）に渡す。未完了の有効 Session があれば新規作成せずその URL を返してよい
   - Acceptance: 未購入は URL 返却、購入済みは Checkout を作らない（拒否維持）、未認証は拒否。並行呼び出しでも Stripe Session 作成は実質 1 回（同時実行テストで検証）
   - Verify: `cd functions && npm test`（lifetime 拒否＋**並行 create で Session 1 件**のテスト必須）
   - Files: `functions/src/createCheckoutSession.ts`, テスト, `functions/src/index.ts`
   - 依存: I37-T1, I37-T2 / 規模: M
+  - 完了: 2026-07-25
 
 - [ ] **I37-T4: `stripeWebhook` onRequest**
   - 内容: raw body で署名検証。`checkout.session.completed`（および遅延決済有効時は `async_payment_succeeded`）で Session 検証（mode / payment_status=paid / Price ID / JPY 480 / metadata uid）→ 合格時のみ `grantLifetimeLicense`。不正署名は 400。未検証・未払いは付与せずログ。未知イベントは 200 で無視可

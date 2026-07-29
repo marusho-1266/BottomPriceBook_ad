@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductForm } from '../../../src/features/products/ProductForm';
@@ -23,7 +23,34 @@ describe('ProductForm(新規)', () => {
     await user.type(screen.getByLabelText('商品名'), 'コシヒカリ 5kg');
     await user.selectOptions(screen.getByLabelText('カテゴリ'), 'food');
     await user.click(screen.getByRole('button', { name: '登録' }));
-    expect(onSubmit).toHaveBeenCalledWith({ name: 'コシヒカリ 5kg', categoryId: 'food' });
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'コシヒカリ 5kg',
+      categoryId: 'food',
+      note: '',
+    });
+  });
+
+  it('メモを含めて送信できる', async () => {
+    const user = userEvent.setup();
+    render(<ProductForm categories={categories} onSubmit={onSubmit} submitLabel="登録" />);
+    await user.type(screen.getByLabelText('商品名'), 'コシヒカリ 5kg');
+    await user.type(screen.getByLabelText('メモ'), '特売時のみ買う');
+    await user.click(screen.getByRole('button', { name: '登録' }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'コシヒカリ 5kg',
+      categoryId: 'food',
+      note: '特売時のみ買う',
+    });
+  });
+
+  it('メモが501文字だとエラーを表示し送信しない', async () => {
+    const user = userEvent.setup();
+    render(<ProductForm categories={categories} onSubmit={onSubmit} submitLabel="登録" />);
+    await user.type(screen.getByLabelText('商品名'), 'コシヒカリ 5kg');
+    fireEvent.change(screen.getByLabelText('メモ'), { target: { value: 'あ'.repeat(501) } });
+    await user.click(screen.getByRole('button', { name: '登録' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/メモは500文字以内/)).toBeInTheDocument();
   });
 
   it('名前が空だとエラーを表示し送信しない', async () => {
@@ -40,7 +67,7 @@ describe('ProductForm(編集・カテゴリ変更制限 M-1)', () => {
     vi.clearAllMocks();
   });
 
-  const initial = { name: 'コシヒカリ 5kg', categoryId: 'food' };
+  const initial = { name: 'コシヒカリ 5kg', categoryId: 'food', note: '精米日注意' };
 
   it('同じ基準単位のカテゴリには変更できる', async () => {
     const user = userEvent.setup();
@@ -52,9 +79,14 @@ describe('ProductForm(編集・カテゴリ変更制限 M-1)', () => {
         submitLabel="保存"
       />,
     );
+    expect(screen.getByLabelText('メモ')).toHaveValue('精米日注意');
     await user.selectOptions(screen.getByLabelText('カテゴリ'), 'flour');
     await user.click(screen.getByRole('button', { name: '保存' }));
-    expect(onSubmit).toHaveBeenCalledWith({ name: 'コシヒカリ 5kg', categoryId: 'flour' });
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'コシヒカリ 5kg',
+      categoryId: 'flour',
+      note: '精米日注意',
+    });
   });
 
   it('基準単位が異なるカテゴリの選択肢は無効化され、案内が表示される', () => {

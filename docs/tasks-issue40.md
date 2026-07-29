@@ -1,6 +1,6 @@
 # タスク分解: 設定に商品管理を追加(Issue #40)
 
-> Status: **Draft(レビュー待ち)** / 作成日: 2026-07-29
+> Status: **In Progress** / 作成日: 2026-07-29
 > 対象: `docs/spec-issue40.md`(Approved) / 計画: `docs/plan-issue40.md`(Approved)
 > 実装は 1 タスク = 1 コミット相当で進める。各タスクの Verify を通してから次へ。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
@@ -9,7 +9,7 @@
 
 ## Phase A: 共通フォーム / API
 
-- [ ] **I40-T1: `ProductForm` にメモ欄を追加**
+- [x] **I40-T1: `ProductForm` にメモ欄を追加**
   - 内容: `ProductFormValues` に `note?: string` を追加。任意入力のメモ欄を表示。
     初期値は `initial?.note ?? ''`。トリム後に空なら `note: ''` として submit。
     クライアント側で最大 500 文字(ルールと整合)。超過時はエラー表示して submit しない。

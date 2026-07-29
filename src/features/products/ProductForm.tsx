@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import type { Category, WithId } from '../../types/models';
 
+const NOTE_MAX_LENGTH = 500;
+
 interface ProductFormValues {
   name: string;
   categoryId: string;
+  note: string;
 }
 
 interface ProductFormProps {
@@ -17,6 +20,7 @@ interface ProductFormProps {
 export function ProductForm({ categories, initial, onSubmit, submitLabel }: ProductFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? '');
+  const [note, setNote] = useState(initial?.note ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const initialBaseUnit = initial
@@ -34,8 +38,13 @@ export function ProductForm({ categories, initial, onSubmit, submitLabel }: Prod
       setError('カテゴリを選択してください');
       return;
     }
+    const trimmedNote = note.trim();
+    if (trimmedNote.length > NOTE_MAX_LENGTH) {
+      setError(`メモは${NOTE_MAX_LENGTH}文字以内で入力してください`);
+      return;
+    }
     setError(null);
-    await onSubmit({ name: trimmed, categoryId });
+    await onSubmit({ name: trimmed, categoryId, note: trimmedNote });
   };
 
   return (
@@ -77,6 +86,19 @@ export function ProductForm({ categories, initial, onSubmit, submitLabel }: Prod
             基準単位が異なるカテゴリへは変更できません。必要な場合は新しい商品として登録してください
           </p>
         )}
+      </div>
+      <div>
+        <label htmlFor="product-note" className="mb-1 block text-xs font-bold text-ink-sub">
+          メモ
+        </label>
+        <textarea
+          id="product-note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="容量違いの注意など"
+          rows={2}
+          className="w-full rounded-xl border border-chevron bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+        />
       </div>
       {error && (
         <p role="alert" className="text-xs font-bold text-sale">

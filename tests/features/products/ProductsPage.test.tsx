@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../src/features/books/BookProvider', () => ({
@@ -35,10 +35,17 @@ import { ProductsPage } from '../../../src/features/products/ProductsPage';
 import { addProduct, updateProduct } from '../../../src/features/products/api';
 import { deleteProductWithRecords } from '../../../src/features/products/deleteProduct';
 
+/** 現在の URL をアサートするためのプローブ */
+function LocationProbe() {
+  const { pathname, search } = useLocation();
+  return <div data-testid="location">{pathname + search}</div>;
+}
+
 function renderPage(initialEntry = '/settings/products') {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <ProductsPage />
+      <LocationProbe />
     </MemoryRouter>,
   );
 }
@@ -74,15 +81,19 @@ describe('ProductsPage', () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(screen.getAllByRole('button', { name: '編集' })[0]);
-    const nameInput = screen.getByDisplayValue('コシヒカリ 5kg');
+    // [0] は上部の追加フォーム、[1] が編集中の行
+    const nameInput = screen.getAllByLabelText('商品名')[1];
     await user.clear(nameInput);
     await user.type(nameInput, 'コシヒカリ 10kg');
+    const noteInput = screen.getAllByLabelText('メモ')[1];
+    await user.clear(noteInput);
+    await user.type(noteInput, '5kg 袋のみ');
     await user.click(screen.getByRole('button', { name: '保存' }));
-    expect(updateProduct).toHaveBeenCalledWith(
-      'b1',
-      'p1',
-      expect.objectContaining({ name: 'コシヒカリ 10kg', categoryId: 'food' }),
-    );
+    expect(updateProduct).toHaveBeenCalledWith('b1', 'p1', {
+      name: 'コシヒカリ 10kg',
+      categoryId: 'food',
+      note: '5kg 袋のみ',
+    });
   });
 
   it('確認のうえ商品を削除できる', async () => {
@@ -93,6 +104,26 @@ describe('ProductsPage', () => {
     expect(window.confirm).toHaveBeenCalledWith(expect.stringMatching(/コシヒカリ 5kg/));
     expect(window.confirm).toHaveBeenCalledWith(expect.stringMatching(/価格記録も削除/));
     expect(deleteProductWithRecords).toHaveBeenCalledWith({}, 'b1', 'p1');
+  });
+
+  it('編集フォームのラベルが追加フォームと衝突しない', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole('button', { name: '編集' })[0]);
+    // 追加フォームと編集フォームで id が一意なため、両方のラベルが個別に解決できる
+    const nameFields = screen.getAllByLabelText('商品名');
+    expect(nameFields).toHaveLength(2);
+    expect(nameFields[1]).toHaveValue('コシヒカリ 5kg');
+    expect(screen.getAllByLabelText('メモ')[1]).toHaveValue('精米日注意');
+  });
+
+  it('削除が失敗するとエラーを表示する', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(deleteProductWithRecords).mockRejectedValueOnce(new Error('unavailable'));
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole('button', { name: '削除' })[0]);
+    expect(await screen.findByRole('alert')).toHaveTextContent('削除に失敗しました');
   });
 
   it('削除をキャンセルすると API を呼ばない', async () => {
@@ -113,5 +144,22 @@ describe('ProductsPage', () => {
     renderPage('/settings/products?edit=missing');
     expect(screen.queryByRole('button', { name: '保存' })).not.toBeInTheDocument();
     expect(screen.getByText('コシヒカリ 5kg')).toBeInTheDocument();
+  });
+
+  it('編集を閉じると一覧に戻り、?edit= も URL から消える', async () => {
+    const user = userEvent.setup();
+    renderPage('/settings/products?edit=p1');
+    expect(screen.getByTestId('location')).toHaveTextContent('edit=p1');
+    await user.click(screen.getByRole('button', { name: 'キャンセル' }));
+    expect(screen.queryByRole('button', { name: '保存' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('location')).not.toHaveTextContent('edit=p1');
+  });
+
+  it('保存すると編集モードを閉じる', async () => {
+    const user = userEvent.setup();
+    renderPage('/settings/products?edit=p1');
+    await user.click(screen.getByRole('button', { name: '保存' }));
+    expect(updateProduct).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: '保存' })).not.toBeInTheDocument();
   });
 });

@@ -53,6 +53,24 @@ describe('ProductForm(新規)', () => {
     expect(screen.getByText(/メモは500文字以内/)).toBeInTheDocument();
   });
 
+  it('商品名が101文字だとエラーを表示し送信しない', async () => {
+    const user = userEvent.setup();
+    render(<ProductForm categories={categories} onSubmit={onSubmit} submitLabel="登録" />);
+    fireEvent.change(screen.getByLabelText('商品名'), { target: { value: 'あ'.repeat(101) } });
+    await user.click(screen.getByRole('button', { name: '登録' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/商品名は100文字以内/)).toBeInTheDocument();
+  });
+
+  it('送信が失敗するとエラーを表示する', async () => {
+    const user = userEvent.setup();
+    onSubmit.mockRejectedValueOnce(new Error('permission-denied'));
+    render(<ProductForm categories={categories} onSubmit={onSubmit} submitLabel="登録" />);
+    await user.type(screen.getByLabelText('商品名'), 'コシヒカリ 5kg');
+    await user.click(screen.getByRole('button', { name: '登録' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('保存に失敗しました');
+  });
+
   it('名前が空だとエラーを表示し送信しない', async () => {
     const user = userEvent.setup();
     render(<ProductForm categories={categories} onSubmit={onSubmit} submitLabel="登録" />);

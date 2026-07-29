@@ -9,7 +9,7 @@
 
 ## Phase A: 編集フォーム
 
-- [ ] **I42-T1: `PriceRecordEditForm` + 単体テスト**
+- [x] **I42-T1: `PriceRecordEditForm` + 単体テスト**
   - 内容: `src/features/prices/PriceRecordEditForm.tsx` を新規作成。
     - Props: `record`, `stores`, `baseUnit`, `onSave(patch)`, `onCancel`
     - フィールド: 価格・内容量・単位・特売・日付・店舗(縦並び)
@@ -35,7 +35,7 @@
   - 依存: なし / 規模: M
 
 ### Checkpoint A
-- [ ] `PriceRecordEditForm` の単体テストがグリーン
+- [x] `PriceRecordEditForm` の単体テストがグリーン
 
 ---
 

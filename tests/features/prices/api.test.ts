@@ -43,6 +43,7 @@ import {
   usePriceRecords,
   useProductPriceRecords,
 } from '../../../src/features/prices/api';
+import { MAX_PRICE, MAX_QUANTITY } from '../../../src/features/prices/limits';
 
 describe('addPriceRecord の trackEvent 連携', () => {
   beforeEach(() => {
@@ -100,6 +101,49 @@ describe('addPriceRecord の trackEvent 連携', () => {
     ).rejects.toThrow('write failed');
 
     expect(trackEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('価格記録の値域チェック(firestore.rules と同じ境界)', () => {
+  const draft = {
+    productId: 'p1',
+    storeId: 's1',
+    price: 100,
+    quantity: 1,
+    unit: '個',
+    isSale: false,
+    recordedAt: new Date('2026-07-01'),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    batchCommit.mockResolvedValue(undefined);
+  });
+
+  it('addPriceRecord は上限ちょうどを通し、上限超過を弾く', async () => {
+    await expect(
+      addPriceRecord('book1', { ...draft, price: MAX_PRICE, quantity: MAX_QUANTITY }),
+    ).resolves.toBeDefined();
+
+    await expect(
+      addPriceRecord('book1', { ...draft, price: MAX_PRICE + 1 }),
+    ).rejects.toThrow();
+    await expect(
+      addPriceRecord('book1', { ...draft, quantity: MAX_QUANTITY + 1 }),
+    ).rejects.toThrow();
+  });
+
+  it('updatePriceRecord は上限超過を弾き、書き込みを発行しない', async () => {
+    await expect(updatePriceRecord('book1', 'rec1', { price: MAX_PRICE + 1 })).rejects.toThrow();
+    await expect(
+      updatePriceRecord('book1', 'rec1', { quantity: MAX_QUANTITY + 1 }),
+    ).rejects.toThrow();
+    expect(batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it('updatePriceRecord は未指定フィールドを検証対象にしない', async () => {
+    await expect(updatePriceRecord('book1', 'rec1', { isSale: true })).resolves.toBeUndefined();
+    expect(batchUpdate).toHaveBeenCalledTimes(1);
   });
 });
 

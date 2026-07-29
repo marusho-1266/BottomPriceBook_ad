@@ -16,6 +16,7 @@ import { useCollection } from '../../lib/firestoreHooks';
 import { withRateLimit } from '../../lib/rateLimit';
 import { useBook } from '../books/BookProvider';
 import { windowStart } from './bottomPrice';
+import { MAX_PRICE, MAX_QUANTITY, outOfRange } from './limits';
 import type { PriceRecord, WithId } from '../../types/models';
 
 export interface PriceRecordDraft {
@@ -29,8 +30,8 @@ export interface PriceRecordDraft {
 }
 
 export async function addPriceRecord(bookId: string, draft: PriceRecordDraft): Promise<unknown> {
-  if (draft.price <= 0 || draft.quantity <= 0) {
-    return Promise.reject(new Error('price and quantity must be positive'));
+  if (outOfRange(draft.price, MAX_PRICE) || outOfRange(draft.quantity, MAX_QUANTITY)) {
+    return Promise.reject(new Error('price and quantity are out of range'));
   }
   const uid = requireUid();
   const ref = doc(collection(db, 'books', bookId, 'priceRecords'));
@@ -47,9 +48,8 @@ export function updatePriceRecord(
   recordId: string,
   patch: Partial<Omit<PriceRecordDraft, 'recordedAt'>> & { recordedAt?: Date },
 ): Promise<void> {
-  if ((patch.price !== undefined && patch.price <= 0) ||
-      (patch.quantity !== undefined && patch.quantity <= 0)) {
-    return Promise.reject(new Error('price and quantity must be positive'));
+  if (outOfRange(patch.price, MAX_PRICE) || outOfRange(patch.quantity, MAX_QUANTITY)) {
+    return Promise.reject(new Error('price and quantity are out of range'));
   }
   const uid = requireUid();
   const { recordedAt, ...rest } = patch;

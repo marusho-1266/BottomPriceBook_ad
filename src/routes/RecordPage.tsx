@@ -9,16 +9,11 @@ import { rankDraftInCategory } from '../features/prices/bottomPrice';
 import { ProductForm } from '../features/products/ProductForm';
 import { addProduct, useProducts } from '../features/products/api';
 import { addStore, useStores } from '../features/stores/api';
+import { fromLocalDateISO, toLocalDateISO } from '../lib/date';
 import { allowedUnits, formatPricePerBase } from '../lib/units';
 import type { BaseUnit } from '../types/models';
 
 type ActiveField = 'price' | 'quantity';
-
-function todayISO(): string {
-  const now = new Date();
-  const offset = now.getTimezoneOffset() * 60000;
-  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
-}
 
 function Keypad({
   onDigit,
@@ -83,7 +78,7 @@ export function RecordPage() {
   const [quantityText, setQuantityText] = useState('');
   const [unit, setUnit] = useState<string>('');
   const [isSale, setIsSale] = useState(false);
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(toLocalDateISO(new Date()));
   const [activeField, setActiveField] = useState<ActiveField>('price');
   const [picker, setPicker] = useState<'product' | 'store' | null>(null);
   const [addingProduct, setAddingProduct] = useState(false);
@@ -185,7 +180,7 @@ export function RecordPage() {
       quantity,
       unit: effectiveUnit,
       isSale,
-      recordedAt: new Date(`${date}T12:00:00`),
+      recordedAt: fromLocalDateISO(date),
     });
     setPriceText('');
     setQuantityText('');

@@ -17,8 +17,10 @@ import {
   bottomPrice,
   bottomPricesByStore,
 } from '../features/prices/bottomPrice';
-import { PriceRecordEditForm } from '../features/prices/PriceRecordEditForm';
-import type { PriceRecordEditPatch } from '../features/prices/priceRecordEdit';
+import {
+  PriceRecordEditForm,
+  type PriceRecordEditPatch,
+} from '../features/prices/PriceRecordEditForm';
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
 import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';

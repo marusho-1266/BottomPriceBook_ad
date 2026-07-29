@@ -1,7 +1,7 @@
 # タスク分解: 設定に商品管理を追加(Issue #40)
 
-> Status: **In Progress** / 作成日: 2026-07-29
-> 対象: `docs/spec-issue40.md`(Approved) / 計画: `docs/plan-issue40.md`(Approved)
+> Status: **Done** / 作成日: 2026-07-29 / 実装完了: 2026-07-29
+> 対象: `docs/spec-issue40.md`(Implemented) / 計画: `docs/plan-issue40.md`(Implemented)
 > 実装は 1 タスク = 1 コミット相当で進める。各タスクの Verify を通してから次へ。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
 
@@ -73,14 +73,14 @@
   - 依存: I40-T3 / 規模: S
 
 ### Checkpoint B
-- [ ] 設定・商品詳細の両方から商品マスタ編集に到達できる
-- [ ] 記録画面のその場登録が健在
+- [x] 設定・商品詳細の両方から商品マスタ編集に到達できる
+- [x] 記録画面のその場登録が健在
 
 ---
 
 ## Phase C: 仕上げ
 
-- [ ] **I40-T5: 親仕様・Issue #32 整合 + 回帰確認**
+- [x] **I40-T5: 親仕様・Issue #32 整合 + 回帰確認**
   - 内容:
     - `docs/spec.md`: 画面構成「設定」に商品管理を追記。必要なら商品詳細に
       マスタ編集導線の一文を追加
@@ -95,8 +95,8 @@
   - 依存: I40-T4 / 規模: S
 
 ### Checkpoint: Complete
-- [ ] Issue #40 Success Criteria を満たす
-- [ ] 既存テスト全通過、レビュー可能な状態
+- [x] Issue #40 Success Criteria を満たす
+- [x] 既存テスト全通過、レビュー可能な状態
 
 ---
 

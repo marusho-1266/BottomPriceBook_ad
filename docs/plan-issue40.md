@@ -1,8 +1,8 @@
 # 実装計画: 設定に商品管理を追加(Issue #40)
 
-> Status: **Approved** / 作成日: 2026-07-29 / Approved: 2026-07-29
-> 対象仕様: `docs/spec-issue40.md`(Approved)
-> タスク分解: `docs/tasks-issue40.md`
+> Status: **Implemented** / 作成日: 2026-07-29 / Approved: 2026-07-29 / 実装完了: 2026-07-29
+> 対象仕様: `docs/spec-issue40.md`(Implemented)
+> タスク分解: `docs/tasks-issue40.md`(Done)
 
 ## 方針
 
@@ -108,5 +108,4 @@ ProductDetailPage ──「商品情報を編集」── /settings/products?edi
 
 ## 次のフェーズ
 
-1. ~~**Phase 3: Tasks**~~ — `docs/tasks-issue40.md`(レビュー中)
-2. **Phase 4: Implement** — I40-T1 から順に実装
+実装完了(I40-T1〜T5)。

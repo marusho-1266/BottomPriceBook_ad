@@ -1,7 +1,6 @@
 # Spec: 設定に商品管理を追加(Issue #40)
 
-> Status: **Approved** / 作成日: 2026-07-29 / 最終更新: 2026-07-29
-> Approved: 2026-07-29
+> Status: **Implemented** / 作成日: 2026-07-29 / Approved: 2026-07-29 / 実装完了: 2026-07-29
 >
 > 対象: GitHub Issue [#40](https://github.com/marusho-1266/BottomPriceBook_ad/issues/40)
 > 「設定に商品管理を追加（編集・削除・メモ・詳細からの導線）」
@@ -232,15 +231,15 @@ export function ProductsPage() {
 
 ## Success Criteria
 
-- [ ] 設定に「商品管理」があり、`/settings/products` で商品一覧が見られる
-- [ ] 商品管理から名前・カテゴリ・メモ付きで新規登録できる
-- [ ] 商品管理から名前・カテゴリ・メモを編集できる
-- [ ] 基準単位が異なるカテゴリへの変更が UI でブロックされる
-- [ ] 削除確認後、商品と配下の価格記録が削除される
-- [ ] 商品詳細から「商品情報を編集」で商品管理へ進める
-- [ ] 記録画面からの新規商品登録が従来どおり動く
-- [ ] `docs/spec.md` / `docs/spec-issue32.md` が本仕様と整合している
-- [ ] 関連テストがグリーン、`npm run lint` / `npm run test` が通る
+- [x] 設定に「商品管理」があり、`/settings/products` で商品一覧が見られる
+- [x] 商品管理から名前・カテゴリ・メモ付きで新規登録できる
+- [x] 商品管理から名前・カテゴリ・メモを編集できる
+- [x] 基準単位が異なるカテゴリへの変更が UI でブロックされる
+- [x] 削除確認後、商品と配下の価格記録が削除される
+- [x] 商品詳細から「商品情報を編集」で商品管理へ進める
+- [x] 記録画面からの新規商品登録が従来どおり動く
+- [x] `docs/spec.md` / `docs/spec-issue32.md` が本仕様と整合している
+- [x] 関連テストがグリーン、`npm run lint` / `npm run test` が通る
 
 ## Out of Scope
 
@@ -258,6 +257,4 @@ Plan(`docs/plan-issue40.md`)で以下を確定:
 
 ## 次のフェーズ
 
-1. ~~**Phase 2: Plan**~~ — `docs/plan-issue40.md`(Approved)
-2. ~~**Phase 3: Tasks**~~ — `docs/tasks-issue40.md`(レビュー中)
-3. **Phase 4: Implement** — I40-T1 から順に実装
+実装完了。Phase 1〜4 完了(2026-07-29)。

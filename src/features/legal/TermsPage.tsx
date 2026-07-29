@@ -1,7 +1,8 @@
 import { CONTACT_FORM_URL } from './contact';
 import { LegalLayout, LegalSection } from './LegalLayout';
+import { LIFETIME_PRICE_JPY } from '../license/pricing';
 
-// ドラフト文面(Issue #14 T2)。事業者表記・制定日はユーザーレビューで確定(T7)
+// 有料化に合わせて改定（Issue #37）。制定日は Issue #14、改定日は本 Issue。
 export function TermsPage() {
   return (
     <LegalLayout title="利用規約">
@@ -29,15 +30,31 @@ export function TermsPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection title="3. サービスの提供・変更・終了">
+      <LegalSection title="3. プラン・料金">
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            本サービスには無料プランと買い切りプラン（lifetime）があります。無料プランでは
+            商品・店舗数などに上限があり、招待や CSV エクスポートなど一部機能を利用できません
+          </li>
+          <li>
+            買い切りプランは税込 ¥{LIFETIME_PRICE_JPY.toLocaleString('ja-JP')}
+            の一回払いです。決済は Stripe を通じて行います
+          </li>
+          <li>
+            デジタルコンテンツの性質上、購入後の返品・キャンセルは原則できません。
+            サービス不具合等により利用できない場合はお問い合わせください。個別に対応します
+          </li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection title="4. サービスの提供・変更・終了">
         <p>
-          本サービスは個人が運営する無料のサービスです。運営者は、事前の通知なく、
-          本サービスの内容の変更、提供の中断または終了を行うことがあります。
+          運営者は、事前の通知なく、本サービスの内容の変更、提供の中断または終了を行うことがあります。
           終了する場合は、可能な範囲で事前にお知らせするよう努めます。
         </p>
       </LegalSection>
 
-      <LegalSection title="4. 免責事項">
+      <LegalSection title="5. 免責事項">
         <ul className="list-disc space-y-1 pl-5">
           <li>
             本サービスに記録される価格等の情報は利用者自身が入力するものであり、
@@ -51,14 +68,14 @@ export function TermsPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection title="5. 知的財産">
+      <LegalSection title="6. 知的財産">
         <p>
           本サービスに関する知的財産権は運営者または正当な権利者に帰属します。
           利用者が入力したデータの権利は利用者に帰属します。
         </p>
       </LegalSection>
 
-      <LegalSection title="6. 規約の変更">
+      <LegalSection title="7. 規約の変更">
         <p>
           運営者は、必要に応じて本規約を変更することがあります。重要な変更を行う場合は、
           本サービス上でお知らせします。変更後に本サービスを利用した場合、
@@ -66,14 +83,14 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="7. 準拠法・管轄">
+      <LegalSection title="8. 準拠法・管轄">
         <p>
           本規約は日本法に準拠します。本サービスに関して紛争が生じた場合は、
           運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。
         </p>
       </LegalSection>
 
-      <LegalSection title="8. お問い合わせ">
+      <LegalSection title="9. お問い合わせ">
         <p>
           本規約に関するお問い合わせは、
           <a
@@ -88,7 +105,9 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <p className="pt-2 text-xs text-ink-faint">2026 年 7 月 18 日 制定</p>
+      <p className="pt-2 text-xs text-ink-faint">
+        2026 年 7 月 18 日 制定 / 2026 年 7 月 25 日 改定
+      </p>
     </LegalLayout>
   );
 }

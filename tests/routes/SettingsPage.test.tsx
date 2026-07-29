@@ -7,21 +7,32 @@ const {
   updateBook,
   signOut,
   useBook,
+  useAuth,
+  useUserLicense,
   fetchPriceRecords,
   fetchProducts,
   fetchStores,
+  useProducts,
+  useStores,
   downloadPriceRecordsCsv,
 } = vi.hoisted(() => ({
   updateBook: vi.fn().mockResolvedValue(undefined),
   signOut: vi.fn().mockResolvedValue(undefined),
   useBook: vi.fn(),
+  useAuth: vi.fn(() => ({ user: { uid: 'u1' }, loading: false })),
+  useUserLicense: vi.fn((): { status: 'free' | 'lifetime'; loading: boolean } => ({
+    status: 'free',
+    loading: false,
+  })),
   fetchPriceRecords: vi.fn().mockResolvedValue([] as unknown[]),
   fetchProducts: vi.fn().mockResolvedValue([] as unknown[]),
   fetchStores: vi.fn().mockResolvedValue([] as unknown[]),
+  useProducts: vi.fn(() => ({ data: [] as unknown[], loading: false })),
+  useStores: vi.fn(() => ({ data: [] as unknown[], loading: false })),
   downloadPriceRecordsCsv: vi.fn(),
 }));
 
-function setBook(isOwner: boolean) {
+function setBook(isOwner: boolean, ownerLicenseStatus: 'free' | 'lifetime' = 'lifetime') {
   useBook.mockReturnValue({
     bookId: 'u1',
     book: {
@@ -30,6 +41,7 @@ function setBook(isOwner: boolean) {
       ownerUid: isOwner ? 'u1' : 'someone-else',
       memberUids: ['u1'],
       bottomWindowMonths: 6,
+      ownerLicenseStatus,
     },
     books: [],
     isOwner,
@@ -42,13 +54,18 @@ vi.mock('../../src/features/books/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/features/books/api')>();
   return { ...actual, updateBook };
 });
+vi.mock('../../src/features/auth/AuthProvider', () => ({ useAuth }));
 vi.mock('../../src/features/auth/api', () => ({ signOut }));
 vi.mock('../../src/features/auth/LinkGoogleSection', () => ({
   LinkGoogleSection: () => <div data-testid="link-google-section">Google連携(モック)</div>,
 }));
+vi.mock('../../src/features/license/api', () => ({
+  useUserLicense,
+  startCheckout: vi.fn(),
+}));
 vi.mock('../../src/features/prices/api', () => ({ fetchPriceRecords }));
-vi.mock('../../src/features/products/api', () => ({ fetchProducts }));
-vi.mock('../../src/features/stores/api', () => ({ fetchStores }));
+vi.mock('../../src/features/products/api', () => ({ fetchProducts, useProducts }));
+vi.mock('../../src/features/stores/api', () => ({ fetchStores, useStores }));
 vi.mock('../../src/features/prices/export', () => ({ downloadPriceRecordsCsv }));
 // 共有セクションは専用テストで検証済み。実 Firestore 購読を避けるためモックする
 vi.mock('../../src/features/sharing/ShareSettings', () => ({ ShareSettings: () => null }));
@@ -73,6 +90,7 @@ describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    useUserLicense.mockReturnValue({ status: 'free', loading: false });
     setBook(true);
   });
 
@@ -172,7 +190,7 @@ describe('SettingsPage', () => {
     expect(screen.getByText('6ヶ月')).toBeInTheDocument();
   });
 
-  it('利用規約・プライバシーポリシー・お問い合わせへのリンクを表示する(Issue #14)', () => {
+  it('利用規約・プライバシーポリシー・特商法・お問い合わせへのリンクを表示する(Issue #14/#37)', () => {
     render(
       <MemoryRouter>
         <SettingsPage />
@@ -182,6 +200,10 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('link', { name: /プライバシーポリシー/ })).toHaveAttribute(
       'href',
       '/privacy',
+    );
+    expect(screen.getByRole('link', { name: /特定商取引法に基づく表記/ })).toHaveAttribute(
+      'href',
+      '/tokushoho',
     );
     const contact = screen.getByRole('link', { name: /お問い合わせ/ });
     expect(contact).toHaveAttribute('target', '_blank');
@@ -265,6 +287,57 @@ describe('SettingsPage', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeInTheDocument();
+  });
+
+  it('オーナー free の帳ではエクスポート不可で CTA を出す(Issue #36)', () => {
+    setBook(true, 'free');
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeDisabled();
+    expect(screen.getByText('買い切り後に CSV エクスポートできます')).toBeInTheDocument();
+  });
+
+  it('lifetime ユーザーが free オーナーの共有帳を開いても購入済み向け誤 CTA を出さない(Issue #36)', () => {
+    useUserLicense.mockReturnValue({ status: 'lifetime', loading: false });
+    setBook(false, 'free');
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('買い切り済み')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'データをエクスポート' })).toBeDisabled();
+    expect(screen.getByText('この帳のオーナーが無料プランのため CSV は使えません')).toBeInTheDocument();
+    expect(screen.queryByText('買い切り後に CSV エクスポートできます')).not.toBeInTheDocument();
+  });
+
+  it('purchase=success 戻りでは反映待ち案内を出し、購入 CTA は維持する(Issue #37)', () => {
+    setBook(true, 'free');
+    render(
+      <MemoryRouter initialEntries={['/settings?purchase=success']}>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByText('購入の反映まで数秒かかることがあります。このままお待ちください。'),
+    ).toBeInTheDocument();
+    // プラン節と CSV 節の双方に UpgradeCta が出る
+    expect(screen.getAllByRole('button', { name: /税込 ¥480（買い切り）/ }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('purchase=cancel 戻りでは案内を出さない(Issue #37)', () => {
+    setBook(true, 'free');
+    render(
+      <MemoryRouter initialEntries={['/settings?purchase=cancel']}>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByText('購入の反映まで数秒かかることがあります。このままお待ちください。'),
+    ).not.toBeInTheDocument();
   });
 
   it('「使い方を見る」からオンボーディングを再表示でき、閉じると設定画面に戻る(Issue #21)', async () => {

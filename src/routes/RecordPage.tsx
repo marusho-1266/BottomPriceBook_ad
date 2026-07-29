@@ -4,6 +4,15 @@ import { PickerSheet } from '../components/PickerSheet';
 import { useBook } from '../features/books/BookProvider';
 import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
 import { useCategories } from '../features/categories/api';
+import { UpgradeCta } from '../features/license/UpgradeCta';
+import { ownerLimitCta } from '../features/license/ctaCopy';
+import {
+  canAddProduct,
+  canAddStore,
+  remainingProductSlots,
+  remainingStoreSlots,
+} from '../features/license/policy';
+import { useBookOwnerLicense } from '../features/license/useBookOwnerLicense';
 import { addPriceRecord, usePriceRecords } from '../features/prices/api';
 import { rankDraftInCategory } from '../features/prices/bottomPrice';
 import { ProductForm } from '../features/products/ProductForm';
@@ -69,13 +78,20 @@ function Keypad({
 }
 
 export function RecordPage() {
-  const { bookId, book } = useBook();
+  const { bookId, book, isOwner } = useBook();
+  const ownerLicense = useBookOwnerLicense();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
   const { data: categories } = useCategories();
   const windowMonths = book?.bottomWindowMonths ?? DEFAULT_BOTTOM_WINDOW_MONTHS;
   const now = useMemo(() => new Date(), []);
   const { data: records } = usePriceRecords({ windowMonths, now });
+  const allowAddProduct = canAddProduct(ownerLicense, products.length);
+  const allowAddStore = canAddStore(ownerLicense, stores.length);
+  const productSlots = remainingProductSlots(ownerLicense, products.length);
+  const storeSlots = remainingStoreSlots(ownerLicense, stores.length);
+  const productCta = ownerLimitCta('product', isOwner);
+  const storeCta = ownerLimitCta('store', isOwner);
 
   const [productId, setProductId] = useState<string | null>(null);
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -332,8 +348,14 @@ export function RecordPage() {
       </div>
 
       {picker === 'product' && (
-        <PickerSheet title="商品を選択" onClose={() => setPicker(null)}>
-          {addingProduct ? (
+        <PickerSheet
+          title="商品を選択"
+          onClose={() => {
+            setAddingProduct(false);
+            setPicker(null);
+          }}
+        >
+          {addingProduct && allowAddProduct ? (
             <ProductForm
               categories={categories}
               submitLabel="登録して選択"
@@ -344,13 +366,29 @@ export function RecordPage() {
             />
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => setAddingProduct(true)}
-                className="mb-3 h-10 w-full rounded-xl border border-dashed border-primary text-sm font-bold text-primary-deep"
-              >
-                + 新しい商品を登録
-              </button>
+              {allowAddProduct ? (
+                <>
+                  {productSlots !== null && (
+                    <p className="mb-2 text-[11px] font-bold text-ink-faint">
+                      あと {productSlots} 件まで商品を追加できます
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setAddingProduct(true)}
+                    className="mb-3 h-10 w-full rounded-xl border border-dashed border-primary text-sm font-bold text-primary-deep"
+                  >
+                    + 新しい商品を登録
+                  </button>
+                </>
+              ) : (
+                <div className="mb-3">
+                  <UpgradeCta
+                    message={productCta.message}
+                    showPurchaseHint={productCta.showPurchaseHint}
+                  />
+                </div>
+              )}
               <ul className="rounded-2xl bg-surface">
                 {products.map((p) => (
                   <li key={p.id} className="border-b border-line last:border-b-0">
@@ -371,30 +409,44 @@ export function RecordPage() {
 
       {picker === 'store' && (
         <PickerSheet title="店舗を選択" onClose={() => setPicker(null)}>
-          <form
-            className="mb-3 flex gap-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const name = newStoreName.trim();
-              if (!name) return;
-              await addStore(bookId, name);
-              setNewStoreName('');
-            }}
-          >
-            <input
-              value={newStoreName}
-              onChange={(e) => setNewStoreName(e.target.value)}
-              placeholder="新しい店舗名"
-              aria-label="新しい店舗名"
-              className="h-10 min-w-0 flex-1 rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary"
-            />
-            <button
-              type="submit"
-              className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-white"
+          {allowAddStore ? (
+            <form
+              className="mb-3 flex flex-col gap-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!allowAddStore) return;
+                const name = newStoreName.trim();
+                if (!name) return;
+                await addStore(bookId, name);
+                setNewStoreName('');
+              }}
             >
-              追加
-            </button>
-          </form>
+              {storeSlots !== null && (
+                <p className="text-[11px] font-bold text-ink-faint">
+                  あと {storeSlots} 件まで店舗を追加できます
+                </p>
+              )}
+              <div className="flex gap-2">
+                <input
+                  value={newStoreName}
+                  onChange={(e) => setNewStoreName(e.target.value)}
+                  placeholder="新しい店舗名"
+                  aria-label="新しい店舗名"
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary"
+                />
+                <button
+                  type="submit"
+                  className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-white"
+                >
+                  追加
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="mb-3">
+              <UpgradeCta message={storeCta.message} showPurchaseHint={storeCta.showPurchaseHint} />
+            </div>
+          )}
           <ul className="rounded-2xl bg-surface">
             {stores.map((s) => (
               <li key={s.id} className="border-b border-line last:border-b-0">

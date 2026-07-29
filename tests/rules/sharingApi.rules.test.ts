@@ -32,6 +32,7 @@ function validBook(uid: string) {
     memberUids: [uid],
     bottomWindowMonths: 6,
     createdAt: serverTimestamp(),
+    ownerLicenseStatus: 'lifetime' as const,
   };
 }
 

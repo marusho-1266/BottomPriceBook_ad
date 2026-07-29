@@ -3,6 +3,19 @@ import type { Timestamp } from 'firebase/firestore';
 /** カテゴリの基準単位。単価は常にこの単位あたりで比較する */
 export type BaseUnit = 'g' | 'ml' | '個' | '枚' | '組' | '回分';
 
+/** アカウントのライセンス状態（Issue #36） */
+export type LicenseStatus = 'free' | 'lifetime';
+
+/** users/{uid}.license。欠落時は free 扱い */
+export interface UserLicense {
+  status: LicenseStatus;
+  purchasedAt?: Timestamp;
+  /** 付与経路。#37 stripe / #38 promo 等 */
+  source?: string;
+  /** Stripe Checkout Session ID（#37）。購入メタ。既 lifetime では上書きしない */
+  stripeCheckoutSessionId?: string;
+}
+
 export interface Book {
   name: string;
   ownerUid: string;
@@ -10,6 +23,11 @@ export interface Book {
   /** 底値の対象期間(ヶ月)。0 = 全期間 */
   bottomWindowMonths: number;
   createdAt: Timestamp;
+  /**
+   * オーナー license の非秘密ミラー（Issue #36）。
+   * 真理は users/{ownerUid}.license。欠落時は free 扱い。
+   */
+  ownerLicenseStatus?: LicenseStatus;
 }
 
 export interface Category {

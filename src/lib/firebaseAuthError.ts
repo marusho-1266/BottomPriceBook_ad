@@ -1,4 +1,7 @@
-/** Firebase Auth エラーオブジェクトから code を取り出す */
+/**
+ * Firebase Auth / Callable Functions など、`.code` を持つエラーから code を取り出す。
+ * Functions の `functions/unauthenticated` 等にも使う。
+ */
 export function firebaseAuthErrorCode(error: unknown): string | undefined {
   return typeof error === 'object' && error !== null && 'code' in error
     ? String((error as { code: unknown }).code)

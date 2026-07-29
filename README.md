@@ -52,6 +52,14 @@ cd functions && npm install && npm run build
 `.env.local` で `VITE_FIREBASE_USE_EMULATORS=false` にし、
 Firebase コンソールの設定値(`.env.example` 参照)を設定する。
 
+### 買い切り決済（Issue #37）
+
+Stripe Checkout・Webhook・特商法のデプロイ前チェックは
+[`docs/deploy-issue37.md`](docs/deploy-issue37.md) を参照。
+**#36（ライセンスガード）と同時デプロイ**すること。
+`STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` は Secret Manager（`defineSecret`）、
+`STRIPE_PRICE_ID` / `APP_BASE_URL` は通常 env（`functions/.env.example`）。
+
 ### デプロイ(Cloud Functions を含む場合。Issue #13〜)
 
 アカウント削除(退会)機能は Cloud Functions を使うため、**Blaze プラン(従量課金)への

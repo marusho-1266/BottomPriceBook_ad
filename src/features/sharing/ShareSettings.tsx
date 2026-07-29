@@ -4,6 +4,10 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthProvider';
 import { useBook } from '../books/BookProvider';
+import { UpgradeCta } from '../license/UpgradeCta';
+import { ownerLimitCta } from '../license/ctaCopy';
+import { canInvite } from '../license/policy';
+import { useBookOwnerLicense } from '../license/useBookOwnerLicense';
 import {
   INVITE_TTL_DAYS,
   buildInviteUrl,
@@ -19,6 +23,9 @@ const UNNAMED = '(名前未設定)';
 export function ShareSettings() {
   const { bookId, book, isOwner } = useBook();
   const { user } = useAuth();
+  const ownerLicense = useBookOwnerLicense();
+  const inviteAllowed = canInvite(ownerLicense);
+  const inviteCta = ownerLimitCta('invite', isOwner);
   const { data: members } = useMembers(bookId);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
@@ -39,7 +46,7 @@ export function ShareSettings() {
   }));
 
   async function handleIssue() {
-    if (!book) return;
+    if (!book || !inviteAllowed) return;
     setIssuing(true);
     setError(null);
     try {
@@ -127,11 +134,14 @@ export function ShareSettings() {
           <button
             type="button"
             onClick={handleIssue}
-            disabled={issuing}
+            disabled={issuing || !inviteAllowed}
             className="h-11 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40"
           >
             招待リンクを発行
           </button>
+          {!inviteAllowed && (
+            <UpgradeCta message={inviteCta.message} showPurchaseHint={inviteCta.showPurchaseHint} />
+          )}
           {inviteUrl && (
             <div className="rounded-xl bg-cream p-3">
               <p className="text-xs break-all">{inviteUrl}</p>

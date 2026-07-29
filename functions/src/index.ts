@@ -1,15 +1,34 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { defineSecret } from 'firebase-functions/params';
 import { setGlobalOptions } from 'firebase-functions/v2';
-import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
+import { type CallableRequest, HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
+import Stripe from 'stripe';
+import {
+  handleCreateCheckoutSession,
+  type CreateCheckoutSessionResult,
+} from './createCheckoutSession.js';
 import { runDeleteAccount } from './deleteAccount.js';
 import { initSentry, withSentry } from './sentry.js';
+import { getCheckoutConfig, getWebhookConfig } from './stripeConfig.js';
+import { handleStripeWebhook } from './stripeWebhook.js';
 
 initializeApp();
 initSentry();
 
 setGlobalOptions({ region: 'asia-northeast1' });
+
+/** Live 決済鍵。平文 env ではなく Secret Manager（defineSecret）経由でマウントする */
+const stripeSecretKey = defineSecret('STRIPE_SECRET_KEY');
+const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
+
+let stripeClient: Stripe | undefined;
+
+function getStripe(secretKey: string): Stripe {
+  stripeClient ??= new Stripe(secretKey);
+  return stripeClient;
+}
 
 export interface DeleteAccountResult {
   ok: true;
@@ -41,3 +60,64 @@ export async function handleDeleteAccount(request: CallableRequest): Promise<Del
 }
 
 export const deleteAccount = onCall(withSentry(handleDeleteAccount));
+
+export async function handleCreateCheckoutSessionRequest(
+  request: CallableRequest,
+): Promise<CreateCheckoutSessionResult> {
+  const config = getCheckoutConfig();
+  const stripe = getStripe(config.secretKey);
+
+  return handleCreateCheckoutSession(request, {
+    firestore: getFirestore(),
+    appBaseUrl: config.appBaseUrl,
+    priceId: config.priceId,
+    createStripeCheckoutSession: async (params, opts) => {
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: 'payment',
+          line_items: [{ price: params.priceId, quantity: 1 }],
+          success_url: params.successUrl,
+          cancel_url: params.cancelUrl,
+          client_reference_id: params.uid,
+          metadata: { uid: params.uid },
+          expires_at: params.expiresAtUnix,
+        },
+        { idempotencyKey: opts.idempotencyKey },
+      );
+      return { id: session.id, url: session.url ?? '' };
+    },
+  });
+}
+
+export const createCheckoutSession = onCall(
+  { secrets: [stripeSecretKey] },
+  withSentry(handleCreateCheckoutSessionRequest),
+);
+
+export const stripeWebhook = onRequest(
+  { cors: false, secrets: [stripeSecretKey, stripeWebhookSecret] },
+  async (req, res) => {
+    const config = getWebhookConfig();
+    const stripe = getStripe(config.secretKey);
+    await handleStripeWebhook(req, res, {
+      firestore: getFirestore(),
+      webhookSecret: config.webhookSecret,
+      priceId: config.priceId,
+      retrieveCheckoutSession: async (sessionId) => {
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ['line_items.data.price'],
+        });
+        return session as unknown as {
+          id: string;
+          mode: string | null;
+          payment_status: string | null;
+          currency: string | null;
+          amount_total: number | null;
+          metadata: Record<string, string> | null;
+          client_reference_id: string | null;
+          line_items?: { data: Array<{ price?: { id?: string } | string | null }> };
+        };
+      },
+    });
+  },
+);

@@ -55,6 +55,33 @@ describe('books のフィールド検証強化(Issue #16)', () => {
     );
   });
 
+  it('ownerLicenseStatus: free なら作成できる(Issue #36)', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertSucceeds(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), ownerLicenseStatus: 'free' }),
+    );
+  });
+
+  it('users.license が lifetime でないとき ownerLicenseStatus: lifetime で作成できない(Issue #36/#37)', async () => {
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertFails(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), ownerLicenseStatus: 'lifetime' }),
+    );
+  });
+
+  it('users.license が lifetime なら ownerLicenseStatus: lifetime で作成できる(Issue #37)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+      await setDoc(doc(adminDb, 'users', ALICE), {
+        license: { status: 'lifetime', source: 'stripe' },
+      });
+    });
+    const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
+    await assertSucceeds(
+      setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), ownerLicenseStatus: 'lifetime' }),
+    );
+  });
+
   it('name が101文字だと作成できない', async () => {
     const db = testEnv.authenticatedContext(ALICE, { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'books', ALICE), { ...validBook(ALICE), name: LONG_101 }));

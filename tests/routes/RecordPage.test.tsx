@@ -4,7 +4,11 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { useBookMock } = vi.hoisted(() => ({
-  useBookMock: vi.fn(() => ({ bookId: 'b1', book: null as unknown })),
+  useBookMock: vi.fn((): {
+    bookId: string;
+    book: unknown;
+    isOwner?: boolean;
+  } => ({ bookId: 'b1', book: null })),
 }));
 vi.mock('../../src/features/books/BookProvider', () => ({
   useBook: useBookMock,
@@ -18,7 +22,7 @@ vi.mock('../../src/features/categories/api', () => ({
     loading: false,
   })),
 }));
-vi.mock('../../src/features/products/api', () => ({
+const { useProducts, useStores } = vi.hoisted(() => ({
   useProducts: vi.fn(() => ({
     data: [
       { id: 'p1', name: 'キュキュット 本体 240ml', categoryId: 'detergent' },
@@ -27,9 +31,6 @@ vi.mock('../../src/features/products/api', () => ({
     ],
     loading: false,
   })),
-  addProduct: vi.fn().mockResolvedValue('new-product-id'),
-}));
-vi.mock('../../src/features/stores/api', () => ({
   useStores: vi.fn(() => ({
     data: [
       { id: 's1', name: 'OKストア' },
@@ -37,6 +38,13 @@ vi.mock('../../src/features/stores/api', () => ({
     ],
     loading: false,
   })),
+}));
+vi.mock('../../src/features/products/api', () => ({
+  useProducts,
+  addProduct: vi.fn().mockResolvedValue('new-product-id'),
+}));
+vi.mock('../../src/features/stores/api', () => ({
+  useStores,
   addStore: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../../src/features/prices/api', () => ({
@@ -46,6 +54,7 @@ vi.mock('../../src/features/prices/api', () => ({
 
 import { RecordPage } from '../../src/routes/RecordPage';
 import { addPriceRecord, usePriceRecords } from '../../src/features/prices/api';
+import { addStore } from '../../src/features/stores/api';
 
 function renderPage() {
   return render(
@@ -70,7 +79,70 @@ describe('RecordPage(電卓ファースト)', () => {
     vi.clearAllMocks();
     // clearAllMocks は mockReturnValue を解除しないため、既定値を毎回設定し直す
     vi.mocked(usePriceRecords).mockReturnValue({ data: [], loading: false } as unknown as ReturnType<typeof usePriceRecords>);
-    useBookMock.mockReturnValue({ bookId: 'b1', book: null });
+    useBookMock.mockReturnValue({
+      bookId: 'b1',
+      book: { ownerLicenseStatus: 'lifetime' },
+      isOwner: true,
+    });
+    useProducts.mockReturnValue({
+      data: [
+        { id: 'p1', name: 'キュキュット 本体 240ml', categoryId: 'detergent' },
+        { id: 'p2', name: 'コシヒカリ 5kg', categoryId: 'food' },
+        { id: 'p3', name: 'ジョイ 300ml', categoryId: 'detergent' },
+      ],
+      loading: false,
+    });
+    useStores.mockReturnValue({
+      data: [
+        { id: 's1', name: 'OKストア' },
+        { id: 's2', name: '別店舗' },
+      ],
+      loading: false,
+    });
+  });
+
+  it('無料枠上限到達時は商品新規登録を隠し既存商品は選べる(Issue #36)', async () => {
+    const user = userEvent.setup();
+    useBookMock.mockReturnValue({
+      bookId: 'b1',
+      book: { ownerLicenseStatus: 'free' },
+      isOwner: true,
+    });
+    useProducts.mockReturnValue({
+      data: Array.from({ length: 20 }, (_, i) => ({
+        id: `p${i}`,
+        name: `商品${i}`,
+        categoryId: 'food',
+      })),
+      loading: false,
+    });
+    renderPage();
+    await user.click(screen.getByRole('button', { name: /商品/ }));
+    expect(screen.queryByRole('button', { name: '+ 新しい商品を登録' })).not.toBeInTheDocument();
+    expect(screen.getByText('商品の上限に達しました。買い切りで無制限になります')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '商品0' })).toBeInTheDocument();
+  });
+
+  it('無料枠上限到達時は店舗追加フォームを出さず CTA を出す(Issue #36)', async () => {
+    const user = userEvent.setup();
+    useBookMock.mockReturnValue({
+      bookId: 'b1',
+      book: { ownerLicenseStatus: 'free' },
+      isOwner: true,
+    });
+    useStores.mockReturnValue({
+      data: [
+        { id: 's1', name: 'A' },
+        { id: 's2', name: 'B' },
+        { id: 's3', name: 'C' },
+      ],
+      loading: false,
+    });
+    renderPage();
+    await user.click(screen.getByRole('button', { name: /店舗/ }));
+    expect(screen.queryByLabelText('新しい店舗名')).not.toBeInTheDocument();
+    expect(screen.getByText('店舗の上限に達しました。買い切りで無制限になります')).toBeInTheDocument();
+    expect(addStore).not.toHaveBeenCalled();
   });
 
   it('usePriceRecords に windowMonths/now を渡す(Issue #17: クエリ絞り込み回帰防止)', () => {
@@ -307,7 +379,11 @@ describe('RecordPage(電卓ファースト)', () => {
   });
 
   it('暫定順位: 期間外の記録のみなら除外後は 1 位 / 1 件中', async () => {
-    useBookMock.mockReturnValue({ bookId: 'b1', book: { bottomWindowMonths: 1 } });
+    useBookMock.mockReturnValue({
+      bookId: 'b1',
+      book: { bottomWindowMonths: 1, ownerLicenseStatus: 'lifetime' },
+      isOwner: true,
+    });
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     vi.mocked(usePriceRecords).mockReturnValue({

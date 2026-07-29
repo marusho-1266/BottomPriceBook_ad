@@ -104,6 +104,7 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
         <h3 className="text-base font-extrabold">アカウントを削除</h3>
         <ul className="mt-2 list-disc pl-4 text-sm text-ink-sub">
           <li>あなたの底値帳とすべての記録が削除されます</li>
+          <li>ライセンス情報（買い切り状態を含む）が削除されます</li>
           <li>発行した招待コードが削除されます</li>
           <li>参加中の底値帳からは退出します(あなたの記録は残ります)</li>
         </ul>

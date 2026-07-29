@@ -17,6 +17,10 @@ import {
   bottomPrice,
   bottomPricesByStore,
 } from '../features/prices/bottomPrice';
+import {
+  PriceRecordEditForm,
+  type PriceRecordEditPatch,
+} from '../features/prices/PriceRecordEditForm';
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
 import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';
@@ -29,7 +33,6 @@ export function ProductDetailPage() {
   const { data: stores } = useStores();
   const { data: productRecords } = useProductPriceRecords(productId);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState('');
 
   const product = products.find((p) => p.id === productId);
   const category = product
@@ -65,10 +68,8 @@ export function ProductDetailPage() {
     await deletePriceRecord(bookId, recordId);
   }
 
-  async function handleSaveEdit(recordId: string) {
-    const price = Number(editPrice);
-    if (!Number.isFinite(price) || price <= 0) return;
-    await updatePriceRecord(bookId, recordId, { price });
+  async function handleSaveEdit(recordId: string, patch: PriceRecordEditPatch) {
+    await updatePriceRecord(bookId, recordId, patch);
     setEditingId(null);
   }
 
@@ -132,54 +133,41 @@ export function ProductDetailPage() {
           {history.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-ink-sub">まだ記録がありません。</p>
           ) : (
-            history.map((record) => (
-              <div
-                key={record.id}
-                className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-bold">
-                    ¥{record.price.toLocaleString()}
-                    {record.isSale && (
-                      <span className="ml-1.5">
-                        <SaleBadge />
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-ink-sub">
-                    {storeName(record.storeId)} · {record.quantity}
-                    {record.unit} · {formatPriceRecordDate(record)}
-                  </div>
+            history.map((record) =>
+              editingId === record.id ? (
+                <div key={record.id} className="border-b border-line px-4 py-3 last:border-b-0">
+                  <PriceRecordEditForm
+                    record={record}
+                    stores={stores}
+                    baseUnit={category.baseUnit}
+                    onSave={(patch) => handleSaveEdit(record.id, patch)}
+                    onCancel={() => setEditingId(null)}
+                  />
                 </div>
-                {editingId === record.id ? (
-                  <div className="flex items-center gap-2">
-                    <label className="sr-only" htmlFor={`price-${record.id}`}>
-                      価格(税込)
-                    </label>
-                    <input
-                      id={`price-${record.id}`}
-                      type="number"
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
-                      className="h-9 w-20 rounded-lg border border-line bg-cream px-2 text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleSaveEdit(record.id)}
-                      className="text-xs font-bold text-primary"
-                    >
-                      保存
-                    </button>
+              ) : (
+                <div
+                  key={record.id}
+                  className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold">
+                      ¥{record.price.toLocaleString()}
+                      {record.isSale && (
+                        <span className="ml-1.5">
+                          <SaleBadge />
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-ink-sub">
+                      {storeName(record.storeId)} · {record.quantity}
+                      {record.unit} · {formatPriceRecordDate(record)}
+                    </div>
                   </div>
-                ) : (
                   <div className="flex gap-1">
                     <button
                       type="button"
                       aria-label="記録を編集"
-                      onClick={() => {
-                        setEditingId(record.id);
-                        setEditPrice(String(record.price));
-                      }}
+                      onClick={() => setEditingId(record.id)}
                       className="p-2 text-ink-faint"
                     >
                       <Pencil className="size-4" />
@@ -193,9 +181,9 @@ export function ProductDetailPage() {
                       <Trash2 className="size-4" />
                     </button>
                   </div>
-                )}
-              </div>
-            ))
+                </div>
+              ),
+            )
           )}
         </div>
         <Link

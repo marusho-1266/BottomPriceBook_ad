@@ -2,7 +2,7 @@
 
 > Status: **Approved** / 作成日: 2026-07-29 / Approved: 2026-07-29
 > 対象仕様: `docs/spec-issue42.md`(Approved)
-> タスク分解: `docs/tasks-issue42.md`(Draft)
+> タスク分解: `docs/tasks-issue42.md`(Approved)
 
 ## 方針
 

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -125,19 +125,47 @@ describe('ProductDetailPage', () => {
     expect(deletePriceRecord).toHaveBeenCalledWith('b1', expect.any(String));
   });
 
-  it('履歴から記録を編集できる', async () => {
+  it('履歴から記録の全項目を編集できる', async () => {
     const user = userEvent.setup();
     renderPage();
     const history = screen.getByTestId('history');
     await user.click(within(history).getAllByRole('button', { name: '記録を編集' })[0]);
-    const price = screen.getByLabelText('価格(税込)');
-    await user.clear(price);
-    await user.type(price, '148');
+
+    await user.clear(screen.getByLabelText('価格(税込)'));
+    await user.type(screen.getByLabelText('価格(税込)'), '148');
+    await user.clear(screen.getByLabelText('内容量'));
+    await user.type(screen.getByLabelText('内容量'), '500');
+    await user.selectOptions(screen.getByLabelText('単位'), 'L');
+    await user.click(screen.getByLabelText('特売'));
+    fireEvent.change(screen.getByLabelText('日付'), { target: { value: '2026-04-01' } });
+    await user.selectOptions(screen.getByLabelText('店舗'), 's2');
     await user.click(screen.getByRole('button', { name: '保存' }));
+
     expect(updatePriceRecord).toHaveBeenCalledWith(
       'b1',
       expect.any(String),
-      expect.objectContaining({ price: 148 }),
+      expect.objectContaining({
+        price: 148,
+        quantity: 500,
+        unit: 'L',
+        isSale: false,
+        storeId: 's2',
+        recordedAt: new Date('2026-04-01T12:00:00'),
+      }),
+    );
+  });
+
+  it('編集をキャンセルすると API を呼ばない', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const history = screen.getByTestId('history');
+    await user.click(within(history).getAllByRole('button', { name: '記録を編集' })[0]);
+    await user.clear(screen.getByLabelText('価格(税込)'));
+    await user.type(screen.getByLabelText('価格(税込)'), '999');
+    await user.click(screen.getByRole('button', { name: 'キャンセル' }));
+    expect(updatePriceRecord).not.toHaveBeenCalled();
+    expect(within(history).getAllByRole('button', { name: '記録を編集' }).length).toBeGreaterThan(
+      0,
     );
   });
 

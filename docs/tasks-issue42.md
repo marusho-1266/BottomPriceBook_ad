@@ -41,7 +41,7 @@
 
 ## Phase B: ページ配線
 
-- [ ] **I42-T2: `ProductDetailPage` を全項目編集に置換**
+- [x] **I42-T2: `ProductDetailPage` を全項目編集に置換**
   - 内容: 履歴の価格のみインライン編集をやめ、`editingId` 一致行で
     `PriceRecordEditForm` を表示する。
     - `onSave`: `await updatePriceRecord(bookId, id, patch)` 後に `editingId` クリア
@@ -59,7 +59,7 @@
   - 依存: I42-T1 / 規模: M
 
 ### Checkpoint B
-- [ ] 商品詳細の履歴編集が H-1 の全項目に対応している
+- [x] 商品詳細の履歴編集が H-1 の全項目に対応している
 
 ---
 

@@ -13,6 +13,7 @@ import { SettingsPage } from './routes/SettingsPage';
 import { ProductDetailPage } from './routes/ProductDetailPage';
 import { CategoriesPage } from './features/categories/CategoriesPage';
 import { StoresPage } from './features/stores/StoresPage';
+import { ProductsPage } from './features/products/ProductsPage';
 import { JoinPage } from './features/sharing/JoinPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
 import { TermsPage } from './features/legal/TermsPage';
@@ -99,6 +100,7 @@ function Gate() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/categories" element={<CategoriesPage />} />
           <Route path="settings/stores" element={<StoresPage />} />
+          <Route path="settings/products" element={<ProductsPage />} />
           <Route path="products/:productId" element={<ProductDetailPage />} />
         </Route>
         {/* 参加フローにタブバーを出さないため AppShell の外に置く(Issue #7)。

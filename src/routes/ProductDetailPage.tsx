@@ -85,6 +85,15 @@ export function ProductDetailPage() {
     <div>
       <SubPageHeader title={product.name} backTo="/" />
 
+      <div className="mx-4 mt-1 mb-3">
+        <Link
+          to={`/settings/products?edit=${product.id}`}
+          className="text-sm font-bold text-primary-deep"
+        >
+          商品情報を編集
+        </Link>
+      </div>
+
       {saleBottom && (
         <ProductSaleBottomHero
           testId="bottom-hero"

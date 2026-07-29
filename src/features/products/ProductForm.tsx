@@ -1,9 +1,14 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import type { Category, WithId } from '../../types/models';
+
+// firestore.rules の products 制約に合わせる(Issue #16)
+const NAME_MAX_LENGTH = 100;
+const NOTE_MAX_LENGTH = 500;
 
 interface ProductFormValues {
   name: string;
   categoryId: string;
+  note: string;
 }
 
 interface ProductFormProps {
@@ -17,7 +22,14 @@ interface ProductFormProps {
 export function ProductForm({ categories, initial, onSubmit, submitLabel }: ProductFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? '');
+  const [note, setNote] = useState(initial?.note ?? '');
   const [error, setError] = useState<string | null>(null);
+
+  // 追加フォームと行内の編集フォームが同時に描画されるため id を一意にする
+  const fieldId = useId();
+  const nameFieldId = `${fieldId}-name`;
+  const categoryFieldId = `${fieldId}-category`;
+  const noteFieldId = `${fieldId}-note`;
 
   const initialBaseUnit = initial
     ? categories.find((c) => c.id === initial.categoryId)?.baseUnit
@@ -30,22 +42,35 @@ export function ProductForm({ categories, initial, onSubmit, submitLabel }: Prod
       setError('商品名を入力してください');
       return;
     }
+    if (trimmed.length > NAME_MAX_LENGTH) {
+      setError(`商品名は${NAME_MAX_LENGTH}文字以内で入力してください`);
+      return;
+    }
     if (!categoryId) {
       setError('カテゴリを選択してください');
       return;
     }
+    const trimmedNote = note.trim();
+    if (trimmedNote.length > NOTE_MAX_LENGTH) {
+      setError(`メモは${NOTE_MAX_LENGTH}文字以内で入力してください`);
+      return;
+    }
     setError(null);
-    await onSubmit({ name: trimmed, categoryId });
+    try {
+      await onSubmit({ name: trimmed, categoryId, note: trimmedNote });
+    } catch {
+      setError('保存に失敗しました。もう一度お試しください');
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div>
-        <label htmlFor="product-name" className="mb-1 block text-xs font-bold text-ink-sub">
+        <label htmlFor={nameFieldId} className="mb-1 block text-xs font-bold text-ink-sub">
           商品名
         </label>
         <input
-          id="product-name"
+          id={nameFieldId}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="例: キュキュット 本体 240ml"
@@ -53,11 +78,11 @@ export function ProductForm({ categories, initial, onSubmit, submitLabel }: Prod
         />
       </div>
       <div>
-        <label htmlFor="product-category" className="mb-1 block text-xs font-bold text-ink-sub">
+        <label htmlFor={categoryFieldId} className="mb-1 block text-xs font-bold text-ink-sub">
           カテゴリ
         </label>
         <select
-          id="product-category"
+          id={categoryFieldId}
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
           className="h-11 w-full rounded-xl border border-chevron bg-surface px-2 text-sm outline-none focus:border-primary"
@@ -77,6 +102,19 @@ export function ProductForm({ categories, initial, onSubmit, submitLabel }: Prod
             基準単位が異なるカテゴリへは変更できません。必要な場合は新しい商品として登録してください
           </p>
         )}
+      </div>
+      <div>
+        <label htmlFor={noteFieldId} className="mb-1 block text-xs font-bold text-ink-sub">
+          メモ
+        </label>
+        <textarea
+          id={noteFieldId}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="容量違いの注意など"
+          rows={2}
+          className="w-full rounded-xl border border-chevron bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+        />
       </div>
       {error && (
         <p role="alert" className="text-xs font-bold text-sale">

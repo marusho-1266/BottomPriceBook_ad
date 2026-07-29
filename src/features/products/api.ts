@@ -24,12 +24,16 @@ export async function fetchProducts(bookId: string): Promise<WithId<Product>[]> 
 
 export async function addProduct(
   bookId: string,
-  input: { name: string; categoryId: string },
+  input: { name: string; categoryId: string; note?: string },
 ): Promise<string> {
   const uid = requireUid();
   const ref = doc(collection(db, 'books', bookId, 'products'));
   const batch = writeBatch(db);
-  batch.set(ref, input);
+  batch.set(ref, {
+    name: input.name,
+    categoryId: input.categoryId,
+    note: input.note ?? '',
+  });
   withRateLimit(batch, bookId, uid);
   await batch.commit();
   return ref.id;
@@ -38,7 +42,7 @@ export async function addProduct(
 export function updateProduct(
   bookId: string,
   productId: string,
-  patch: { name?: string; categoryId?: string },
+  patch: { name?: string; categoryId?: string; note?: string },
 ): Promise<void> {
   const uid = requireUid();
   const batch = writeBatch(db);

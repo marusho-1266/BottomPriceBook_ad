@@ -40,7 +40,7 @@
 
 ## Phase B: 商品管理画面と導線
 
-- [ ] **I40-T3: `ProductsPage` + ルート + 設定リンク**
+- [x] **I40-T3: `ProductsPage` + ルート + 設定リンク**
   - 内容: `ProductsPage` を新規作成。
     - ヘッダー: 「商品管理」→ 戻る `/settings`
     - 上部: 追加用 `ProductForm`(「登録」)。成功後フォームをリセット

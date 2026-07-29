@@ -110,7 +110,7 @@ describe('SettingsPage', () => {
     expect(updateBook).toHaveBeenCalledWith(db, 'u1', { name: 'うちの底値帳' });
   });
 
-  it('カテゴリ・店舗管理への導線がある', () => {
+  it('カテゴリ・店舗・商品管理への導線がある', () => {
     render(
       <MemoryRouter>
         <SettingsPage />
@@ -123,6 +123,10 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('link', { name: /店舗管理/ })).toHaveAttribute(
       'href',
       '/settings/stores',
+    );
+    expect(screen.getByRole('link', { name: /商品管理/ })).toHaveAttribute(
+      'href',
+      '/settings/products',
     );
   });
 

@@ -6,6 +6,7 @@ import {
   FolderTree,
   HelpCircle,
   Mail,
+  Package,
   ShieldCheck,
   StoreIcon,
 } from 'lucide-react';
@@ -170,6 +171,11 @@ export function SettingsPage() {
           to="/settings/stores"
           label="店舗管理"
           icon={<StoreIcon className="size-5" />}
+        />
+        <SettingsLink
+          to="/settings/products"
+          label="商品管理"
+          icon={<Package className="size-5" />}
         />
       </div>
 

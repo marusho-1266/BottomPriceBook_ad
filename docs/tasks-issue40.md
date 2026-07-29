@@ -21,7 +21,7 @@
     `tests/features/products/ProductForm.test.tsx`
   - 依存: なし / 規模: S
 
-- [ ] **I40-T2: `addProduct` / `updateProduct` に `note` を配線**
+- [x] **I40-T2: `addProduct` / `updateProduct` に `note` を配線**
   - 内容: 両 API の入力型に `note?: string` を追加し、Firestore へ書き込む。
     新規で未指定ならフィールド省略または `''` のいずれか(空文字で統一してよい)。
     更新で `note` を渡したときのみパッチに含める(空文字クリアを含む)。
@@ -34,7 +34,7 @@
   - 依存: I40-T1 / 規模: S
 
 ### Checkpoint A
-- [ ] ProductForm + products API がメモ対応し、記録画面の登録回帰が通る
+- [x] ProductForm + products API がメモ対応し、記録画面の登録回帰が通る
 
 ---
 

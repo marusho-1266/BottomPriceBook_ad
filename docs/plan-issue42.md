@@ -1,8 +1,8 @@
 # 実装計画: 価格記録の編集項目を拡充(Issue #42)
 
-> Status: **Approved** / 作成日: 2026-07-29 / Approved: 2026-07-29
-> 対象仕様: `docs/spec-issue42.md`(Approved)
-> タスク分解: `docs/tasks-issue42.md`(Approved)
+> Status: **Implemented** / 作成日: 2026-07-29 / Approved: 2026-07-29 / 実装完了: 2026-07-29
+> 対象仕様: `docs/spec-issue42.md`(Implemented)
+> タスク分解: `docs/tasks-issue42.md`(Done)
 
 ## 方針
 
@@ -118,4 +118,4 @@ Props(案):
 
 ## 次のフェーズ
 
-Plan Approved。Phase 3: Tasks(`docs/tasks-issue42.md`)へ進む。
+実装完了(I42-T1〜T3)。

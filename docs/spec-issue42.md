@@ -1,6 +1,6 @@
 # Spec: 価格記録の編集項目を拡充(Issue #42)
 
-> Status: **Approved** / 作成日: 2026-07-29 / Approved: 2026-07-29
+> Status: **Implemented** / 作成日: 2026-07-29 / Approved: 2026-07-29 / 実装完了: 2026-07-29
 >
 > 対象: GitHub Issue [#42](https://github.com/marusho-1266/BottomPriceBook_ad/issues/42)
 > 「価格記録の編集項目を拡充（内容量・特売・日付・店舗）」
@@ -215,14 +215,14 @@ export function PriceRecordEditForm(props: {
 
 ## Success Criteria
 
-- [ ] 商品詳細の履歴から価格・内容量・単位・特売・日付・店舗を編集して保存できる
-- [ ] 単位は当該商品カテゴリの `baseUnit` に応じた選択肢に制限される
-- [ ] 不正値では保存されず、エラー文言が見える
-- [ ] キャンセルで未保存のまま閲覧表示に戻れる
-- [ ] 保存後、履歴および底値表示に反映される
-- [ ] 削除は従来どおり動作する
-- [ ] 関連テストがグリーン、`npm run lint` / `npm run test` が通る
-- [ ] `docs/spec.md` の H-1 記述と実装が整合している
+- [x] 商品詳細の履歴から価格・内容量・単位・特売・日付・店舗を編集して保存できる
+- [x] 単位は当該商品カテゴリの `baseUnit` に応じた選択肢に制限される
+- [x] 不正値では保存されず、エラー文言が見える
+- [x] キャンセルで未保存のまま閲覧表示に戻れる
+- [x] 保存後、履歴および底値表示に反映される
+- [x] 削除は従来どおり動作する
+- [x] 関連テストがグリーン、`npm run lint` / `npm run test` が通る
+- [x] `docs/spec.md` の H-1 記述と実装が整合している
 
 ## Out of Scope
 
@@ -246,4 +246,4 @@ Plan で確定する実装詳細:
 
 ## 次のフェーズ
 
-仕様・Plan Approved。Phase 3: Tasks(`docs/tasks-issue42.md`) → 承認後に実装。
+実装完了。Phase 1〜4 完了(2026-07-29)。

@@ -1,7 +1,7 @@
 # タスク分解: 価格記録の編集項目を拡充(Issue #42)
 
-> Status: **Approved** / 作成日: 2026-07-29 / Approved: 2026-07-29
-> 対象: `docs/spec-issue42.md`(Approved) / 計画: `docs/plan-issue42.md`(Approved)
+> Status: **Done** / 作成日: 2026-07-29 / 実装完了: 2026-07-29
+> 対象: `docs/spec-issue42.md`(Implemented) / 計画: `docs/plan-issue42.md`(Implemented)
 > 実装は 1 タスク = 1 コミット相当で進める。各タスクの Verify を通してから次へ。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
 
@@ -65,7 +65,7 @@
 
 ## Phase C: 仕上げ
 
-- [ ] **I42-T3: 親仕様整合 + 回帰確認**
+- [x] **I42-T3: 親仕様整合 + 回帰確認**
   - 内容:
     - `docs/spec.md`: H-1 / 商品詳細 / Success Criteria
       「価格記録をあとから編集・削除できる」が実装と矛盾しないことを確認・必要なら追記
@@ -79,8 +79,8 @@
   - 依存: I42-T2 / 規模: S
 
 ### Checkpoint: Complete
-- [ ] Issue #42 Success Criteria を満たす
-- [ ] 既存テスト全通過、レビュー可能な状態
+- [x] Issue #42 Success Criteria を満たす
+- [x] 既存テスト全通過、レビュー可能な状態
 
 ---
 

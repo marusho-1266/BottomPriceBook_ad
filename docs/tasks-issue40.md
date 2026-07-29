@@ -58,7 +58,7 @@
     必要なら Settings 系テスト
   - 依存: I40-T2 / 規模: M
 
-- [ ] **I40-T4: `?edit=` deep-link + 商品詳細からの導線**
+- [x] **I40-T4: `?edit=` deep-link + 商品詳細からの導線**
   - 内容: `ProductsPage` が `?edit=:productId` を読み、該当商品を初期編集モードにする
     (存在しない ID は無視)。
     `ProductDetailPage` に「商品情報を編集」リンク

@@ -140,6 +140,14 @@ describe('ProductDetailPage', () => {
       expect.objectContaining({ price: 148 }),
     );
   });
+
+  it('商品情報を編集への導線がある', () => {
+    renderPage();
+    expect(screen.getByRole('link', { name: '商品情報を編集' })).toHaveAttribute(
+      'href',
+      '/settings/products?edit=p1',
+    );
+  });
 });
 
 describe('ProductDetailPage(特売記録のみ)', () => {

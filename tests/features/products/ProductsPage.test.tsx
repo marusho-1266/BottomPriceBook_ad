@@ -102,4 +102,16 @@ describe('ProductsPage', () => {
     await user.click(screen.getAllByRole('button', { name: '削除' })[0]);
     expect(deleteProductWithRecords).not.toHaveBeenCalled();
   });
+
+  it('?edit= があるとき該当商品を編集モードで開く', () => {
+    renderPage('/settings/products?edit=p1');
+    expect(screen.getByDisplayValue('コシヒカリ 5kg')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
+  });
+
+  it('存在しない ?edit= は無視して一覧のまま', () => {
+    renderPage('/settings/products?edit=missing');
+    expect(screen.queryByRole('button', { name: '保存' })).not.toBeInTheDocument();
+    expect(screen.getByText('コシヒカリ 5kg')).toBeInTheDocument();
+  });
 });

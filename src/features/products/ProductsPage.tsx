@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { SubPageHeader } from '../../components/SubPageHeader';
 import { db } from '../../lib/firebase';
 import type { Product, WithId } from '../../types/models';
@@ -91,8 +92,19 @@ export function ProductsPage() {
   const { bookId } = useBook();
   const { data: categories } = useCategories();
   const { data: products, loading } = useProducts();
+  const [searchParams] = useSearchParams();
+  const editFromQuery = searchParams.get('edit');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQueryApplied, setEditQueryApplied] = useState(false);
   const [formKey, setFormKey] = useState(0);
+
+  // 購読完了後に一度だけ ?edit= を編集モードへ反映する
+  if (!editQueryApplied && !loading) {
+    setEditQueryApplied(true);
+    if (editFromQuery && products.some((p) => p.id === editFromQuery)) {
+      setEditingId(editFromQuery);
+    }
+  }
 
   return (
     <div>

@@ -33,6 +33,9 @@
     2. `.env.local` に `VITE_FIREBASE_APPCHECK_SITE_KEY` を追記
     3. デプロイ(`npm run deploy`。ユーザー承認のうえ実施)
     4. App Check メトリクスで「検証済みリクエスト」が記録され始めることを確認
+    5. 独自ドメイン接続時は reCAPTCHA / Auth 認可ドメイン / OAuth 生成元へ
+       ドメインを追加する(`README.md`「独自ドメイン接続時の必須設定」参照。
+       未追加だと `appCheck/recaptcha-error` で Google ログインが失敗する)
     - **enforcement はまだ有効化しない**(Phase 4 まで監視モード)
   - Acceptance: 手順が人間だけで実行できる粒度で書かれており、
     メトリクスに検証済みリクエストが現れている

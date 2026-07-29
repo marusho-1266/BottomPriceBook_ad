@@ -52,6 +52,40 @@ cd functions && npm install && npm run build
 `.env.local` で `VITE_FIREBASE_USE_EMULATORS=false` にし、
 Firebase コンソールの設定値(`.env.example` 参照)を設定する。
 
+### 独自ドメイン接続時の必須設定(App Check / Google ログイン)
+
+Firebase Hosting に独自ドメイン(例: `https://sokoneko.jp/`)を接続したあと、
+以下の許可リストへドメインを追加しないと、App Check の reCAPTCHA が失敗し
+Google ログイン時にコンソールへ次のエラーが出る:
+
+```text
+@firebase/auth: Auth (...): Error while retrieving App Check token:
+FirebaseError: AppCheck: ReCAPTCHA error. (appCheck/recaptcha-error).
+```
+
+Hosting のドメイン接続だけでは不十分で、**コンソール側の許可ドメイン更新が必須**。
+コード変更や再デプロイは不要(設定反映のみで直る)。
+
+1. **reCAPTCHA の許可ドメイン**(App Check 用サイトキー)
+   - App Check で使っているのが reCAPTCHA v3 の場合:
+     [reCAPTCHA admin](https://www.google.com/recaptcha/admin) で該当サイトキーを開き、
+     Domains に `sokoneko.jp` を追加する(`https://` やパスは付けない)
+   - reCAPTCHA Enterprise の場合:
+     [Google Cloud Console > reCAPTCHA](https://console.cloud.google.com/security/recaptcha)
+     で該当キーを編集し、Domain List に同様に追加する
+   - 併せて `sokoneko-2e8b7.web.app` / `sokoneko-2e8b7.firebaseapp.com` も
+     一覧にあることを確認する(無いとデフォルト Hosting URL からも失敗する)
+2. **Firebase Authentication の認可ドメイン**
+   - Firebase コンソール > Authentication > Settings > Authorized domains
+   - `sokoneko.jp` を追加する(未追加だと Google ログインのポップアップ/リダイレクトが失敗する)
+3. **Google OAuth クライアントの JavaScript 生成元**(必要なら)
+   - Google Cloud Console > APIs & Services > Credentials
+   - Firebase が使う Web クライアントの「Authorized JavaScript origins」に
+     `https://sokoneko.jp` があることを確認し、無ければ追加する
+
+反映後、ブラウザをハードリロードしてから独自ドメインで Google ログインを再試行する。
+コンソールの `appCheck/recaptcha-error` が消え、ログインが完了すれば設定完了。
+
 ### デプロイ(Cloud Functions を含む場合。Issue #13〜)
 
 アカウント削除(退会)機能は Cloud Functions を使うため、**Blaze プラン(従量課金)への

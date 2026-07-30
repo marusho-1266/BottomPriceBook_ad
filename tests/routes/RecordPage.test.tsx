@@ -46,6 +46,8 @@ vi.mock('../../src/features/prices/api', () => ({
 
 import { RecordPage } from '../../src/routes/RecordPage';
 import { addPriceRecord, usePriceRecords } from '../../src/features/prices/api';
+import { addProduct } from '../../src/features/products/api';
+import { addStore } from '../../src/features/stores/api';
 import { DesktopLayoutProvider } from '../../src/components/DesktopLayoutContext';
 
 function renderPage() {
@@ -76,13 +78,17 @@ async function selectStore(user: ReturnType<typeof userEvent.setup>, name: strin
   await user.click(screen.getByRole('button', { name }));
 }
 
+// コンボボックスのトリガーは選択中の値を読み上げるため、名前は前方一致で引く
+const productTrigger = () => screen.getByRole('button', { name: /^商品: / });
+const storeTrigger = () => screen.getByRole('button', { name: /^店舗: / });
+
 async function selectProductDesktop(user: ReturnType<typeof userEvent.setup>, name: string) {
-  await user.click(screen.getByRole('button', { name: '商品を選択' }));
+  await user.click(productTrigger());
   await user.click(screen.getByRole('option', { name }));
 }
 
 async function selectStoreDesktop(user: ReturnType<typeof userEvent.setup>, name: string) {
-  await user.click(screen.getByRole('button', { name: '店舗を選択' }));
+  await user.click(storeTrigger());
   await user.click(screen.getByRole('option', { name }));
 }
 
@@ -386,14 +392,14 @@ describe('RecordPage(デスクトップ: 検索コンボボックス)', () => {
     const user = userEvent.setup();
     renderDesktopPage();
 
-    expect(screen.getByRole('button', { name: '商品を選択' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /選択してください/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '商品の候補を開く' })).toBeInTheDocument();
 
     await selectProductDesktop(user, 'ジョイ 300ml');
-    expect(screen.getByRole('button', { name: '商品を選択' })).toHaveTextContent('ジョイ 300ml');
+    // 選択した値はスクリーンリーダーにも伝わる必要がある
+    expect(productTrigger()).toHaveAccessibleName('商品: ジョイ 300ml');
 
     await selectStoreDesktop(user, 'OKストア');
-    expect(screen.getByRole('button', { name: '店舗を選択' })).toHaveTextContent('OKストア');
+    expect(storeTrigger()).toHaveAccessibleName('店舗: OKストア');
     expect(screen.queryByRole('heading', { name: '商品を選択' })).not.toBeInTheDocument();
   });
 
@@ -401,7 +407,7 @@ describe('RecordPage(デスクトップ: 検索コンボボックス)', () => {
     const user = userEvent.setup();
     renderDesktopPage();
 
-    await user.click(screen.getByRole('button', { name: '商品を選択' }));
+    await user.click(productTrigger());
     await user.type(screen.getByRole('combobox', { name: '商品を検索' }), 'キュキュ');
     expect(screen.getByRole('option', { name: 'キュキュット 本体 240ml' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'コシヒカリ 5kg' })).not.toBeInTheDocument();
@@ -427,8 +433,66 @@ describe('RecordPage(デスクトップ: 検索コンボボックス)', () => {
   it('透過オーバーレイ付きのピッカーシートを出さない', async () => {
     const user = userEvent.setup();
     renderDesktopPage();
-    await user.click(screen.getByRole('button', { name: '商品を選択' }));
+    await user.click(productTrigger());
     expect(screen.queryByRole('button', { name: '閉じる' })).not.toBeInTheDocument();
     expect(screen.getByRole('listbox', { name: '商品の候補' })).toBeInTheDocument();
+  });
+
+  it('コンボボックス内から商品を新規登録できる', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+
+    await user.click(productTrigger());
+    await user.click(screen.getByRole('button', { name: '+ 新しい商品を登録' }));
+    await user.type(screen.getByLabelText('商品名'), 'テスト商品');
+    await user.click(screen.getByRole('button', { name: '登録して選択' }));
+
+    expect(addProduct).toHaveBeenCalledWith('b1', {
+      name: 'テスト商品',
+      categoryId: 'detergent',
+      note: '',
+    });
+    // 登録後はパネルが閉じる
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('商品名')).not.toBeInTheDocument();
+  });
+
+  it('商品登録フォームを開くと候補リストを畳んでパネルを伸ばさない', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+
+    await user.click(productTrigger());
+    expect(screen.getByRole('listbox', { name: '商品の候補' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '+ 新しい商品を登録' }));
+
+    expect(screen.getByLabelText('商品名')).toBeInTheDocument();
+    expect(screen.queryByRole('listbox', { name: '商品の候補' })).not.toBeInTheDocument();
+  });
+
+  it('商品登録フォームを開いたまま閉じると次に開いたとき候補リストに戻る', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+
+    await user.click(productTrigger());
+    await user.click(screen.getByRole('button', { name: '+ 新しい商品を登録' }));
+    await user.click(screen.getByRole('button', { name: '商品の候補を閉じる' }));
+
+    await user.click(productTrigger());
+    expect(screen.getByRole('listbox', { name: '商品の候補' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('商品名')).not.toBeInTheDocument();
+  });
+
+  it('コンボボックス内から店舗を追加でき、入力欄がクリアされる', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+
+    await user.click(storeTrigger());
+    await user.type(screen.getByLabelText('新しい店舗名'), 'ライフ');
+    await user.click(screen.getByRole('button', { name: '追加' }));
+
+    expect(addStore).toHaveBeenCalledWith('b1', 'ライフ');
+    expect(screen.getByLabelText('新しい店舗名')).toHaveValue('');
+    // 追加操作ではパネルを閉じない(続けて選択できる)
+    expect(screen.getByRole('listbox', { name: '店舗の候補' })).toBeInTheDocument();
   });
 });

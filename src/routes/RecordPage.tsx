@@ -1,16 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ChevronRight, Delete } from 'lucide-react';
 import { PickerSheet } from '../components/PickerSheet';
-import { SearchableCombobox } from '../components/SearchableCombobox';
+import {
+  SearchableCombobox,
+  type SearchableComboboxHandle,
+} from '../components/SearchableCombobox';
 import { useDesktopLayout } from '../components/useDesktopLayout';
 import { useBook } from '../features/books/BookProvider';
 import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
 import { useCategories } from '../features/categories/api';
 import { addPriceRecord, usePriceRecords } from '../features/prices/api';
 import { rankDraftInCategory } from '../features/prices/bottomPrice';
-import { ProductForm } from '../features/products/ProductForm';
-import { addProduct, useProducts } from '../features/products/api';
-import { addStore, useStores } from '../features/stores/api';
+import { NewProductForm } from '../features/products/NewProductForm';
+import { useProducts } from '../features/products/api';
+import { StoreAddForm } from '../features/stores/StoreAddForm';
+import { useStores } from '../features/stores/api';
 import { fromLocalDateISO, toLocalDateISO } from '../lib/date';
 import { allowedUnits, formatPricePerBase } from '../lib/units';
 import type { BaseUnit } from '../types/models';
@@ -67,6 +71,7 @@ function Keypad({
 
 export function RecordPage() {
   const isDesktop = useDesktopLayout();
+  const productComboboxRef = useRef<SearchableComboboxHandle>(null);
   const { bookId, book } = useBook();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
@@ -85,7 +90,6 @@ export function RecordPage() {
   const [activeField, setActiveField] = useState<ActiveField>('price');
   const [picker, setPicker] = useState<'product' | 'store' | null>(null);
   const [addingProduct, setAddingProduct] = useState(false);
-  const [newStoreName, setNewStoreName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -163,6 +167,13 @@ export function RecordPage() {
     setUnit(selectedCategory ? allowedUnits(selectedCategory.baseUnit)[0] : '');
     setPicker(null);
     setAddingProduct(false);
+    setSaved(false);
+  };
+
+  const selectStore = (id: string) => {
+    setStoreId(id);
+    setPicker(null);
+    setSaved(false);
   };
 
   const handleSave = async () => {
@@ -210,6 +221,7 @@ export function RecordPage() {
           {isDesktop ? (
             <>
               <SearchableCombobox
+                ref={productComboboxRef}
                 fieldLabel="商品"
                 options={productOptions}
                 selectedId={productId}
@@ -219,14 +231,15 @@ export function RecordPage() {
                   if (!open) setAddingProduct(false);
                 }}
                 searchPlaceholder="商品名で検索..."
+                hideList={addingProduct}
               >
                 {addingProduct ? (
-                  <ProductForm
+                  <NewProductForm
+                    bookId={bookId}
                     categories={categories}
-                    submitLabel="登録して選択"
-                    onSubmit={async (values) => {
-                      const id = await addProduct(bookId, values);
+                    onCreated={(id) => {
                       selectProduct(id);
+                      productComboboxRef.current?.close();
                     }}
                   />
                 ) : (
@@ -244,36 +257,10 @@ export function RecordPage() {
                 options={storeOptions}
                 selectedId={storeId}
                 selectedLabel={store?.name ?? null}
-                onSelect={(id) => {
-                  setStoreId(id);
-                  setSaved(false);
-                }}
+                onSelect={selectStore}
                 searchPlaceholder="店舗名で検索..."
               >
-                <form
-                  className="flex gap-2"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const name = newStoreName.trim();
-                    if (!name) return;
-                    await addStore(bookId, name);
-                    setNewStoreName('');
-                  }}
-                >
-                  <input
-                    value={newStoreName}
-                    onChange={(e) => setNewStoreName(e.target.value)}
-                    placeholder="新しい店舗名"
-                    aria-label="新しい店舗名"
-                    className="h-10 min-w-0 flex-1 rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary"
-                  />
-                  <button
-                    type="submit"
-                    className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-white"
-                  >
-                    追加
-                  </button>
-                </form>
+                <StoreAddForm bookId={bookId} />
               </SearchableCombobox>
             </>
           ) : (
@@ -423,14 +410,7 @@ export function RecordPage() {
           }}
         >
           {addingProduct ? (
-            <ProductForm
-              categories={categories}
-              submitLabel="登録して選択"
-              onSubmit={async (values) => {
-                const id = await addProduct(bookId, values);
-                selectProduct(id);
-              }}
-            />
+            <NewProductForm bookId={bookId} categories={categories} onCreated={selectProduct} />
           ) : (
             <>
               <button
@@ -460,39 +440,13 @@ export function RecordPage() {
 
       {!isDesktop && picker === 'store' && (
         <PickerSheet title="店舗を選択" onClose={() => setPicker(null)}>
-          <form
-            className="mb-3 flex gap-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const name = newStoreName.trim();
-              if (!name) return;
-              await addStore(bookId, name);
-              setNewStoreName('');
-            }}
-          >
-            <input
-              value={newStoreName}
-              onChange={(e) => setNewStoreName(e.target.value)}
-              placeholder="新しい店舗名"
-              aria-label="新しい店舗名"
-              className="h-10 min-w-0 flex-1 rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary"
-            />
-            <button
-              type="submit"
-              className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-white"
-            >
-              追加
-            </button>
-          </form>
+          <StoreAddForm bookId={bookId} className="mb-3" />
           <ul className="rounded-2xl bg-surface">
             {stores.map((s) => (
               <li key={s.id} className="border-b border-line last:border-b-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setStoreId(s.id);
-                    setPicker(null);
-                  }}
+                  onClick={() => selectStore(s.id)}
                   className="w-full px-4 py-3 text-left text-sm font-bold"
                 >
                   {s.name}

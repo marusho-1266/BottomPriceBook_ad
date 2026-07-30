@@ -46,11 +46,22 @@ vi.mock('../../src/features/prices/api', () => ({
 
 import { RecordPage } from '../../src/routes/RecordPage';
 import { addPriceRecord, usePriceRecords } from '../../src/features/prices/api';
+import { DesktopLayoutProvider } from '../../src/components/DesktopLayoutContext';
 
 function renderPage() {
   return render(
     <MemoryRouter>
       <RecordPage />
+    </MemoryRouter>,
+  );
+}
+
+function renderDesktopPage() {
+  return render(
+    <MemoryRouter>
+      <DesktopLayoutProvider value={true}>
+        <RecordPage />
+      </DesktopLayoutProvider>
     </MemoryRouter>,
   );
 }
@@ -63,6 +74,16 @@ async function selectProduct(user: ReturnType<typeof userEvent.setup>, name: str
 async function selectStore(user: ReturnType<typeof userEvent.setup>, name: string) {
   await user.click(screen.getByRole('button', { name: /店舗/ }));
   await user.click(screen.getByRole('button', { name }));
+}
+
+async function selectProductDesktop(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole('button', { name: '商品を選択' }));
+  await user.click(screen.getByRole('option', { name }));
+}
+
+async function selectStoreDesktop(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole('button', { name: '店舗を選択' }));
+  await user.click(screen.getByRole('option', { name }));
 }
 
 describe('RecordPage(電卓ファースト)', () => {
@@ -351,5 +372,63 @@ describe('RecordPage(電卓ファースト)', () => {
     expect(await screen.findByText('記録しました')).toBeInTheDocument();
     expect(screen.getByText('¥0')).toBeInTheDocument();
     expect(screen.getByText('キュキュット 本体 240ml')).toBeInTheDocument();
+  });
+});
+
+describe('RecordPage(デスクトップ: 検索コンボボックス)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(usePriceRecords).mockReturnValue({ data: [], loading: false } as unknown as ReturnType<typeof usePriceRecords>);
+    useBookMock.mockReturnValue({ bookId: 'b1', book: null });
+  });
+
+  it('ボトムシートではなくコンボボックスで商品・店舗を選べる', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+
+    expect(screen.getByRole('button', { name: '商品を選択' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /選択してください/ })).not.toBeInTheDocument();
+
+    await selectProductDesktop(user, 'ジョイ 300ml');
+    expect(screen.getByRole('button', { name: '商品を選択' })).toHaveTextContent('ジョイ 300ml');
+
+    await selectStoreDesktop(user, 'OKストア');
+    expect(screen.getByRole('button', { name: '店舗を選択' })).toHaveTextContent('OKストア');
+    expect(screen.queryByRole('heading', { name: '商品を選択' })).not.toBeInTheDocument();
+  });
+
+  it('商品名検索で候補を絞り込み、選択して記録できる', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+
+    await user.click(screen.getByRole('button', { name: '商品を選択' }));
+    await user.type(screen.getByRole('combobox', { name: '商品を検索' }), 'キュキュ');
+    expect(screen.getByRole('option', { name: 'キュキュット 本体 240ml' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'コシヒカリ 5kg' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: 'キュキュット 本体 240ml' }));
+
+    await selectStoreDesktop(user, 'OKストア');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '記録する' }));
+
+    expect(addPriceRecord).toHaveBeenCalledWith(
+      'b1',
+      expect.objectContaining({
+        productId: 'p1',
+        storeId: 's1',
+        price: 1,
+        quantity: 2,
+      }),
+    );
+  });
+
+  it('透過オーバーレイ付きのピッカーシートを出さない', async () => {
+    const user = userEvent.setup();
+    renderDesktopPage();
+    await user.click(screen.getByRole('button', { name: '商品を選択' }));
+    expect(screen.queryByRole('button', { name: '閉じる' })).not.toBeInTheDocument();
+    expect(screen.getByRole('listbox', { name: '商品の候補' })).toBeInTheDocument();
   });
 });

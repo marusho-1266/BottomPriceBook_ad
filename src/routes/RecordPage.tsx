@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight, Delete } from 'lucide-react';
 import { PickerSheet } from '../components/PickerSheet';
+import { SearchableCombobox } from '../components/SearchableCombobox';
+import { useDesktopLayout } from '../components/useDesktopLayout';
 import { useBook } from '../features/books/BookProvider';
 import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
 import { useCategories } from '../features/categories/api';
@@ -64,6 +66,7 @@ function Keypad({
 }
 
 export function RecordPage() {
+  const isDesktop = useDesktopLayout();
   const { bookId, book } = useBook();
   const { data: products } = useProducts();
   const { data: stores } = useStores();
@@ -85,6 +88,15 @@ export function RecordPage() {
   const [newStoreName, setNewStoreName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const productOptions = useMemo(
+    () => products.map((p) => ({ id: p.id, label: p.name })),
+    [products],
+  );
+  const storeOptions = useMemo(
+    () => stores.map((s) => ({ id: s.id, label: s.name })),
+    [stores],
+  );
 
   const product = products.find((p) => p.id === productId) ?? null;
   const store = stores.find((s) => s.id === storeId) ?? null;
@@ -195,28 +207,104 @@ export function RecordPage() {
         <h2 className="text-lg font-extrabold">価格を記録</h2>
 
         <div className="mt-3 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => setPicker('product')}
-            className="flex items-center gap-2.5 rounded-2xl border-[1.5px] border-line-strong bg-surface px-3.5 py-3 text-left"
-          >
-            <span className="min-w-8 text-[11px] font-bold text-ink-faint">商品</span>
-            <span className="flex-1 truncate text-sm font-bold">
-              {product ? product.name : '選択してください'}
-            </span>
-            <ChevronRight className="size-4 text-chevron" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setPicker('store')}
-            className="flex items-center gap-2.5 rounded-2xl border-[1.5px] border-line-strong bg-surface px-3.5 py-3 text-left"
-          >
-            <span className="min-w-8 text-[11px] font-bold text-ink-faint">店舗</span>
-            <span className="flex-1 truncate text-sm font-bold">
-              {store ? store.name : '選択してください'}
-            </span>
-            <ChevronRight className="size-4 text-chevron" />
-          </button>
+          {isDesktop ? (
+            <>
+              <SearchableCombobox
+                fieldLabel="商品"
+                options={productOptions}
+                selectedId={productId}
+                selectedLabel={product?.name ?? null}
+                onSelect={selectProduct}
+                onOpenChange={(open) => {
+                  if (!open) setAddingProduct(false);
+                }}
+                searchPlaceholder="商品名で検索..."
+              >
+                {addingProduct ? (
+                  <ProductForm
+                    categories={categories}
+                    submitLabel="登録して選択"
+                    onSubmit={async (values) => {
+                      const id = await addProduct(bookId, values);
+                      selectProduct(id);
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddingProduct(true)}
+                    className="h-10 w-full rounded-xl border border-dashed border-primary text-sm font-bold text-primary-deep"
+                  >
+                    + 新しい商品を登録
+                  </button>
+                )}
+              </SearchableCombobox>
+              <SearchableCombobox
+                fieldLabel="店舗"
+                options={storeOptions}
+                selectedId={storeId}
+                selectedLabel={store?.name ?? null}
+                onSelect={(id) => {
+                  setStoreId(id);
+                  setSaved(false);
+                }}
+                searchPlaceholder="店舗名で検索..."
+              >
+                <form
+                  className="flex gap-2"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const name = newStoreName.trim();
+                    if (!name) return;
+                    await addStore(bookId, name);
+                    setNewStoreName('');
+                  }}
+                >
+                  <input
+                    value={newStoreName}
+                    onChange={(e) => setNewStoreName(e.target.value)}
+                    placeholder="新しい店舗名"
+                    aria-label="新しい店舗名"
+                    className="h-10 min-w-0 flex-1 rounded-xl border border-chevron bg-surface px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <button
+                    type="submit"
+                    className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-white"
+                  >
+                    追加
+                  </button>
+                </form>
+              </SearchableCombobox>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setPicker('product');
+                  setAddingProduct(false);
+                }}
+                className="flex items-center gap-2.5 rounded-2xl border-[1.5px] border-line-strong bg-surface px-3.5 py-3 text-left"
+              >
+                <span className="min-w-8 text-[11px] font-bold text-ink-faint">商品</span>
+                <span className="flex-1 truncate text-sm font-bold">
+                  {product ? product.name : '選択してください'}
+                </span>
+                <ChevronRight className="size-4 text-chevron" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPicker('store')}
+                className="flex items-center gap-2.5 rounded-2xl border-[1.5px] border-line-strong bg-surface px-3.5 py-3 text-left"
+              >
+                <span className="min-w-8 text-[11px] font-bold text-ink-faint">店舗</span>
+                <span className="flex-1 truncate text-sm font-bold">
+                  {store ? store.name : '選択してください'}
+                </span>
+                <ChevronRight className="size-4 text-chevron" />
+              </button>
+            </>
+          )}
         </div>
 
         <button
@@ -326,8 +414,14 @@ export function RecordPage() {
         </button>
       </div>
 
-      {picker === 'product' && (
-        <PickerSheet title="商品を選択" onClose={() => setPicker(null)}>
+      {!isDesktop && picker === 'product' && (
+        <PickerSheet
+          title="商品を選択"
+          onClose={() => {
+            setPicker(null);
+            setAddingProduct(false);
+          }}
+        >
           {addingProduct ? (
             <ProductForm
               categories={categories}
@@ -364,7 +458,7 @@ export function RecordPage() {
         </PickerSheet>
       )}
 
-      {picker === 'store' && (
+      {!isDesktop && picker === 'store' && (
         <PickerSheet title="店舗を選択" onClose={() => setPicker(null)}>
           <form
             className="mb-3 flex gap-2"

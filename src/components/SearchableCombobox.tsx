@@ -85,17 +85,11 @@ export function SearchableCombobox({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      inputRef.current?.focus();
-      setActiveIndex(0);
-    }
+    if (open) inputRef.current?.focus();
   }, [open]);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
   const openList = () => {
+    setActiveIndex(0);
     setOpenState(true);
     setQuery('');
   };
@@ -138,6 +132,11 @@ export function SearchableCombobox({
     }
   };
 
+  const onQueryChange = (value: string) => {
+    setQuery(value);
+    setActiveIndex(0);
+  };
+
   return (
     <div ref={rootRef} className="relative">
       <div
@@ -158,7 +157,7 @@ export function SearchableCombobox({
             }
             aria-label={`${fieldLabel}を検索`}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => onQueryChange(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder={searchPlaceholder}
             className="min-w-0 flex-1 bg-transparent text-sm font-bold outline-none placeholder:font-medium placeholder:text-ink-faint"

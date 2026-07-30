@@ -83,4 +83,17 @@ describe('BookSwitcher', () => {
 
     expect(screen.getByRole('button', { name: /わたしの底値帳.*選択中/ })).toBeInTheDocument();
   });
+
+  it('切替シートのオーバーレイは画面全幅を覆う(PCでの帯状暗転防止)', async () => {
+    const user = userEvent.setup();
+    setBooks([MY_BOOK, JOINED_BOOK]);
+    render(<BookSwitcher />);
+
+    await user.click(screen.getByRole('button', { name: '底値帳を切り替え' }));
+
+    const backdrop = screen.getByTestId('picker-sheet-backdrop');
+    const shell = backdrop.parentElement;
+    expect(shell?.className.split(/\s+/)).toEqual(expect.arrayContaining(['fixed', 'inset-0']));
+    expect(shell?.className.split(/\s+/)).not.toContain('max-w-md');
+  });
 });

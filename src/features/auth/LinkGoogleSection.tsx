@@ -189,7 +189,7 @@ function ReauthPasswordDialog({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-30 mx-auto flex max-w-md items-center justify-center px-6">
+    <div className="fixed inset-0 z-30 flex items-center justify-center px-6">
       <div
         aria-hidden="true"
         onClick={() => {
@@ -202,7 +202,7 @@ function ReauthPasswordDialog({
         role="alertdialog"
         aria-modal="true"
         aria-label="再認証が必要です"
-        className="relative w-full rounded-2xl bg-surface p-5"
+        className="relative w-full max-w-md rounded-2xl bg-surface p-5"
       >
         <h3 className="text-base font-extrabold">再認証が必要です</h3>
         <p className="mt-2 text-sm text-ink-sub">

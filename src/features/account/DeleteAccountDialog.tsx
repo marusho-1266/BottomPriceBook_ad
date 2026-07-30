@@ -88,7 +88,7 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-30 mx-auto flex max-w-md items-center justify-center px-6">
+    <div className="fixed inset-0 z-30 flex items-center justify-center px-6">
       <div
         aria-hidden="true"
         onClick={submitting ? undefined : onCancel}
@@ -99,7 +99,7 @@ export function DeleteAccountDialog({ onCancel }: { onCancel: () => void }) {
         role="alertdialog"
         aria-modal="true"
         aria-label="アカウントを削除"
-        className="relative w-full rounded-2xl bg-surface p-5"
+        className="relative w-full max-w-md rounded-2xl bg-surface p-5"
       >
         <h3 className="text-base font-extrabold">アカウントを削除</h3>
         <ul className="mt-2 list-disc pl-4 text-sm text-ink-sub">

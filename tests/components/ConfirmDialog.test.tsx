@@ -68,4 +68,13 @@ describe('ConfirmDialog', () => {
     await user.keyboard('{Escape}');
     expect(opener).toHaveFocus();
   });
+
+  it('オーバーレイは画面全幅を覆い、パネル幅だけ制限する(PCでの帯状暗転防止)', () => {
+    renderDialog();
+    const dialog = screen.getByRole('alertdialog');
+    const shell = dialog.parentElement;
+    expect(shell?.className.split(/\s+/)).toEqual(expect.arrayContaining(['fixed', 'inset-0']));
+    expect(shell?.className.split(/\s+/)).not.toContain('max-w-md');
+    expect(dialog.className.split(/\s+/)).toContain('max-w-md');
+  });
 });

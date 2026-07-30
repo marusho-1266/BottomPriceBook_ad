@@ -76,4 +76,15 @@ describe('OnboardingModal', () => {
     expect(onComplete).not.toHaveBeenCalled();
     expect(onSkip).not.toHaveBeenCalled();
   });
+
+  it('オーバーレイは画面全幅を覆い、パネル幅だけ制限する(PCでの帯状暗転防止)', () => {
+    render(<OnboardingModal onComplete={vi.fn()} onSkip={vi.fn()} />);
+    const backdrop = screen.getByTestId('onboarding-backdrop');
+    const shell = backdrop.parentElement;
+    expect(shell?.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(['fixed', 'inset-0']),
+    );
+    expect(shell?.className.split(/\s+/)).not.toContain('max-w-md');
+    expect(screen.getByRole('dialog').className.split(/\s+/)).toContain('max-w-md');
+  });
 });

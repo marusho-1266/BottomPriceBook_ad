@@ -61,14 +61,14 @@ export function ConfirmDialog({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-30 mx-auto flex max-w-md items-center justify-center px-6">
+    <div className="fixed inset-0 z-30 flex items-center justify-center px-6">
       <div aria-hidden="true" onClick={onCancel} className="absolute inset-0 bg-ink/30" />
       <div
         ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full rounded-2xl bg-surface p-5"
+        className="relative w-full max-w-md rounded-2xl bg-surface p-5"
       >
         <h3 className="text-base font-extrabold">{title}</h3>
         <p className="mt-2 text-sm text-ink-sub">{description}</p>

@@ -9,7 +9,7 @@
 
 ## Phase A: ルートと LP UI
 
-- [ ] **I31-T1: `WelcomePage` + 公開ルート配線 + テスト**
+- [x] **I31-T1: `WelcomePage` + 公開ルート配線 + テスト**
   - 内容:
     - `src/routes/WelcomePage.tsx` を新設。構成は Plan どおり:
       1. ヒーロー(ブランド「そこねこ」・見出し・一文・メイン CTA・Cat 等の視覚)
@@ -36,7 +36,7 @@
   - 依存: なし / 規模: M
 
 ### Checkpoint A
-- [ ] WelcomePage のテストがグリーン。`/welcome` が Gate 外にある
+- [x] WelcomePage のテストがグリーン。`/welcome` が Gate 外にある
 
 ---
 

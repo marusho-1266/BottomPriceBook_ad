@@ -54,6 +54,13 @@ describe('公開ルート(認証不要。Issue #14)', () => {
     expect(screen.queryByRole('button', { name: /Google でログイン/ })).not.toBeInTheDocument();
   });
 
+  it('未ログインで /welcome を開くと宣伝 LP が表示される', async () => {
+    await renderAt('/welcome');
+    expect(screen.getByRole('heading', { level: 1, name: 'そこねこ' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '店頭で、その場で底値がわかる' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Google でログイン/ })).not.toBeInTheDocument();
+  });
+
   it('未ログインでその他のパスを開くとログイン画面が表示される', async () => {
     await renderAt('/');
     expect(screen.getByRole('button', { name: /Google でログイン/ })).toBeInTheDocument();

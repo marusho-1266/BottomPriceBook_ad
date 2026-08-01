@@ -21,6 +21,7 @@ import { OnboardingModal } from './features/onboarding/OnboardingModal';
 import { hasSeenOnboarding, markOnboardingSeen } from './features/onboarding/storage';
 import { db } from './lib/firebase';
 import { trackEvent } from './lib/analytics';
+import { WelcomePage } from './routes/WelcomePage';
 
 function Loading() {
   return (
@@ -121,12 +122,14 @@ function Gate() {
 export function App() {
   return (
     <AuthProvider>
-      {/* 規約・ポリシーは未ログインでも閲覧できる公開ルート(Issue #14)。
-          それ以外は Gate(認証ガード)配下の入れ子 Routes が URL 全体で再マッチする */}
+      {/* 規約・ポリシー・宣伝 LP は未ログインでも閲覧できる公開ルート
+          (Issue #14 / #31)。それ以外は Gate(認証ガード)配下の入れ子 Routes が
+          URL 全体で再マッチする */}
       <BrowserRouter>
         <Routes>
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="welcome" element={<WelcomePage />} />
           <Route path="*" element={<Gate />} />
         </Routes>
       </BrowserRouter>

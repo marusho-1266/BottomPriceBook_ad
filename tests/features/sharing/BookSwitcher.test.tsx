@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Timestamp } from 'firebase/firestore';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DesktopLayoutProvider } from '../../../src/components/DesktopLayoutContext';
 import type { Book, WithId } from '../../../src/types/models';
 
 const UID = 'alice-uid';
@@ -42,14 +43,30 @@ function setBooks(books: WithId<Book>[], currentId = UID) {
   });
 }
 
+function renderMobile() {
+  return render(
+    <DesktopLayoutProvider value={false}>
+      <BookSwitcher />
+    </DesktopLayoutProvider>,
+  );
+}
+
+function renderDesktop() {
+  return render(
+    <DesktopLayoutProvider value={true}>
+      <BookSwitcher tone="onSurface" />
+    </DesktopLayoutProvider>,
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('BookSwitcher', () => {
+describe('BookSwitcher(モバイル)', () => {
   it('参加 book が 1 冊なら従来どおり「そこねこ」を表示し、切替トリガーは出ない', () => {
     setBooks([MY_BOOK]);
-    render(<BookSwitcher />);
+    renderMobile();
 
     expect(screen.getByRole('heading', { name: 'そこねこ' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '底値帳を切り替え' })).not.toBeInTheDocument();
@@ -57,7 +74,7 @@ describe('BookSwitcher', () => {
 
   it('複数冊なら現在の book 名を表示する', () => {
     setBooks([MY_BOOK, JOINED_BOOK]);
-    render(<BookSwitcher />);
+    renderMobile();
 
     expect(screen.getByRole('heading', { name: 'わたしの底値帳' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '底値帳を切り替え' })).toBeInTheDocument();
@@ -66,10 +83,10 @@ describe('BookSwitcher', () => {
   it('シートから選ぶと setCurrentBookId が呼ばれる', async () => {
     const user = userEvent.setup();
     setBooks([MY_BOOK, JOINED_BOOK]);
-    render(<BookSwitcher />);
+    renderMobile();
 
     await user.click(screen.getByRole('button', { name: '底値帳を切り替え' }));
-    await user.click(screen.getByRole('button', { name: /ボブの底値帳/ }));
+    await user.click(screen.getByRole('option', { name: /ボブの底値帳/ }));
 
     expect(mocks.setCurrentBookId).toHaveBeenCalledWith(OTHER);
   });
@@ -77,10 +94,50 @@ describe('BookSwitcher', () => {
   it('シートでは選択中の book に印が付く', async () => {
     const user = userEvent.setup();
     setBooks([MY_BOOK, JOINED_BOOK]);
-    render(<BookSwitcher />);
+    renderMobile();
 
     await user.click(screen.getByRole('button', { name: '底値帳を切り替え' }));
 
-    expect(screen.getByRole('button', { name: /わたしの底値帳.*選択中/ })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /わたしの底値帳.*選択中/ })).toBeInTheDocument();
+  });
+
+  it('切替シートのオーバーレイは画面全幅を覆う(PCでの帯状暗転防止)', async () => {
+    const user = userEvent.setup();
+    setBooks([MY_BOOK, JOINED_BOOK]);
+    renderMobile();
+
+    await user.click(screen.getByRole('button', { name: '底値帳を切り替え' }));
+
+    const backdrop = screen.getByTestId('picker-sheet-backdrop');
+    const shell = backdrop.parentElement;
+    expect(shell?.className.split(/\s+/)).toEqual(expect.arrayContaining(['fixed', 'inset-0']));
+    expect(shell?.className.split(/\s+/)).not.toContain('max-w-md');
+  });
+});
+
+describe('BookSwitcher(デスクトップ)', () => {
+  it('ドロップダウンから選ぶと setCurrentBookId が呼ばれる', async () => {
+    const user = userEvent.setup();
+    setBooks([MY_BOOK, JOINED_BOOK]);
+    renderDesktop();
+
+    await user.click(screen.getByRole('button', { name: '底値帳を切り替え' }));
+    expect(screen.getByRole('listbox', { name: '底値帳の候補' })).toBeInTheDocument();
+    expect(screen.queryByTestId('picker-sheet-backdrop')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('option', { name: /ボブの底値帳/ }));
+    expect(mocks.setCurrentBookId).toHaveBeenCalledWith(OTHER);
+  });
+
+  it('選択中の book に印が付き、Escape で閉じる', async () => {
+    const user = userEvent.setup();
+    setBooks([MY_BOOK, JOINED_BOOK]);
+    renderDesktop();
+
+    await user.click(screen.getByRole('button', { name: '底値帳を切り替え' }));
+    expect(screen.getByRole('option', { name: /わたしの底値帳.*選択中/ })).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox', { name: '底値帳の候補' })).not.toBeInTheDocument();
   });
 });

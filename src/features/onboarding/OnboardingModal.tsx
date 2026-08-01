@@ -52,14 +52,14 @@ export function OnboardingModal({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-30 mx-auto flex max-w-md items-center justify-center px-6">
+    <div className="fixed inset-0 z-30 flex items-center justify-center px-6">
       <div aria-hidden="true" data-testid="onboarding-backdrop" className="absolute inset-0 bg-ink/30" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="アプリの使い方"
-        className="relative w-full rounded-2xl bg-surface p-5"
+        className="relative w-full max-w-md rounded-2xl bg-surface p-5"
       >
         <div className="mb-3 flex justify-end">
           <button type="button" onClick={onSkip} className="text-xs font-bold text-ink-faint">

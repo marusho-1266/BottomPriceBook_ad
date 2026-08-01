@@ -1,8 +1,8 @@
 # 実装計画: 宣伝用 LP(Issue #31)
 
-> Status: **Approved** / 作成日: 2026-08-01 / Approved: 2026-08-01
-> 対象仕様: `docs/spec-issue31.md`(Approved)
-> タスク分解: `docs/tasks-issue31.md`
+> Status: **Implemented** / 作成日: 2026-08-01 / Approved: 2026-08-01 / 実装完了: 2026-08-01
+> 対象仕様: `docs/spec-issue31.md`(Implemented)
+> タスク分解: `docs/tasks-issue31.md`(Done)
 
 ## 方針
 
@@ -147,4 +147,4 @@ OGP の SNS 実プレビューはデプロイ後の手動確認(本 Issue のコ
 
 ## 次のフェーズ
 
-この Plan の承認後 → Phase 3: Tasks(`docs/tasks-issue31.md`) → Phase 4: Implement
+Phase 2〜4 完了(2026-08-01)。

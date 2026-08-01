@@ -1,13 +1,13 @@
 # Spec: 宣伝用 LP 作成(Issue #31)
 
-> Status: **Approved** / 作成日: 2026-08-01 / Approved: 2026-08-01
+> Status: **Implemented** / 作成日: 2026-08-01 / Approved: 2026-08-01 / 実装完了: 2026-08-01
 >
 > 対象: GitHub Issue [#31](https://github.com/marusho-1266/BottomPriceBook_ad/issues/31)
 > 「LP作成」(宣伝用の LP を作成)
 > このドキュメントは spec-driven development の Phase 1 (Specify) 成果物。
 > プロジェクト全体の仕様(Tech Stack・Code Style・Testing Strategy・Boundaries 等)は
 > `docs/spec.md`(Approved)を継承し、本ドキュメントでは本機能固有の差分のみを記述する。
-> 実装計画: `docs/plan-issue31.md`
+> 実装計画: `docs/plan-issue31.md` / タスク: `docs/tasks-issue31.md`
 
 ## 元 Issue
 
@@ -199,13 +199,13 @@ OGP のクローラ挙動は自動テスト対象外(手動)。
 
 ## Success Criteria
 
-- [ ] 未ログインで `https://<host>/welcome` が開き、ヒーロー〜フッターの 4 セクションがある
-- [ ] ブランド「そこねこ」がヒーローで一目で分かる
-- [ ] メイン CTA およびフッター再 CTA からログイン画面 `/` へ進める
-- [ ] フッターから利用規約・プライバシーポリシーへ辿れる
-- [ ] `index.html` に description / og:* / (推奨) twitter:card があり、`public` に og:image がある
-- [ ] 見た目がアプリ本体と同トーンである
-- [ ] 関連テストがグリーン、`npm run lint` / `npm run test` が通る
+- [x] 未ログインで `https://<host>/welcome` が開き、ヒーロー〜フッターの 4 セクションがある
+- [x] ブランド「そこねこ」がヒーローで一目で分かる
+- [x] メイン CTA およびフッター再 CTA からログイン画面 `/` へ進める
+- [x] フッターから利用規約・プライバシーポリシーへ辿れる
+- [x] `index.html` に description / og:* / (推奨) twitter:card があり、`public` に og:image がある
+- [x] 見た目がアプリ本体と同トーンである
+- [x] 関連テストがグリーン、`npm run lint` / `npm run test` が通る
 
 ## Out of Scope
 
@@ -230,4 +230,4 @@ Plan で確定する実装詳細:
 
 ## 次のフェーズ
 
-この Spec の承認後 → Phase 2: Plan(`docs/plan-issue31.md`) → Phase 3: Tasks → Phase 4: Implement
+Phase 1〜4 完了(2026-08-01)。デプロイ後に OGP 実プレビューを手動確認する。

@@ -1,7 +1,7 @@
 # タスク分解: 宣伝用 LP(Issue #31)
 
-> Status: **In Progress** / 作成日: 2026-08-01 / Approved: 2026-08-01
-> 対象: `docs/spec-issue31.md`(Approved) / 計画: `docs/plan-issue31.md`(Approved)
+> Status: **Done** / 作成日: 2026-08-01 / Approved: 2026-08-01 / 実装完了: 2026-08-01
+> 対象: `docs/spec-issue31.md`(Implemented) / 計画: `docs/plan-issue31.md`(Implemented)
 > 実装は 1 タスク = 1 コミット相当で進める。各タスクの Verify を通してから次へ。
 > 凡例は `docs/tasks.md` と同じ(受け入れ / Verify / 依存 / 規模)。
 
@@ -60,13 +60,13 @@
   - 依存: なし(T1 と並列可だが、順序は T1 → T2 を推奨) / 規模: S
 
 ### Checkpoint B
-- [ ] `dist` に OGP meta と og-image が含まれる
+- [x] `dist` に OGP meta と og-image が含まれる
 
 ---
 
 ## Phase C: 仕上げ
 
-- [ ] **I31-T3: 仕様の Success Criteria 更新 + 回帰**
+- [x] **I31-T3: 仕様の Success Criteria 更新 + 回帰**
   - 内容:
     - `docs/spec-issue31.md` の Success Criteria を達成状況に合わせて更新し、
       Status を Implemented(または相当)にする
@@ -81,8 +81,8 @@
   - 依存: I31-T1, I31-T2 / 規模: XS
 
 ### Checkpoint C(最終)
-- [ ] lint / test グリーン
-- [ ] Spec Success Criteria を満たす(OGP 実プレビューはデプロイ後手動)
+- [x] lint / test グリーン
+- [x] Spec Success Criteria を満たす(OGP 実プレビューはデプロイ後手動)
 
 ---
 

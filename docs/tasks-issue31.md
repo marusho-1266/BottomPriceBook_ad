@@ -42,7 +42,7 @@
 
 ## Phase B: OGP
 
-- [ ] **I31-T2: og:image + `index.html` meta**
+- [x] **I31-T2: og:image + `index.html` meta**
   - 内容:
     - `public/og-image.png` を新設(1200×630)。クリーム＋オレンジ＋「そこねこ」の簡易ブランド画像
     - `index.html` に以下を追加(ホストは Plan 確定値):

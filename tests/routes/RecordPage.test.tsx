@@ -182,6 +182,60 @@ describe('RecordPage(電卓ファースト)', () => {
     expect(screen.getByText(/総量を入力/)).toBeInTheDocument();
   });
 
+  it('単価: 商品・価格・内容量が揃うと価格表示の下に単価をライブ表示する', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    // 価格 158 / 内容量 240ml → 0.66 円/ml
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '5' }));
+    await user.click(screen.getByRole('button', { name: '8' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '4' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+
+    expect(screen.getByText('0.66円/ml')).toBeInTheDocument();
+  });
+
+  it('単価: 内容量未入力の間は単価を表示しない', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '5' }));
+    await user.click(screen.getByRole('button', { name: '8' }));
+
+    expect(screen.queryByText(/円\/ml/)).not.toBeInTheDocument();
+  });
+
+  it('単価: 入力値を変えると単価表示が即座に更新される', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await selectProduct(user, 'キュキュット 本体 240ml');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: /内容量/ }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    expect(screen.getByText('0.50円/ml')).toBeInTheDocument();
+
+    // 価格を 200 に変更 → 1.0 円/ml
+    await user.click(screen.getByRole('button', { name: /価格/ }));
+    await user.click(screen.getByRole('button', { name: '1文字削除' }));
+    await user.click(screen.getByRole('button', { name: '1文字削除' }));
+    await user.click(screen.getByRole('button', { name: '1文字削除' }));
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    expect(screen.getByText('1.0円/ml')).toBeInTheDocument();
+  });
+
   it('暫定順位: 入力途中(内容量未入力)は順位を表示しない', async () => {
     const user = userEvent.setup();
     renderPage();

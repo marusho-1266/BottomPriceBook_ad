@@ -16,7 +16,7 @@ import { useProducts } from '../features/products/api';
 import { StoreAddForm } from '../features/stores/StoreAddForm';
 import { useStores } from '../features/stores/api';
 import { fromLocalDateISO, toLocalDateISO } from '../lib/date';
-import { allowedUnits, formatPricePerBase } from '../lib/units';
+import { allowedUnits, calcUnitPrice, formatPricePerBase } from '../lib/units';
 import type { BaseUnit } from '../types/models';
 
 type ActiveField = 'price' | 'quantity';
@@ -140,6 +140,16 @@ export function RecordPage() {
     const storeName = stores.find((s) => s.id === ref.storeId)?.name ?? '不明';
     return `${ref.displayRank}位: ${productName} / ${storeName} / ${formatPricePerBase(ref.unitPrice, baseUnit)}`;
   }, [draftRank, baseUnit, products, stores]);
+
+  const draftUnitPriceLabel = useMemo(() => {
+    if (!baseUnit || !priceText || !quantityText) return null;
+    const price = Number(priceText);
+    const quantity = Number(quantityText);
+    if (!Number.isFinite(price) || !Number.isFinite(quantity)) return null;
+    const unitPrice = calcUnitPrice(price, quantity, effectiveUnit, baseUnit);
+    if (unitPrice === null) return null;
+    return formatPricePerBase(unitPrice, baseUnit);
+  }, [baseUnit, priceText, quantityText, effectiveUnit]);
 
   const handleDigit = (digit: string) => {
     setSaved(false);
@@ -303,6 +313,11 @@ export function RecordPage() {
           <span className="block text-5xl leading-tight font-extrabold">
             ¥{priceText === '' ? '0' : priceText}
           </span>
+          {draftUnitPriceLabel && (
+            <span className="mt-0.5 block text-sm font-bold text-ink-sub">
+              {draftUnitPriceLabel}
+            </span>
+          )}
           <span
             className={`mx-auto mt-1 block h-[3px] w-44 rounded-full ${
               activeField === 'price' ? 'bg-primary' : 'bg-transparent'

@@ -102,12 +102,20 @@ describe('ComparePage(全記録ランキング)', () => {
     expect(within(rows[0]).getByText(/1位/)).toBeInTheDocument();
   });
 
-  it('各行に店舗名と記録日を表示する', () => {
+  it('各行に価格・内容量・店舗名・記録日を表示する', () => {
     mockRecords([priceRecord({ id: 'r1', storeId: 's2' })]);
     renderPage();
     const row = within(screen.getByTestId('ranking')).getAllByRole('listitem')[0];
-    expect(within(row).getByText(/西友/)).toBeInTheDocument();
-    expect(within(row).getByText(/7\/10/)).toBeInTheDocument();
+    expect(within(row).getByText(/¥158 · 240ml · 西友 · 7\/10/)).toBeInTheDocument();
+  });
+
+  it('内容量は記録ごとに表示する(L 記録は 1.2L)', () => {
+    mockRecords([
+      priceRecord({ id: 'r3', productId: 'p2', price: 298, quantity: 1.2, unit: 'L' }),
+    ]);
+    renderPage();
+    const row = within(screen.getByTestId('ranking')).getAllByRole('listitem')[0];
+    expect(within(row).getByText(/¥298 · 1\.2L ·/)).toBeInTheDocument();
   });
 
   it('参照切れの店舗は「(不明な店舗)」で表示する', () => {

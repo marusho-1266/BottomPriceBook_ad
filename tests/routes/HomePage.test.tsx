@@ -105,10 +105,10 @@ describe('HomePage(底値一覧)', () => {
     });
   });
 
-  it('商品ごとの底値と店舗・単価を表示する', () => {
+  it('商品ごとの底値と店舗・内容量・単価を表示する', () => {
     renderPage();
     expect(screen.getByText('¥158')).toBeInTheDocument();
-    expect(screen.getByText(/OKストア/)).toBeInTheDocument();
+    expect(screen.getByText(/OKストア · 240ml ·/)).toBeInTheDocument();
     expect(screen.getByText(/0\.66円\/ml/)).toBeInTheDocument();
   });
 

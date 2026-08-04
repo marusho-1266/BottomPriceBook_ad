@@ -6,7 +6,7 @@ import { SaleBadge } from './SaleBadge';
 import { BookSwitcher } from '../features/sharing/BookSwitcher';
 import type { BottomResult } from '../features/prices/bottomPrice';
 import type { HomeSummary } from '../features/prices/homeSummary';
-import { formatPricePerBase } from '../lib/units';
+import { formatPricePerBase, formatQuantityLabel } from '../lib/units';
 import type { Category, PriceRecord, Product, WithId } from '../types/models';
 
 type Props = {
@@ -110,6 +110,7 @@ export function PcHomeDashboard({
                         <tr>
                           <th className="px-4 py-2.5 font-bold">商品</th>
                           <th className="px-3 py-2.5 font-bold">底値</th>
+                          <th className="px-3 py-2.5 font-bold">内容量</th>
                           <th className="hidden px-3 py-2.5 font-bold sm:table-cell">店舗</th>
                           <th className="hidden px-4 py-2.5 font-bold md:table-cell">単価</th>
                         </tr>
@@ -146,6 +147,9 @@ export function PcHomeDashboard({
                                     <SaleBadge />
                                   </span>
                                 )}
+                              </td>
+                              <td className="px-3 py-3 whitespace-nowrap text-ink-sub">
+                                {formatQuantityLabel(best.record.quantity, best.record.unit)}
                               </td>
                               <td className="hidden px-3 py-3 text-ink-sub sm:table-cell">
                                 {storeName(best.record.storeId)}

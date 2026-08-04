@@ -7,7 +7,7 @@ import { usePriceRecords } from '../features/prices/api';
 import { rankAllRecordsByUnitPrice } from '../features/prices/bottomPrice';
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
-import { formatPricePerBase } from '../lib/units';
+import { formatPricePerBase, formatQuantityLabel } from '../lib/units';
 import type { PriceRecord, WithId } from '../types/models';
 
 /** 表示する記録の上限件数(超過分は「他 N 件」注記にまとめる) */
@@ -128,8 +128,9 @@ export function ComparePage() {
                   )}
                   <div className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-sub">
                     <span>
-                      ¥{row.record.price.toLocaleString()} · {storeName(row.record.storeId)} ·{' '}
-                      {formatDate(row.record)}
+                      ¥{row.record.price.toLocaleString()} ·{' '}
+                      {formatQuantityLabel(row.record.quantity, row.record.unit)} ·{' '}
+                      {storeName(row.record.storeId)} · {formatDate(row.record)}
                     </span>
                     {row.record.isSale && <SaleBadge />}
                   </div>

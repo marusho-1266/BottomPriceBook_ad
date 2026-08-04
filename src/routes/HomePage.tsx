@@ -13,7 +13,7 @@ import { usePriceRecords } from '../features/prices/api';
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
 import { DEFAULT_BOTTOM_WINDOW_MONTHS } from '../features/books/api';
-import { formatPricePerBase } from '../lib/units';
+import { formatPricePerBase, formatQuantityLabel } from '../lib/units';
 import type { PriceRecord, Product, WithId } from '../types/models';
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
@@ -159,6 +159,7 @@ export function HomePage() {
                         <div className="truncate text-sm font-bold">{product.name}</div>
                         <div className="mt-0.5 text-[11px] text-ink-sub">
                           {storeName(best.record.storeId)} ·{' '}
+                          {formatQuantityLabel(best.record.quantity, best.record.unit)} ·{' '}
                           {formatPricePerBase(best.unitPrice, category.baseUnit)}
                         </div>
                       </div>

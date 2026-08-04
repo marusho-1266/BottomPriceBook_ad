@@ -3,6 +3,7 @@ import {
   allowedUnits,
   calcUnitPrice,
   formatPricePerBase,
+  formatQuantityLabel,
   relabelRecordToBaseUnit,
   toBaseQuantity,
 } from '../../src/lib/units';
@@ -61,6 +62,14 @@ describe('calcUnitPrice(基準単位あたりの円)', () => {
 
   it('許容外の単位ペアなら null', () => {
     expect(calcUnitPrice(100, 100, 'ml', 'g')).toBeNull();
+  });
+});
+
+describe('formatQuantityLabel', () => {
+  it('{quantity}{unit} をスペースなしで返す', () => {
+    expect(formatQuantityLabel(240, 'ml')).toBe('240ml');
+    expect(formatQuantityLabel(1.2, 'L')).toBe('1.2L');
+    expect(formatQuantityLabel(5, 'kg')).toBe('5kg');
   });
 });
 

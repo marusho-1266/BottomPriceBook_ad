@@ -113,6 +113,20 @@ describe('HomePage PC ダッシュボード', () => {
     expect(screen.getByText('キュキュット 本体 240ml')).toBeInTheDocument();
   });
 
+  it('底値一覧に内容量列を表示する', () => {
+    renderDesktopHome();
+    // カテゴリごとにテーブルがあるため見出しは複数
+    expect(screen.getAllByRole('columnheader', { name: '内容量' }).length).toBeGreaterThanOrEqual(1);
+    const rows = screen.getAllByRole('row');
+    // ヘッダー除くデータ行: キュキュット(240ml) / コシヒカリ(5kg)
+    expect(rows.some((row) => row.textContent?.includes('240ml') && row.textContent?.includes('¥158'))).toBe(
+      true,
+    );
+    expect(rows.some((row) => row.textContent?.includes('5kg') && row.textContent?.includes('¥1,980'))).toBe(
+      true,
+    );
+  });
+
   it('未選択時は右ペインにプレースホルダを表示する', () => {
     renderDesktopHome();
     expect(screen.getByText('一覧から商品を選択')).toBeInTheDocument();

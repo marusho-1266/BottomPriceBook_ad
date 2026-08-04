@@ -41,6 +41,11 @@ export function formatPricePerBase(unitPrice: number | null, baseUnit: BaseUnit)
   return `${unitPrice.toFixed(digits)}円/${baseUnit}`;
 }
 
+/** 内容量ラベル。商品詳細履歴と同じ {quantity}{unit} */
+export function formatQuantityLabel(quantity: number, unit: string): string {
+  return `${quantity}${unit}`;
+}
+
 /**
  * 旧基準単位で正規化し、新基準単位へ unit を付け替える(物理換算ではない)。
  * 現行 baseUnit と不整合な unit は quantity をそのまま残し unit のみ付け替える。

@@ -24,6 +24,7 @@ import {
 import { useProducts } from '../features/products/api';
 import { useStores } from '../features/stores/api';
 import { formatPriceRecordDate } from '../features/prices/formatPriceRecordDate';
+import { formatQuantityLabel } from '../lib/units';
 
 export function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
@@ -159,8 +160,9 @@ export function ProductDetailPage() {
                       )}
                     </div>
                     <div className="mt-0.5 text-[11px] text-ink-sub">
-                      {storeName(record.storeId)} · {record.quantity}
-                      {record.unit} · {formatPriceRecordDate(record)}
+                      {storeName(record.storeId)} ·{' '}
+                      {formatQuantityLabel(record.quantity, record.unit)} ·{' '}
+                      {formatPriceRecordDate(record)}
                     </div>
                   </div>
                   <div className="flex gap-1">
